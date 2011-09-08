@@ -464,6 +464,7 @@ MACHINE_START(SMDK4212, "SMDK4X12")
 	/* Maintainer: Kukjin Kim <kgene.kim@samsung.com> */
 	.atag_offset	= 0x100,
 	.init_early	= smdk4x12_init_early,
+	.smp		= smp_ops(exynos_smp_ops),
 	.init_irq	= exynos4_init_irq,
 	.map_io		= smdk4x12_map_io,
 	.handle_irq	= gic_handle_irq,
@@ -477,6 +478,7 @@ MACHINE_START(SMDK4412, "SMDK4X12")
 	/* Maintainer: Changhwan Youn <chaos.youn@samsung.com> */
 	.atag_offset	= 0x100,
 	.init_early	= smdk4x12_init_early,
+	.smp		= smp_ops(exynos_smp_ops),
 	.init_irq	= exynos4_init_irq,
 	.map_io		= smdk4x12_map_io,
 	.handle_irq	= gic_handle_irq,
