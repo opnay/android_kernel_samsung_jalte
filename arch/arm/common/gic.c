@@ -75,7 +75,8 @@ static DEFINE_RAW_SPINLOCK(irq_controller_lock);
  * the logical CPU numbering.  Let's use a mapping as returned
  * by the GIC itself.
  */
-static u8 gic_cpu_map[8] __read_mostly;
+#define NR_GIC_CPU_IF 8
+static u8 gic_cpu_map[NR_GIC_CPU_IF] __read_mostly;
 
 /*
  * Supported arch specific GIC irq extension.
@@ -250,7 +251,7 @@ static int gic_set_affinity(struct irq_data *d, const struct cpumask *mask_val,
 	unsigned int cpu = cpumask_any_and(mask_val, cpu_online_mask);
 	u32 val, mask, bit;
 
-	if (cpu >= 8 || cpu >= nr_cpu_ids)
+	if (cpu >= NR_GIC_CPU_IF || cpu >= nr_cpu_ids)
 		return -EINVAL;
 
 	raw_spin_lock(&irq_controller_lock);
@@ -402,7 +403,7 @@ static void __cpuinit gic_cpu_init(struct gic_chip_data *gic)
 	/*
 	 * Get what the GIC says our CPU mask is.
 	 */
-	BUG_ON(cpu >= 8);
+	BUG_ON(cpu >= NR_GIC_CPU_IF);
 	cpu_mask = readl_relaxed(dist_base + GIC_DIST_TARGET + 0);
 	gic_cpu_map[cpu] = cpu_mask;
 
@@ -410,7 +411,7 @@ static void __cpuinit gic_cpu_init(struct gic_chip_data *gic)
 	 * Clear our mask from the other map entries in case they're
 	 * still undefined.
 	 */
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < NR_GIC_CPU_IF; i++)
 		if (i != cpu)
 			gic_cpu_map[i] &= ~cpu_mask;
 
@@ -736,7 +737,7 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	 * Initialize the CPU interface map to all CPUs.
 	 * It will be refined as each CPU probes its ID.
 	 */
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < NR_GIC_CPU_IF; i++)
 		gic_cpu_map[i] = 0xff;
 
 	/*
