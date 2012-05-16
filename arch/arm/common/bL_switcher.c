@@ -22,6 +22,7 @@
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/cpu_pm.h>
+#include <linux/cpumask.h>
 #if !defined(CONFIG_ARM_EXYNOS_IKS_CPUFREQ)
 #include <linux/workqueue.h>
 #endif
@@ -30,6 +31,9 @@
 #include <linux/wait.h>
 #include <linux/cpu.h>
 #endif
+#include <linux/clockchips.h>
+#include <linux/hrtimer.h>
+#include <linux/tick.h>
 #include <linux/mm.h>
 #include <linux/string.h>
 #include <linux/spinlock.h>
@@ -187,7 +191,9 @@ static DEFINE_SPINLOCK(switch_gic_lock);
  */
 static int bL_switch_to(unsigned int new_cluster_id)
 {
-	unsigned int mpidr, cpuid, clusterid, ob_cluster, ib_cluster;
+	unsigned int mpidr, cpuid, clusterid, ob_cluster, ib_cluster, this_cpu;
+	struct tick_device *tdev;
+	enum clock_event_mode tdev_mode;
 	int ret = 0;
 
 	mpidr = read_mpidr();
@@ -215,6 +221,8 @@ static int bL_switch_to(unsigned int new_cluster_id)
 	 */
 	local_irq_disable();
 
+	this_cpu = smp_processor_id();
+	
 	/*
 	 * Get spin_lock to protect concurrent accesses of GIC registers
 	 * from both NWd(gic_migrate_target) and SWd(SMC of bL_power_up).
@@ -234,9 +242,17 @@ static int bL_switch_to(unsigned int new_cluster_id)
 	 * Raise a SGI on the inbound CPU to make sure it doesn't stall
 	 * in a possible WFI, such as the one in bL_do_switch().
 	 */
-	arm_send_ping_ipi(smp_processor_id());
+	arm_send_ping_ipi(this_cpu);
 
 	spin_unlock(&switch_gic_lock);
+
+	tdev = tick_get_device(this_cpu);
+	if (tdev && !cpumask_equal(tdev->evtdev->cpumask, cpumask_of(this_cpu)))
+		tdev = NULL;
+	if (tdev) {
+		tdev_mode = tdev->evtdev->mode;
+		clockevents_set_mode(tdev->evtdev, CLOCK_EVT_MODE_SHUTDOWN);
+	}
 
 	ret = cpu_pm_enter();
 	if (ret)
@@ -259,6 +275,12 @@ static int bL_switch_to(unsigned int new_cluster_id)
 	ret = cpu_pm_exit();
 
 out:
+	if (tdev) {
+		clockevents_set_mode(tdev->evtdev, tdev_mode);
+		clockevents_program_event(tdev->evtdev,
+					  tdev->evtdev->next_event, 1);
+	}
+
 	local_irq_enable();
 
 	if (ret)
