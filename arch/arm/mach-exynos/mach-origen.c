@@ -680,7 +680,7 @@ static void s5p_tv_setup(void)
 static void __init origen_map_io(void)
 {
 	exynos_init_io(NULL, 0);
-	s3c24xx_init_clocks(24000000);
+	s3c24xx_init_clocks(clk_xusbxti.rate);
 	s3c24xx_init_uarts(origen_uartcfgs, ARRAY_SIZE(origen_uartcfgs));
 }
 
@@ -712,7 +712,6 @@ static void __init origen_machine_init(void)
 
 	origen_ehci_init();
 	origen_ohci_init();
-	clk_xusbxti.rate = 24000000;
 
 	s5p_tv_setup();
 	s5p_i2c_hdmiphy_set_platdata(NULL);

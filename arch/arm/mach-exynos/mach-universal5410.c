@@ -463,7 +463,6 @@ static struct platform_device *universal5410_devices[] __initdata = {
 };
 static void __init universal5410_map_io(void)
 {
-	clk_xusbxti.rate = 24000000;
 	clk_xxti.rate = 24000000;
 
 	exynos_init_io(NULL, 0);
