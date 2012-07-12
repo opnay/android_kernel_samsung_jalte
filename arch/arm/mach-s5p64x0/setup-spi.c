@@ -9,7 +9,6 @@
  */
 
 #include <linux/gpio.h>
-#include <linux/platform_device.h>
 #include <linux/io.h>
 
 #include <plat/gpio-cfg.h>
@@ -23,7 +22,7 @@ struct s3c64xx_spi_info s3c64xx_spi0_pdata __initdata = {
 	.tx_st_done	= 25,
 };
 
-int s3c64xx_spi0_cfg_gpio(struct platform_device *dev)
+int s3c64xx_spi0_cfg_gpio(void)
 {
 	if (soc_is_s5p6450())
 		s3c_gpio_cfgall_range(S5P6450_GPC(0), 3,
@@ -42,7 +41,7 @@ struct s3c64xx_spi_info s3c64xx_spi1_pdata __initdata = {
 	.tx_st_done	= 25,
 };
 
-int s3c64xx_spi1_cfg_gpio(struct platform_device *dev)
+int s3c64xx_spi1_cfg_gpio(void)
 {
 	if (soc_is_s5p6450())
 		s3c_gpio_cfgall_range(S5P6450_GPC(4), 3,

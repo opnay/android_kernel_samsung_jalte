@@ -51,7 +51,7 @@ struct s3c64xx_spi_info {
 
 	int num_cs;
 
-	int (*cfg_gpio)(struct platform_device *pdev);
+	int (*cfg_gpio)(void);
 	void (*gpio_pull_up)(bool pull_up);
 
 	/* Following two fields are for future compatibility */
@@ -86,10 +86,10 @@ extern int exynos_spi_cfg_cs(int gpio, int ch_num);
 extern void exynos_spi_clock_setup(struct device *spi_dev, int ch_num);
 
 /* defined by architecture to configure gpio */
-extern int s3c64xx_spi0_cfg_gpio(struct platform_device *dev);
-extern int s3c64xx_spi1_cfg_gpio(struct platform_device *dev);
-extern int s3c64xx_spi2_cfg_gpio(struct platform_device *dev);
-extern int s3c64xx_spi3_cfg_gpio(struct platform_device *dev);
+extern int s3c64xx_spi0_cfg_gpio(void);
+extern int s3c64xx_spi1_cfg_gpio(void);
+extern int s3c64xx_spi2_cfg_gpio(void);
+extern int s3c64xx_spi3_cfg_gpio(void);
 
 extern struct s3c64xx_spi_info s3c64xx_spi0_pdata;
 extern struct s3c64xx_spi_info s3c64xx_spi1_pdata;

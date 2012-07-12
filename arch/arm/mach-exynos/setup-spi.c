@@ -11,7 +11,6 @@
 #include <linux/clk.h>
 #include <linux/err.h>
 #include <linux/gpio.h>
-#include <linux/platform_device.h>
 
 #include <plat/clock.h>
 #include <plat/cpu.h>
@@ -88,7 +87,7 @@ struct s3c64xx_spi_info s3c64xx_spi0_pdata __initdata = {
 	.dma_mode	= HYBRID_MODE,
 };
 
-int s3c64xx_spi0_cfg_gpio(struct platform_device *dev)
+int s3c64xx_spi0_cfg_gpio(void)
 {
 	int gpio;
 
@@ -133,7 +132,7 @@ struct s3c64xx_spi_info s3c64xx_spi1_pdata __initdata = {
 	.dma_mode	= HYBRID_MODE,
 };
 
-int s3c64xx_spi1_cfg_gpio(struct platform_device *dev)
+int s3c64xx_spi1_cfg_gpio(void)
 {
 	int gpio;
 
@@ -178,7 +177,7 @@ struct s3c64xx_spi_info s3c64xx_spi2_pdata __initdata = {
 	.dma_mode	= HYBRID_MODE,
 };
 
-int s3c64xx_spi2_cfg_gpio(struct platform_device *dev)
+int s3c64xx_spi2_cfg_gpio(void)
 {
 	int gpio;
 
@@ -225,7 +224,7 @@ struct s3c64xx_spi_info s3c64xx_spi3_pdata __initdata = {
 	.dma_mode	= PIO_MODE,
 };
 
-int s3c64xx_spi3_cfg_gpio(struct platform_device *dev)
+int s3c64xx_spi3_cfg_gpio(void)
 {
 	return 0;
 }
