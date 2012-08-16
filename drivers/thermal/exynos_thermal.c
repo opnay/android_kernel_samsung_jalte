@@ -1305,7 +1305,8 @@ static int __devinit exynos_tmu_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "No platform init data supplied.\n");
 		return -ENODEV;
 	}
-	data = kzalloc(sizeof(struct exynos_tmu_data), GFP_KERNEL);
+	data = devm_kzalloc(&pdev->dev, sizeof(struct exynos_tmu_data),
+					GFP_KERNEL);
 	if (!data) {
 		dev_err(&pdev->dev, "Failed to allocate driver structure\n");
 		return -ENOMEM;
@@ -1316,46 +1317,34 @@ static int __devinit exynos_tmu_probe(struct platform_device *pdev)
 	for (i = 0; i < EXYNOS_TMU_COUNT; i++) {
 		data->irq[i] = platform_get_irq(pdev, i);
 		if (data->irq[i] < 0) {
-			ret = data->irq[i];
 			dev_err(&pdev->dev, "Failed to get platform irq\n");
-			goto err_free;
+			return data->irq;
 		}
 
 		data->mem[i] = platform_get_resource(pdev, IORESOURCE_MEM, i);
 		if (!data->mem[i]) {
-			ret = -ENOENT;
 			dev_err(&pdev->dev, "Failed to get platform resource\n");
-			goto err_free;
+			return -ENOENT;
 		}
 
-		data->mem[i] = request_mem_region(data->mem[i]->start,
-				resource_size(data->mem[i]), pdev->name);
-		if (!data->mem[i]) {
-			ret = -ENODEV;
-			dev_err(&pdev->dev, "Failed to request memory region\n");
-			goto err_free;
-		}
-
-		data->base[i] = ioremap(data->mem[i]->start, resource_size(data->mem[i]));
+		data->base[i] = devm_request_and_ioremap(&pdev->dev, data->mem);
 		if (!data->base[i]) {
-			ret = -ENODEV;
 			dev_err(&pdev->dev, "Failed to ioremap memory\n");
-			goto err_mem_region;
+			return -ENODEV;
 		}
 
-		ret = request_irq(data->irq[i], exynos_tmu_irq,
+		ret = devm_request_irq(&pdev->dev, data->irq[i], exynos_tmu_irq,
 				IRQF_TRIGGER_RISING, "exynos-tmu", data);
 		if (ret) {
 			dev_err(&pdev->dev, "Failed to request irq: %d\n", data->irq[i]);
-			goto err_io_remap;
+			return ret;
 		}
 	}
 
 	data->clk = clk_get(NULL, "tmu_apbif");
 	if (IS_ERR(data->clk)) {
-		ret = PTR_ERR(data->clk);
 		dev_err(&pdev->dev, "Failed to get clock\n");
-		goto err_irq;
+		return  PTR_ERR(data->clk);
 	}
 
 	if (pdata->type == SOC_ARCH_EXYNOS5 ||
@@ -1433,24 +1422,6 @@ static int __devinit exynos_tmu_probe(struct platform_device *pdev)
 err_clk:
 	platform_set_drvdata(pdev, NULL);
 	clk_put(data->clk);
-err_irq:
-	for (i = 0; i < EXYNOS_TMU_COUNT; i++) {
-		if (data->irq[i])
-			free_irq(data->irq[i], data);
-	}
-err_io_remap:
-	for (i = 0; i < EXYNOS_TMU_COUNT; i++) {
-		if (data->base[i])
-			iounmap(data->base[i]);
-	}
-err_mem_region:
-	for (i = 0; i < EXYNOS_TMU_COUNT; i++) {
-		if (data->mem[i])
-			release_mem_region(data->mem[i]->start, resource_size(data->mem[i]));
-	}
-err_free:
-	kfree(data);
-
 	return ret;
 }
 
@@ -1466,17 +1437,7 @@ static int __devexit exynos_tmu_remove(struct platform_device *pdev)
 
 	clk_put(data->clk);
 
-	for (i = 0; i < EXYNOS_TMU_COUNT; i++)
-		free_irq(data->irq[i], data);
-
-	for (i = 0; i < EXYNOS_TMU_COUNT; i++)
-		iounmap(data->base[i]);
-	for (i = 0; i < EXYNOS_TMU_COUNT; i++)
-		release_mem_region(data->mem[i]->start, resource_size(data->mem[i]));
-
 	platform_set_drvdata(pdev, NULL);
-
-	kfree(data);
 
 	return 0;
 }
