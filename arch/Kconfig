@@ -216,4 +216,7 @@ config HAVE_CMPXCHG_DOUBLE
 config ARCH_WANT_OLD_COMPAT_IPC
 	bool
 
+config GENERIC_KERNEL_THREAD
+	bool
+
 source "kernel/gcov/Kconfig"
