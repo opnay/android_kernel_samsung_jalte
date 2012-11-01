@@ -10,8 +10,6 @@
 #ifndef __ASM_ARM_HARDWARE_GIC_H
 #define __ASM_ARM_HARDWARE_GIC_H
 
-#include <linux/compiler.h>
-
 #define GIC_CPU_CTRL			0x00
 #define GIC_CPU_PRIMASK			0x04
 #define GIC_CPU_BINPOINT		0x08
@@ -34,8 +32,6 @@
 #define GIC_DIST_SGI_PENDING_CLEAR	0xf10
 #define GIC_DIST_SGI_PENDING_SET	0xf20
 
-#ifndef __ASSEMBLY__
-#include <linux/irqdomain.h>
 struct device_node;
 
 extern struct irq_chip gic_arch_extn;
@@ -56,7 +52,5 @@ static inline void gic_init(unsigned int nr, int start,
 
 int gic_get_cpu_id(unsigned int cpu);
 void gic_migrate_target(unsigned int new_cpu_id);
-
-#endif
 
 #endif
