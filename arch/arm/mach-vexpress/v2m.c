@@ -6,6 +6,7 @@
 #include <linux/amba/mmci.h>
 #include <linux/io.h>
 #include <linux/init.h>
+#include <linux/irqchip.h>
 #include <linux/of_address.h>
 #include <linux/of_fdt.h>
 #include <linux/of_irq.h>
@@ -26,7 +27,6 @@
 #include <asm/mach/time.h>
 #include <asm/hardware/arm_timer.h>
 #include <asm/hardware/cache-l2x0.h>
-#include <asm/hardware/gic.h>
 #include <asm/hardware/timer-sp.h>
 #include <asm/hardware/sp810.h>
 #include <asm/hardware/gic.h>
@@ -618,16 +618,6 @@ void __init v2m_dt_init_early(void)
 	versatile_sched_clock_init(v2m_sysreg_base + V2M_SYS_24MHZ, 24000000);
 }
 
-static  struct of_device_id vexpress_irq_match[] __initdata = {
-	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
-	{}
-};
-
-static void __init v2m_dt_init_irq(void)
-{
-	of_irq_init(vexpress_irq_match);
-}
-
 static void __init v2m_dt_timer_init(void)
 {
 	struct device_node *node;
@@ -676,7 +666,7 @@ DT_MACHINE_START(VEXPRESS_DT, "ARM-Versatile Express")
 	.dt_compat	= v2m_dt_match,
 	.map_io		= v2m_dt_map_io,
 	.init_early	= v2m_dt_init_early,
-	.init_irq	= v2m_dt_init_irq,
+	.init_irq	= irqchip_init,
 	.timer		= &v2m_dt_timer,
 	.init_machine	= v2m_dt_init,
 	.restart	= v2m_restart,

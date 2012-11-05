@@ -15,6 +15,7 @@
 #include <linux/io.h>
 #include <linux/irq.h>
 #include <linux/irqdomain.h>
+#include <linux/irqchip.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
@@ -23,7 +24,6 @@
 #include <linux/micrel_phy.h>
 #include <asm/smp_twd.h>
 #include <asm/hardware/cache-l2x0.h>
-#include <asm/hardware/gic.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/time.h>
 #include <asm/system_misc.h>
@@ -106,7 +106,6 @@ static int __init imx6q_gpio_add_irq_domain(struct device_node *np,
 }
 
 static const struct of_device_id imx6q_irq_match[] __initconst = {
-	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
 	{ .compatible = "fsl,imx6q-gpio", .data = imx6q_gpio_add_irq_domain, },
 	{ /* sentinel */ }
 };
@@ -116,6 +115,7 @@ static void __init imx6q_init_irq(void)
 	l2x0_of_init(0, ~0UL);
 	imx_src_init();
 	imx_gpc_init();
+	irqchip_init();
 	of_irq_init(imx6q_irq_match);
 }
 

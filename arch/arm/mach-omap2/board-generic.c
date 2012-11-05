@@ -15,6 +15,7 @@
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
 #include <linux/irqdomain.h>
+#include <linux/irqchip.h>
 #include <linux/i2c/twl.h>
 
 #include <mach/hardware.h>
@@ -33,12 +34,12 @@
 
 static struct of_device_id irq_match[] __initdata = {
 	{ .compatible = "ti,omap2-intc", .data = omap_intc_of_init, },
-	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
 	{ }
 };
 
 static void __init omap_init_irq(void)
 {
+	irqchip_init();
 	of_irq_init(irq_match);
 }
 
