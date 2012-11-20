@@ -160,4 +160,6 @@ source "drivers/ice4_fpga/Kconfig"
 
 source "drivers/felica/Kconfig"
 
+source "drivers/irqchip/Kconfig"
+
 endmenu
