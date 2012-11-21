@@ -21,7 +21,6 @@
 #include <linux/percpu.h>
 
 #include <asm/sched_clock.h>
-#include <asm/hardware/gic.h>
 #include <asm/localtimer.h>
 
 #include <plat/cpu.h>

@@ -22,7 +22,6 @@
 #include <linux/io.h>
 
 #include <asm/mach/time.h>
-#include <asm/hardware/gic.h>
 #include <asm/localtimer.h>
 #include <asm/sched_clock.h>
 

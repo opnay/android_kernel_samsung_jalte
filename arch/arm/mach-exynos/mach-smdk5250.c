@@ -30,7 +30,6 @@
 #include <video/s5p-dp.h>
 
 #include <asm/mach/arch.h>
-#include <asm/hardware/gic.h>
 #include <asm/mach-types.h>
 
 #include <media/m5mols.h>
@@ -2072,7 +2071,6 @@ MACHINE_START(SMDK5250, "SMDK5250")
 	.init_early	= smdk5250_init_early,
 	.init_irq	= exynos5_init_irq,
 	.map_io		= smdk5250_map_io,
-	.handle_irq	= gic_handle_irq,
 	.init_machine	= smdk5250_machine_init,
 	.timer		= &exynos4_timer,
 	.restart	= exynos5_restart,
