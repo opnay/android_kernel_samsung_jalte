@@ -938,7 +938,7 @@ static int exynos5410_enter_lowpower(struct cpuidle_device *dev,
 			for_each_online_cpu(i) {
 				if (i == cpuid)
 					continue;
-				arm_send_ping_ipi(i);
+				arch_send_wakeup_ipi_mask(cpumask_of(i));
 			}
 		}
 		return exynos_enter_idle(dev, drv, (index - 1));
