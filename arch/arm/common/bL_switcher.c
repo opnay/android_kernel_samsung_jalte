@@ -148,21 +148,22 @@ static void bL_do_switch(void *_unused)
 }
 
 /*
- * Stack isolation (size needs to be optimized)
+ * Stack isolation.  To ensure 'current' remains valid, we just use another
+ * piece of our thread's stack space which should be fairly lightly used.
+ * The selected area starts just above the thread_info structure located
+ * at the very bottom of the stack, aligned to a cache line, and indexed
+ * with the cluster number.
  */
-
-static unsigned long __attribute__((__aligned__(L1_CACHE_BYTES)))
-	stacks[BL_CPUS_PER_CLUSTER][BL_NR_CLUSTERS][128];
-
+#define STACK_SIZE 512
 extern void call_with_stack(void (*fn)(void *), void *arg, void *sp);
-
-static int bL_switchpoint(unsigned long _unused)
+static int bL_switchpoint(unsigned long _arg)
 {
 	unsigned int mpidr = read_mpidr();
-	unsigned int cpuid = MPIDR_AFFINITY_LEVEL(mpidr, 0);
 	unsigned int clusterid = MPIDR_AFFINITY_LEVEL(mpidr, 1);
-	void *stack = stacks[cpuid][clusterid] + ARRAY_SIZE(stacks[0][0]);
-	call_with_stack(bL_do_switch, NULL, stack);
+	void *stack = current_thread_info() + 1;
+	stack = PTR_ALIGN(stack, L1_CACHE_BYTES);
+	stack += clusterid * STACK_SIZE + STACK_SIZE;
+	call_with_stack(bL_do_switch, (void *)_arg, stack);
 	BUG();
 
 	/*
