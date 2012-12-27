@@ -39,6 +39,7 @@
 #include <linux/mfd/tmio.h>
 #include <linux/sh_clk.h>
 #include <linux/videodev2.h>
+#include <linux/irqchip/arm-gic.h>
 #include <video/sh_mobile_lcdc.h>
 #include <video/sh_mipi_dsi.h>
 #include <sound/sh_fsi.h>
@@ -48,7 +49,6 @@
 #include <mach/common.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
-#include <asm/hardware/gic.h>
 #include <asm/hardware/cache-l2x0.h>
 #include <asm/traps.h>
 

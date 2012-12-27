@@ -19,8 +19,8 @@
 #include <linux/of.h>
 #include <linux/of_irq.h>
 #include <linux/irqchip.h>
+#include <linux/irqchip/arm-gic.h>
 
-#include <asm/hardware/gic.h>
 #include <asm/mach/map.h>
 
 #include <mach/hardware.h>

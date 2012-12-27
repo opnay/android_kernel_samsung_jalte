@@ -27,6 +27,7 @@
 #include <linux/amba/mmci.h>
 #include <linux/amba/pl022.h>
 #include <linux/io.h>
+#include <linux/irqchip/arm-gic.h>
 
 #include <mach/hardware.h>
 #include <asm/irq.h>
@@ -34,7 +35,6 @@
 #include <asm/mach-types.h>
 #include <asm/pmu.h>
 #include <asm/pgtable.h>
-#include <asm/hardware/gic.h>
 #include <asm/hardware/cache-l2x0.h>
 #include <asm/smp_twd.h>
 

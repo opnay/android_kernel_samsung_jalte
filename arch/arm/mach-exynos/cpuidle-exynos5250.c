@@ -20,6 +20,7 @@
 #include <linux/ratelimit.h>
 #include <linux/time.h>
 #include <linux/serial_core.h>
+#include <linux/irqchip/arm-gic.h>
 
 #include <asm/cp15.h>
 #include <asm/cacheflush.h>
@@ -27,7 +28,6 @@
 #include <asm/smp_scu.h>
 #include <asm/suspend.h>
 #include <asm/unified.h>
-#include <asm/hardware/gic.h>
 #include <mach/regs-pmu.h>
 #include <mach/regs-clock.h>
 #include <mach/pmu.h>

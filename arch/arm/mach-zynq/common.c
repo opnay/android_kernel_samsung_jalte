@@ -19,6 +19,7 @@
 #include <linux/cpumask.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>
+#include <linux/irqchip/arm-gic.h>
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
 #include <linux/of.h>
@@ -27,7 +28,6 @@
 #include <asm/mach/map.h>
 #include <asm/mach-types.h>
 #include <asm/page.h>
-#include <asm/hardware/gic.h>
 #include <asm/hardware/cache-l2x0.h>
 
 #include <mach/zynq_soc.h>

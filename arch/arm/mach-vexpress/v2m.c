@@ -7,6 +7,7 @@
 #include <linux/io.h>
 #include <linux/init.h>
 #include <linux/irqchip.h>
+#include <linux/irqchip/arm-gic.h>
 #include <linux/of_address.h>
 #include <linux/of_fdt.h>
 #include <linux/of_irq.h>
@@ -29,7 +30,6 @@
 #include <asm/hardware/cache-l2x0.h>
 #include <asm/hardware/timer-sp.h>
 #include <asm/hardware/sp810.h>
-#include <asm/hardware/gic.h>
 
 #include <mach/ct-ca9x4.h>
 #include <mach/motherboard.h>

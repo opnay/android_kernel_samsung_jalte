@@ -21,11 +21,11 @@
 #include <linux/of_irq.h>
 #include <linux/dma-mapping.h>
 #include <linux/irqchip.h>
+#include <linux/irqchip/arm-gic.h>
 
 #include <asm/proc-fns.h>
 #include <asm/exception.h>
 #include <asm/hardware/cache-l2x0.h>
-#include <asm/hardware/gic.h>
 #include <asm/mach/map.h>
 #include <asm/mach/irq.h>
 #include <asm/cacheflush.h>

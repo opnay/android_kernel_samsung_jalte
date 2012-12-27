@@ -24,8 +24,7 @@
 #include <linux/cpu.h>
 #include <linux/notifier.h>
 #include <linux/cpu_pm.h>
-
-#include <asm/hardware/gic.h>
+#include <linux/irqchip/arm-gic.h>
 
 #include <mach/omap-wakeupgen.h>
 #include <mach/omap-secure.h>

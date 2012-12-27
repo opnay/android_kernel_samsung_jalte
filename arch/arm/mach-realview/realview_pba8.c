@@ -27,13 +27,13 @@
 #include <linux/amba/mmci.h>
 #include <linux/amba/pl022.h>
 #include <linux/io.h>
+#include <linux/irqchip/arm-gic.h>
 
 #include <asm/irq.h>
 #include <asm/leds.h>
 #include <asm/mach-types.h>
 #include <asm/pmu.h>
 #include <asm/pgtable.h>
-#include <asm/hardware/gic.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
