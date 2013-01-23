@@ -174,7 +174,7 @@ out:
 int get_cluster_info(struct file *file, int cluster_idx, 
 		 struct scfs_cinfo *target)
 {
-	struct scfs_inode_info *sii = SCFS_I(file->f_dentry->d_inode);
+	struct scfs_inode_info *sii = SCFS_I(file_inode(file));
 	struct scfs_cinfo *cinfo;
 	struct cinfo_entry *cinfo_entry;
 	struct list_head *head, *tmp;
@@ -798,7 +798,7 @@ int scfs_write_meta(struct file *file)
 	struct list_head *head = NULL, *tmp;
 	struct cinfo_entry *last, *cinfo_entry = NULL;
 	struct comp_footer cf = {0, };
-	struct scfs_inode_info *sii = SCFS_I(file->f_dentry->d_inode);
+	struct scfs_inode_info *sii = SCFS_I(file_inode(file));
 	struct file *lower_file;
 	struct scfs_sb_info *sbi = SCFS_S(sii->vfs_inode.i_sb);
 	struct inode *lower_inode;
@@ -931,7 +931,7 @@ int scfs_write_meta(struct file *file)
 	} else
 		ret = 0;
 
-	lower_inode = lower_file->f_dentry->d_inode;
+	lower_inode = file_inode(lower_file);
 	/* file may have shrunk after append-write */
 	if (pos < i_size_read(lower_inode)) {
 		ia.ia_valid = ATTR_SIZE;

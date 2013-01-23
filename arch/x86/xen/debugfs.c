@@ -74,7 +74,7 @@ static char *format_array_alloc(const char *fmt, u32 *array, unsigned array_size
 static ssize_t u32_array_read(struct file *file, char __user *buf, size_t len,
 			      loff_t *ppos)
 {
-	struct inode *inode = file->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(file);
 	struct array_data *data = inode->i_private;
 	size_t size;
 

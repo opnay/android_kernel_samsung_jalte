@@ -800,7 +800,7 @@ static int yaffs_readdir(struct file *f, void *dirent, filldir_t filldir)
 	struct yaffs_obj *obj;
 	struct yaffs_dev *dev;
 	struct yaffs_search_context *sc;
-	struct inode *inode = f->f_dentry->d_inode;
+	struct inode *inode = file_inode(f);
 	unsigned long offset, curoffs;
 	struct yaffs_obj *l;
 	int ret_val = 0;
@@ -1383,7 +1383,7 @@ static ssize_t yaffs_file_write(struct file *f, const char *buf, size_t n,
 
 	yaffs_gross_lock(dev);
 
-	inode = f->f_dentry->d_inode;
+	inode = file_inode(f);
 
 	if (!S_ISBLK(inode->i_mode) && f->f_flags & O_APPEND)
 		ipos = inode->i_size;

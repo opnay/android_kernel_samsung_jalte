@@ -355,7 +355,7 @@ static ssize_t barcode_emul_fw_update_store(struct device *dev, struct device_at
 		goto err_open;
 	}
 
-	fsize = fp->f_path.dentry->d_inode->i_size;
+	fsize = file_inode(fp)->i_size;
 	pr_barcode("barcode firmware size: %ld\n", fsize);
 
 	buff = kzalloc((size_t)fsize, GFP_KERNEL);

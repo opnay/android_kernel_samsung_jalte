@@ -191,7 +191,7 @@ static int load_ums_fw_bootmode(struct i2c_client *client, const char *pFn)
 		goto err_open;
 	}
 
-	uFSize = (unsigned int)fp->f_path.dentry->d_inode->i_size;
+	uFSize = (unsigned int)file_inode(fp)->i_size;
 	pr_info("ssp_load_ums firmware size: %u\n", uFSize);
 
 	buff = kzalloc((size_t)uFSize, GFP_KERNEL);

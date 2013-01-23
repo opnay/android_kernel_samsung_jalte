@@ -100,7 +100,7 @@ int mdnie_open_file(const char *path, char **fp)
 		return -EPERM;
 	}
 
-	length = i_size_read(filp->f_path.dentry->d_inode);
+	length = i_size_read(file_inode(filp));
 	if (length <= 0) {
 		pr_err("%s: file length is %ld\n", __func__, length);
 		return -EPERM;
@@ -116,7 +116,7 @@ int mdnie_open_file(const char *path, char **fp)
 	ret = kernel_read(filp, pos, dp, length);
 	if (ret != length) {
 		/* check node is sysfs, bus this way is not safe */
-		sb = filp->f_path.dentry->d_inode->i_sb;
+		sb = file_inode(filp)->i_sb;
 		if ((sb->s_magic != SYSFS_MAGIC) && (length != sb->s_blocksize)) {
 			pr_err("%s: read size= %d, length= %ld\n", __func__, ret, length);
 			KFREE(dp);

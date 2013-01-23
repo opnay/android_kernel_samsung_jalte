@@ -365,7 +365,7 @@ pipe_read(struct kiocb *iocb, const struct iovec *_iov,
 	   unsigned long nr_segs, loff_t pos)
 {
 	struct file *filp = iocb->ki_filp;
-	struct inode *inode = filp->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(filp);
 	struct pipe_inode_info *pipe;
 	int do_wakeup;
 	ssize_t ret;
@@ -494,7 +494,7 @@ pipe_write(struct kiocb *iocb, const struct iovec *_iov,
 	    unsigned long nr_segs, loff_t ppos)
 {
 	struct file *filp = iocb->ki_filp;
-	struct inode *inode = filp->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(filp);
 	struct pipe_inode_info *pipe;
 	ssize_t ret;
 	int do_wakeup;
@@ -686,7 +686,7 @@ bad_pipe_w(struct file *filp, const char __user *buf, size_t count,
 
 static long pipe_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
-	struct inode *inode = filp->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(filp);
 	struct pipe_inode_info *pipe;
 	int count, buf, nrbufs;
 
@@ -714,7 +714,7 @@ static unsigned int
 pipe_poll(struct file *filp, poll_table *wait)
 {
 	unsigned int mask;
-	struct inode *inode = filp->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(filp);
 	struct pipe_inode_info *pipe = inode->i_pipe;
 	int nrbufs;
 
@@ -767,7 +767,7 @@ pipe_release(struct inode *inode, int decr, int decw)
 static int
 pipe_read_fasync(int fd, struct file *filp, int on)
 {
-	struct inode *inode = filp->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(filp);
 	int retval;
 
 	mutex_lock(&inode->i_mutex);
@@ -781,7 +781,7 @@ pipe_read_fasync(int fd, struct file *filp, int on)
 static int
 pipe_write_fasync(int fd, struct file *filp, int on)
 {
-	struct inode *inode = filp->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(filp);
 	int retval;
 
 	mutex_lock(&inode->i_mutex);
@@ -795,7 +795,7 @@ pipe_write_fasync(int fd, struct file *filp, int on)
 static int
 pipe_rdwr_fasync(int fd, struct file *filp, int on)
 {
-	struct inode *inode = filp->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(filp);
 	struct pipe_inode_info *pipe = inode->i_pipe;
 	int retval;
 
@@ -1074,7 +1074,7 @@ struct file *create_write_pipe(int flags)
 
 void free_write_pipe(struct file *f)
 {
-	free_pipe_info(f->f_dentry->d_inode);
+	free_pipe_info(file_inode(f));
 	path_put(&f->f_path);
 	put_filp(f);
 }
@@ -1248,7 +1248,7 @@ int pipe_proc_fn(struct ctl_table *table, int write, void __user *buf,
  */
 struct pipe_inode_info *get_pipe_info(struct file *file)
 {
-	struct inode *i = file->f_path.dentry->d_inode;
+	struct inode *i = file_inode(file);
 
 	return S_ISFIFO(i->i_mode) ? i->i_pipe : NULL;
 }

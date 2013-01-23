@@ -270,7 +270,7 @@ static IMG_INT pvr_proc_open(struct inode *inode,struct file *file)
 static ssize_t pvr_proc_write(struct file *file, const char __user *buffer,
 		size_t count, loff_t *ppos)
 {
-	struct inode *inode = file->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(file);
 	struct proc_dir_entry * dp;
 
 	PVR_UNREFERENCED_PARAMETER(ppos);

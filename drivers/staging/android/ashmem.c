@@ -365,7 +365,7 @@ static int ashmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		return -1;
 
 	list_for_each_entry_safe(range, next, &ashmem_lru_list, lru) {
-		struct inode *inode = range->asma->file->f_dentry->d_inode;
+		struct inode *inode = file_inode(range->asma->file);
 		loff_t start = range->pgstart * PAGE_SIZE;
 		loff_t end = (range->pgend + 1) * PAGE_SIZE - 1;
 

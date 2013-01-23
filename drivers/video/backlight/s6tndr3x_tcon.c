@@ -277,7 +277,7 @@ static int load_tuning_value(struct i2c_client *client, char *filename)
 		goto load_tuning_value_err1;
 	}
 
-	size = filp->f_path.dentry->d_inode->i_size;
+	size = file_inode(filp)->i_size;
 	printk(KERN_ERR "[TCON:INFO]:%s:loading file size : %d\n", __func__, size);
 
 	dp = kmalloc(size, GFP_KERNEL);

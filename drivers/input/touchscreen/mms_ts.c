@@ -2470,7 +2470,7 @@ static void fw_update(void *device_data)
 			goto err_open;
 		}
 
-		fsize = fp->f_path.dentry->d_inode->i_size;
+		fsize = file_inode(fp)->i_size;
 
 		buff = kzalloc((size_t)fsize, GFP_KERNEL);
 		if (!buff) {

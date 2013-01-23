@@ -162,7 +162,6 @@ static int scfs_file_release(struct inode *inode, struct file *file)
 static int scfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 {
 	struct file *lower_file = NULL;
-	struct dentry *dentry = file->f_path.dentry;
 	int ret = 0;
 
 	lower_file = scfs_lower_file(file);
@@ -170,7 +169,7 @@ static int scfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 	ret = vfs_readdir(lower_file, filldir, dirent);
 	file->f_pos = lower_file->f_pos;
 	if (ret >= 0)
-		fsstack_copy_attr_atime(dentry->d_inode, lower_file->f_path.dentry->d_inode);
+		fsstack_copy_attr_atime(file_inode(file), file_inode(lower_file));
 
 	return ret;
 }
@@ -235,7 +234,7 @@ static int scfs_fsync(struct file *file, loff_t start, loff_t end, int datasync)
 	if(ret)
 		return ret;
 #ifdef SCFS_MULTI_THREAD_COMPRESSION
-//	scfs_write_compress_all_cluster(SCFS_I(file->f_path.dentry->d_inode));
+//	scfs_write_compress_all_cluster(SCFS_I(file_inode(file)));
 #endif
 
 	ret = vfs_fsync(scfs_lower_file(file), datasync);

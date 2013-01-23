@@ -2339,7 +2339,7 @@ static int synaptics_load_fw_from_ums(struct synaptics_rmi4_data *rmi4_data)
 		goto open_err;
 	}
 
-	fw_size = fp->f_path.dentry->d_inode->i_size;
+	fw_size = file_inode(fp)->i_size;
 
 	if (0 < fw_size) {
 		unsigned char *fw_data;

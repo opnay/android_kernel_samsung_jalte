@@ -145,7 +145,7 @@ int wacom_i2c_get_ums_data(struct wacom_i2c *wac_i2c, u8 **ums_data)
 		return ret;
 	}
 
-	fsize = fp->f_path.dentry->d_inode->i_size;
+	fsize = file_inode(fp)->i_size;
 	printk(KERN_NOTICE
 		"epen:start, file path %s, size %ld Bytes\n",
 		WACOM_FW_PATH, fsize);

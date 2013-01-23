@@ -2745,7 +2745,7 @@ static void alaw2ulaw(unsigned char *buff, unsigned long len)
 static ssize_t ixj_read(struct file * file_p, char __user *buf, size_t length, loff_t * ppos)
 {
 	unsigned long i = *ppos;
-	IXJ * j = get_ixj(NUM(file_p->f_path.dentry->d_inode));
+	IXJ * j = get_ixj(NUM(file_inode(file_p)));
 
 	DECLARE_WAITQUEUE(wait, current);
 
@@ -2802,7 +2802,7 @@ static ssize_t ixj_enhanced_read(struct file * file_p, char __user *buf, size_t 
 {
 	int pre_retval;
 	ssize_t read_retval = 0;
-	IXJ *j = get_ixj(NUM(file_p->f_path.dentry->d_inode));
+	IXJ *j = get_ixj(NUM(file_inode(file_p)));
 
 	pre_retval = ixj_PreRead(j, 0L);
 	switch (pre_retval) {
@@ -2881,7 +2881,7 @@ static ssize_t ixj_enhanced_write(struct file * file_p, const char __user *buf, 
 	int pre_retval;
 	ssize_t write_retval = 0;
 
-	IXJ *j = get_ixj(NUM(file_p->f_path.dentry->d_inode));
+	IXJ *j = get_ixj(NUM(file_inode(file_p)));
 
 	pre_retval = ixj_PreWrite(j, 0L);
 	switch (pre_retval) {
@@ -4584,7 +4584,7 @@ static unsigned int ixj_poll(struct file *file_p, poll_table * wait)
 {
 	unsigned int mask = 0;
 
-	IXJ *j = get_ixj(NUM(file_p->f_path.dentry->d_inode));
+	IXJ *j = get_ixj(NUM(file_inode(file_p)));
 
 	poll_wait(file_p, &(j->poll_q), wait);
 	if (j->read_buffer_ready > 0)
@@ -6111,7 +6111,7 @@ static long do_ixj_ioctl(struct file *file_p, unsigned int cmd, unsigned long ar
 	IXJ_FILTER jf;
 	IXJ_FILTER_RAW jfr;
 	void __user *argp = (void __user *)arg;
-	struct inode *inode = file_p->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(file_p);
 	unsigned int minor = iminor(inode);
 	unsigned int raise, mant;
 	int board = NUM(inode);
@@ -6683,7 +6683,7 @@ static long ixj_ioctl(struct file *file_p, unsigned int cmd, unsigned long arg)
 
 static int ixj_fasync(int fd, struct file *file_p, int mode)
 {
-	IXJ *j = get_ixj(NUM(file_p->f_path.dentry->d_inode));
+	IXJ *j = get_ixj(NUM(file_inode(file_p)));
 
 	return fasync_helper(fd, file_p, mode, &j->async_queue);
 }

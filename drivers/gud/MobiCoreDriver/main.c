@@ -72,7 +72,7 @@ static struct class *mc_device_class;
 static struct sock *__get_socket(struct file *filp)
 {
 	struct sock *u_sock = NULL;
-	struct inode *inode = filp->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(filp);
 
 	/*
 	 *	Socket ?

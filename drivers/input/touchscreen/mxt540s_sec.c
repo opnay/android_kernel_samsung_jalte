@@ -380,7 +380,7 @@ static int mxt_load_fw_from_ums(struct mxt_fw_info *fw_info,
 		goto err_open;
 	}
 
-	fw.size = filp->f_path.dentry->d_inode->i_size;
+	fw.size = file_inode(filp)->i_size;
 
 	fw_data = kzalloc(fw.size, GFP_KERNEL);
 	if (!fw_data) {

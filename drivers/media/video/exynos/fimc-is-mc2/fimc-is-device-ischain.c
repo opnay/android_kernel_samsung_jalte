@@ -1654,7 +1654,7 @@ static int fimc_is_ischain_loadfirm(struct fimc_is_device_ischain *this)
 
 	location = 1;
 	fw_requested = 0;
-	fsize = fp->f_path.dentry->d_inode->i_size;
+	fsize = file_inode(fp)->i_size;
 	pr_info("start, file path %s, size %ld Bytes\n",
 		is_dumped_fw_loading_needed ? fw_path : FIMC_IS_FW_SDCARD, fsize);
 	buf = vmalloc(fsize);
@@ -1765,7 +1765,7 @@ static int fimc_is_ischain_loadsetf(struct fimc_is_device_ischain *this,
 
 	location = 1;
 	fw_requested = 0;
-	fsize = fp->f_path.dentry->d_inode->i_size;
+	fsize = file_inode(fp)->i_size;
 	pr_info("start, file path %s, size %ld Bytes\n",
 		setfile_path, fsize);
 	buf = vmalloc(fsize);
@@ -1877,7 +1877,7 @@ static int fimc_is_ischain_loadcalb(struct fimc_is_device_ischain *this,
 		goto out;
 	}
 
-	fsize = fp->f_path.dentry->d_inode->i_size;
+	fsize = file_inode(fp)->i_size;
 	if (fsize != FIMC_IS_MAX_CAL_SIZE) {
 		merr("cal_data.bin file size is invalid(%ld size)",
 			this, fsize);
@@ -2208,7 +2208,7 @@ int fimc_is_ischain_power(struct fimc_is_device_ischain *this, int on)
 			else 
 				is_dump_existed = true;
 
-			fsize = fp->f_path.dentry->d_inode->i_size;
+			fsize = file_inode(fp)->i_size;
 			pr_info("start, file path %s, size %ld Bytes\n",
 				fw_path, fsize);
 			fw_buf = vmalloc(fsize);
@@ -2266,7 +2266,7 @@ fw_dump_exit1:
 					goto fw_dump_exit2;
 				}
 
-				fsize = fp->f_path.dentry->d_inode->i_size;
+				fsize = file_inode(fp)->i_size;
 				pr_info("start, file path %s, size %ld Bytes\n",
 					fw_path, fsize);
 				fw_buf = vmalloc(fsize);

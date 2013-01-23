@@ -519,7 +519,7 @@ void __init clk_debugfs_add_table(struct clk_lookup *cl, size_t num)
 static ssize_t usecount_dbg_read(struct file *file, char __user *buf,
 						  size_t size, loff_t *off)
 {
-	struct clk *clk = file->f_dentry->d_inode->i_private;
+	struct clk *clk = file_inode(file)->i_private;
 	char cusecount[128];
 	unsigned int len;
 
@@ -530,7 +530,7 @@ static ssize_t usecount_dbg_read(struct file *file, char __user *buf,
 static ssize_t rate_dbg_read(struct file *file, char __user *buf,
 					  size_t size, loff_t *off)
 {
-	struct clk *clk = file->f_dentry->d_inode->i_private;
+	struct clk *clk = file_inode(file)->i_private;
 	char crate[128];
 	unsigned int rate;
 	unsigned int len;
