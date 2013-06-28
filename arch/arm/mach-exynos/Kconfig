@@ -813,6 +813,12 @@ config MACH_J_CHN_CU
 	bool "EXYNOS5410_CHN_CU board"
 	help
 	  Machine support for J_CHN_CU board based on EXYNOS5410
+
+comment "EXYNOS5410_CHN_OPEN Boards"
+config MACH_J_CHN_OPEN
+	bool "EXYNOS5410_CHN_OPEN board"
+	help
+	  Machine support for J_CHN_OPEN board based on EXYNOS5410
 endif
 
 config GPS_BCMxxxxx
@@ -1336,6 +1342,12 @@ config ANDROID_OOM_KILLER
 	  linux kernel is totally different from android policy.
 	  Hence, it makes more sense that we select the oom victim
 	  as android does when LMK is invoked.
+
+config INTERNAL_ISP_START_CAMERA
+	bool "Patch for internal isp start-up case"
+	default n
+	help
+	  To help fast memory allocation for camera start-up case
 
 config SEC_LOG
 	default n

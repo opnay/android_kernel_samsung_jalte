@@ -515,7 +515,7 @@ static int fimc_is_isp_video_s_input(struct file *file, void *priv,
 		&sensor->enum_sensor[module].ext,
 		sensor->enum_sensor[module].setfile_name);
 	if (ret)
-		merr("fimc_is_device_init is fail\n", vctx);
+		merr("fimc_is_device_init is fail", vctx);
 
 p_err:
 	return ret;

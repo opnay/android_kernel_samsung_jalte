@@ -1418,6 +1418,7 @@ static int fimc_is_ischain_readfw(struct fimc_is_device_ischain *this,
 	loff_t pos = 0;
 	char fw_path[100];
 	char setfile_path[100];
+	char setf_name[50];
 	int retry = FIMC_IS_FW_RETRY_CNT;
 	struct fimc_is_from_info *finfo = NULL;
 
@@ -1461,6 +1462,19 @@ static int fimc_is_ischain_readfw(struct fimc_is_device_ischain *this,
 	}
 	
 	pr_info("Camera: FW Data has dumped successfully\n");
+
+	if(sysfs_finfo->header_ver[0] == 'O') {
+		if(sysfs_finfo->header_ver[5] == 'S')
+			snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_IMX135_GUMI_SETF);
+		else
+			snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_3L2_GUMI_SETF);
+	}
+	else {		
+		if(sysfs_finfo->header_ver[5] == 'S')
+			snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_IMX135_SEC_SETF);
+		else
+			snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_3L2_SEC_SETF);		
+	}
 
 	snprintf(setfile_path, sizeof(setfile_path), "%s%s", FIMC_IS_FW_DUMP_PATH, setf_name);
 	pos = 0;
@@ -1660,7 +1674,8 @@ static int fimc_is_ischain_loadfirm(struct fimc_is_device_ischain *this)
 
 	memcpy((void *)this->imemory.kvaddr, (void *)buf, fsize);
 	fimc_is_ischain_cache_flush(this, 0, fsize + 1);
-	fimc_is_ischain_version(this, fw_name, buf, fsize);
+	if (cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_FRONT)
+		fimc_is_ischain_version(this, fw_name, buf, fsize);
 
 request_fw:
 	if (fw_requested) {
@@ -1676,8 +1691,9 @@ request_fw:
 		memcpy((void *)this->imemory.kvaddr, fw_blob->data,
 			fw_blob->size);
 		fimc_is_ischain_cache_flush(this, 0, fw_blob->size + 1);
-		fimc_is_ischain_version(this, fw_name, fw_blob->data,
-			fw_blob->size);
+		if (cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_FRONT)
+			fimc_is_ischain_version(this, fw_name, fw_blob->data,
+				fw_blob->size);
 
 		release_firmware(fw_blob);
 #ifdef SDCARD_FW
@@ -1770,7 +1786,8 @@ static int fimc_is_ischain_loadsetf(struct fimc_is_device_ischain *this,
 	address = (void *)(this->imemory.kvaddr + load_addr);
 	memcpy((void *)address, (void *)buf, fsize);
 	fimc_is_ischain_cache_flush(this, load_addr, fsize + 1);
-	fimc_is_ischain_version(this, setf_name, buf, fsize);
+	if (cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_REAR)
+		fimc_is_ischain_version(this, setf_name, buf, fsize);
 
 request_fw:
 	if (fw_requested) {
@@ -1795,8 +1812,9 @@ request_fw:
 		address = (void *)(this->imemory.kvaddr + load_addr);
 		memcpy(address, fw_blob->data, fw_blob->size);
 		fimc_is_ischain_cache_flush(this, load_addr, fw_blob->size + 1);
-		fimc_is_ischain_version(this, setf_name, fw_blob->data,
-			(u32)fw_blob->size);
+		if (cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_REAR)
+			fimc_is_ischain_version(this, setf_name, fw_blob->data,
+				(u32)fw_blob->size);
 
 		release_firmware(fw_blob);
 #ifdef SDCARD_FW
@@ -1818,7 +1836,7 @@ out:
 		err("setfile loading is fail");
 	else
 		pr_info("Camera: the %s Setfile were applied successfully.\n",
-			((cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_FRONT) && 
+			((cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_REAR) && 
 				is_dumped_fw_loading_needed) ? "dumped" : "default");
 
 	return ret;
@@ -3048,12 +3066,12 @@ static int fimc_is_itf_setfile(struct fimc_is_device_ischain *this,
 
 	if (!setfile_addr) {
 		merr("setfile address is NULL", this);
-		pr_err("cmd : %08X\n", itf->com_regs->ihcmd);
-		pr_err("instance : %08X\n", itf->com_regs->ihc_sensorid);
-		pr_err("param1 : %08X\n", itf->com_regs->ihc_param1);
-		pr_err("param2 : %08X\n", itf->com_regs->ihc_param2);
-		pr_err("param3 : %08X\n", itf->com_regs->ihc_param3);
-		pr_err("param4 : %08X\n", itf->com_regs->ihc_param4);
+		pr_err("cmd : %08X\n", readl(&itf->com_regs->ihcmd));
+		pr_err("id : %08X\n", readl(&itf->com_regs->ihc_sensorid));
+		pr_err("param1 : %08X\n", readl(&itf->com_regs->ihc_param1));
+		pr_err("param2 : %08X\n", readl(&itf->com_regs->ihc_param2));
+		pr_err("param3 : %08X\n", readl(&itf->com_regs->ihc_param3));
+		pr_err("param4 : %08X\n", readl(&itf->com_regs->ihc_param4));
 		goto p_err;
 	}
 
@@ -3493,6 +3511,20 @@ static int fimc_is_itf_grp_shot(struct fimc_is_device_ischain *device,
 			} else if (device->module == SENSOR_NAME_IMX135 &&
 				!test_bit(FIMC_IS_ISCHAIN_REPROCESSING, \
 					&device->state)) {
+#ifdef CONFIG_TARGET_LOCALE_KOR	//for only KOR blackbox
+				if (device->sensor->width < 2000) {
+ 					fimc_is_set_dvfs(core, device, group->id, \
+					DVFS_L1_1, I2C_L1_1);
+				} else {
+					if ((device->setfile && 0xffff) == \
+						ISS_SUB_SCENARIO_VIDEO)
+						fimc_is_set_dvfs(core, device, group->id, \
+							DVFS_L1, I2C_L1);
+					else
+						fimc_is_set_dvfs(core, device, group->id, \
+							DVFS_L1, I2C_L1);
+				}
+#else	// for Not KOR
 				if ((device->setfile && 0xffff) == \
 					ISS_SUB_SCENARIO_VIDEO)
 					fimc_is_set_dvfs(core, device, group->id, \
@@ -3500,6 +3532,7 @@ static int fimc_is_itf_grp_shot(struct fimc_is_device_ischain *device,
 				else
 					fimc_is_set_dvfs(core, device, group->id, \
 						DVFS_L1, I2C_L1);
+#endif
 			} else if (device->module == SENSOR_NAME_S5K6B2) {
 				if (((device->setfile && 0xffff) \
 					== ISS_SUB_SCENARIO_FRONT_VT1) \
