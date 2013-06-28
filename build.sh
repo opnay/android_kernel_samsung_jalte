@@ -1,8 +1,8 @@
 export ARCH=arm
 export CROSS_COMPILE=/home/diadust/android/toolchain/android-toolchain-eabi-4.7/bin/arm-eabi-
-KERNDIR=/home/diadust/E300S/Kernel
+KERNDIR=/home/diadust/e300s/kernel
 INITRAM_DIR=$KERNDIR/initramfs
-INITRAM_ORIG=/home/diadust/E300S/firmware/ME7/boot
+INITRAM_ORIG=/home/diadust/e300s/firmware/MF3/boot
 JOBN=16
 export CONFIG_DEBUG_SECTION_MISMATCH=y
 
@@ -24,7 +24,8 @@ echo "--------------------------------------------------------------------------
 rm $KERNDIR/mkbootimg/zImage
 rm $KERNDIR/mkbootimg/ramdisk.cpio.gz
 mv $KERNDIR/mkbootimg/boot.img $KERNDIR/mkbootimg/boot.img.bak
-rm -R $INITRAM_DIR/*
+rm -Rf $INITRAM_DIR
+mkdir $INITRAM_DIR
 cp -R $INITRAM_ORIG/* $INITRAM_DIR/
 find $INITRAM_DIR -name "*~" -exec rm -f {} \;
 make distclean
