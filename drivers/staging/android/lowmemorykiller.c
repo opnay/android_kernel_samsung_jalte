@@ -46,6 +46,9 @@
 #include <linux/swap.h>
 #endif
 
+#include <linux/uaccess.h>
+#include <linux/proc_fs.h>
+
 #ifdef CONFIG_ZRAM_FOR_ANDROID
 #include <linux/fs.h>
 #include <linux/swap.h>
@@ -56,15 +59,12 @@
 #include <linux/freezer.h>
 #include <asm/atomic.h>
 
-#include <linux/uaccess.h>
-#include <linux/proc_fs.h>
-
-
 #define MIN_FREESWAP_PAGES 8192 /* 32MB */
 #define MIN_RECLAIM_PAGES 512  /* 2MB */
 #define MIN_CSWAP_INTERVAL (10*HZ)  /* 10 senconds */
 #define RTCC_DAEMON_PROC "rtccd"
 #define _KCOMPCACHE_DEBUG 0
+
 #if _KCOMPCACHE_DEBUG
 #define lss_dbg(x...) printk("lss: " x)
 #else
