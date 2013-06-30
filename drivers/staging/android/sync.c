@@ -23,13 +23,12 @@
 #include <linux/sched.h>
 #include <linux/seq_file.h>
 #include <linux/slab.h>
-#include <linux/sync.h>
 #include <linux/uaccess.h>
-
 #include <linux/anon_inodes.h>
+#include <linux/sync.h>
 
 #define CREATE_TRACE_POINTS
-#include <trace/events/sync.h>
+#include "trace/sync.h"
 
 static void sync_fence_signal_pt(struct sync_pt *pt);
 static int _sync_pt_has_signaled(struct sync_pt *pt);
@@ -248,6 +247,7 @@ static const struct file_operations sync_fence_fops = {
 	.release = sync_fence_release,
 	.poll = sync_fence_poll,
 	.unlocked_ioctl = sync_fence_ioctl,
+	.compat_ioctl = sync_fence_ioctl,
 };
 
 static struct sync_fence *sync_fence_alloc(const char *name)
@@ -261,7 +261,7 @@ static struct sync_fence *sync_fence_alloc(const char *name)
 
 	fence->file = anon_inode_getfile("sync_fence", &sync_fence_fops,
 					 fence, 0);
-	if (fence->file == NULL)
+	if (IS_ERR(fence->file))
 		goto err;
 
 	kref_init(&fence->kref);
@@ -346,7 +346,8 @@ static int sync_fence_merge_pts(struct sync_fence *dst, struct sync_fence *src)
 			 * the later of the two
 			 */
 			if (dst_pt->parent == src_pt->parent) {
-				if (dst_pt->parent->ops->compare(dst_pt, src_pt) == -1) {
+				if (dst_pt->parent->ops->compare(dst_pt, src_pt)
+						 == -1) {
 					struct sync_pt *new_pt =
 						sync_pt_dup(src_pt);
 					if (new_pt == NULL)
@@ -615,10 +616,12 @@ int sync_fence_wait(struct sync_fence *fence, long timeout)
 		return fence->status;
 	}
 
-	if (fence->status == 0 && timeout > 0) {
-		pr_info("fence timeout on [%p] after %dms\n", fence,
-			jiffies_to_msecs(timeout));
-		sync_dump();
+	if (fence->status == 0) {
+		if (timeout > 0) {
+			pr_info("fence timeout on [%p] after %dms\n", fence,
+				jiffies_to_msecs(timeout));
+			sync_dump();
+		}
 		return -ETIME;
 	}
 
@@ -986,25 +989,25 @@ late_initcall(sync_debugfs_init);
 static char sync_dump_buf[64 * 1024];
 void sync_dump(void)
 {
-       struct seq_file s = {
-               .buf = sync_dump_buf,
-               .size = sizeof(sync_dump_buf) - 1,
-       };
-       int i;
+	struct seq_file s = {
+		.buf = sync_dump_buf,
+		.size = sizeof(sync_dump_buf) - 1,
+	};
+	int i;
 
-       sync_debugfs_show(&s, NULL);
+	sync_debugfs_show(&s, NULL);
 
-       for (i = 0; i < s.count; i += DUMP_CHUNK) {
-               if ((s.count - i) > DUMP_CHUNK) {
-                       char c = s.buf[i + DUMP_CHUNK];
-                       s.buf[i + DUMP_CHUNK] = 0;
-                       pr_cont("%s", s.buf + i);
-                       s.buf[i + DUMP_CHUNK] = c;
-               } else {
-                       s.buf[s.count] = 0;
-                       pr_cont("%s", s.buf + i);
-               }
-       }
+	for (i = 0; i < s.count; i += DUMP_CHUNK) {
+		if ((s.count - i) > DUMP_CHUNK) {
+			char c = s.buf[i + DUMP_CHUNK];
+			s.buf[i + DUMP_CHUNK] = 0;
+			pr_cont("%s", s.buf + i);
+			s.buf[i + DUMP_CHUNK] = c;
+		} else {
+			s.buf[s.count] = 0;
+			pr_cont("%s", s.buf + i);
+		}
+	}
 }
 #else
 static void sync_dump(void)
