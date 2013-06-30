@@ -294,10 +294,10 @@ void gpu_clock_set(int sgx_clk)
 			else
 				bts = 0;
 
-			PVR_LOG(("SGX change clock [%d] Mhz -> [%d] MHz req [%d] MHz / M[%d] / B[%d]", old_clk, sgx_gpu_clk, sgx_clk, (800/mif_sdiv), bts));
+			//PVR_LOG(("SGX change clock [%d] Mhz -> [%d] MHz req [%d] MHz / M[%d] / B[%d]", old_clk, sgx_gpu_clk, sgx_clk, (800/mif_sdiv), bts));
 		}
 #else
-		PVR_LOG(("SGX change clock [%d] Mhz -> [%d] MHz req [%d] MHz / M[%d]", old_clk, sgx_gpu_clk, sgx_clk, (800/mif_sdiv)));
+		//PVR_LOG(("SGX change clock [%d] Mhz -> [%d] MHz req [%d] MHz / M[%d]", old_clk, sgx_gpu_clk, sgx_clk, (800/mif_sdiv)));
 #endif
 	}
 #endif
