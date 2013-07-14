@@ -1636,6 +1636,7 @@ int cpufreq_get_policy(struct cpufreq_policy *policy, unsigned int cpu)
 }
 EXPORT_SYMBOL(cpufreq_get_policy);
 
+extern void exynos_enforce_policy(struct cpufreq_policy *policy);
 
 /*
  * data   : current policy.
@@ -1656,6 +1657,8 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 		ret = -EINVAL;
 		goto error_out;
 	}
+
+	exynos_enforce_policy(policy);
 
 	/* verify the cpu speed can be set within this limit */
 	ret = cpufreq_driver->verify(policy);
