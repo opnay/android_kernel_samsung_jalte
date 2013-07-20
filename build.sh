@@ -1,8 +1,8 @@
 export ARCH=arm
 export CROSS_COMPILE=/home/diadust/android/toolchain/android-toolchain-eabi-4.7/bin/arm-eabi-
-KERNDIR=/home/diadust/e300s/kernel
+KERNDIR=/home/diadust/project/kernel_e300s
 INITRAM_DIR=$KERNDIR/initramfs
-INITRAM_ORIG=/home/diadust/e300s/firmware/MF3/boot
+INITRAM_ORIG=/home/diadust/e300s/MG2/boot
 JOBN=16
 export CONFIG_DEBUG_SECTION_MISMATCH=y
 
