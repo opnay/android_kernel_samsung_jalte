@@ -630,7 +630,9 @@ rx_use_cpu:
  ignore_char:
 		continue;
 	}
+	spin_unlock(&port->lock);
 	tty_flip_buffer_push(tty);
+	spin_lock(&port->lock);
 
  out:
 	spin_unlock_irqrestore(&port->lock, flags);
