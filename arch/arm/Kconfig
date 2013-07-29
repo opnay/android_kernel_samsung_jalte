@@ -144,8 +144,7 @@ config GENERIC_LOCKBREAK
 	depends on SMP && PREEMPT
 
 config RWSEM_XCHGADD_ALGORITHM
-	bool
-	default y
+	def_bool y
 
 config ARCH_HAS_ILOG2_U32
 	bool
