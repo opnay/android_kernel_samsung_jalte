@@ -1,6 +1,6 @@
 export ARCH=arm
 export CROSS_COMPILE=/home/diadust/android/toolchain/android-toolchain-eabi-4.7/bin/arm-eabi-
-KERNDIR=/home/diadust/project/kernel_e300s
+KERNDIR=/home/diadust/project/kernel_jalte
 INITRAM_DIR=$KERNDIR/initramfs
 JOBN=16
 export CONFIG_DEBUG_SECTION_MISMATCH=y
@@ -46,6 +46,6 @@ echo "--------------------------------------------------------------------------
 cd $INITRAM_DIR
 find . | cpio -o -H newc | gzip > $KERNDIR/mkbootimg/ramdisk.cpio.gz
 cd $KERNDIR/mkbootimg
-./mkbootimg --base 10000000 --pagesize 2048 --kernel zImage --ramdisk ramdisk.cpio.gz -o boot.img
+./mkbootimg --base 10000000 --pagesize 2048 --kernel zImage --ramdisk ramdisk.cpio.gz -o "$1"_boot.img
 echo " Build Complete "
 
