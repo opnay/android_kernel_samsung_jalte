@@ -2,23 +2,25 @@ export ARCH=arm
 export CROSS_COMPILE=/home/diadust/android/toolchain/android-toolchain-eabi-4.7/bin/arm-eabi-
 KERNDIR=/home/diadust/project/kernel_e300s
 INITRAM_DIR=$KERNDIR/initramfs
-INITRAM_ORIG=/home/diadust/e300s/MG2/boot
 JOBN=16
 export CONFIG_DEBUG_SECTION_MISMATCH=y
 
 
-if [[ -z $1 ]]
+if [  "$1"="skt" -o "$1"="ktt" ]
 then
-	echo "No configuration file defined"
-	exit 1
-
-else 
-	if [[ ! -e "$KERNDIR/arch/arm/configs/$1" ]]
+INITRAM_ORIG=/home/diadust/GalaxyS4/$1/MG2/boot
+DEFCONFIGS=immortal_"$1"_defconfig
+	if [[ ! -e "$KERNDIR/arch/arm/configs/$DEFCONFIGS" ]]
 	then
-		echo "Configuration file $1 don't exists"
+		echo "Configuration file $DEFCONFIGS don't exists"
 		exit 1
 	fi
+else
+	echo "No defined"
+	echo "./build.sh [ skt / ktt ]"
+	exit 1
 fi
+
 
 echo "----------------------------------------------------------------------------------------------------------CLEAN"
 rm $KERNDIR/mkbootimg/zImage
@@ -30,7 +32,7 @@ cp -R $INITRAM_ORIG/* $INITRAM_DIR/
 find $INITRAM_DIR -name "*~" -exec rm -f {} \;
 make distclean
 echo "----------------------------------------------------------------------------------------------------------CONFIG"
-make $1
+make $DEFCONFIGS
 make menuconfig
 echo "----------------------------------------------------------------------------------------------------------BUILD"
 make -j$JOBN
