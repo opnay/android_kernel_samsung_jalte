@@ -6,26 +6,32 @@ JOBN=16
 export CONFIG_DEBUG_SECTION_MISMATCH=y
 
 
-if [  "$1"="skt" -o "$1"="ktt" ]
+if [  "$1"="skt" ]
 then
 INITRAM_ORIG=/home/diadust/GalaxyS4/$1/MG2/boot
-DEFCONFIGS=immortal_"$1"_defconfig
-	if [[ ! -e "$KERNDIR/arch/arm/configs/$DEFCONFIGS" ]]
-	then
-		echo "Configuration file $DEFCONFIGS don't exists"
-		exit 1
-	fi
+else if [ "$1"="kt" ]
+then
+INITRAM_ORIG=/home/diadust/GalaxyS4/$1/MG2/boot
+else if [ "$1"="lg" ]
+then
+INITRAM_ORIG=/home/diadust/GalaxyS4/$1/MG2/boot
 else
 	echo "No defined"
-	echo "./build.sh [ skt / ktt ]"
+	echo "./build.sh [ skt / kt / lg ]"
+	exit 1
+fi fi fi
+
+export CONFIG_LOCALVERSION="-Immortal-Test3-$1"
+DEFCONFIGS=immortal_"$1"_defconfig
+if [[ ! -e "$KERNDIR/arch/arm/configs/$DEFCONFIGS" ]]
+then
+	echo "Configuration file $DEFCONFIGS don't exists"
 	exit 1
 fi
 
-
 echo "----------------------------------------------------------------------------------------------------------CLEAN"
-rm $KERNDIR/mkbootimg/zImage
-rm $KERNDIR/mkbootimg/ramdisk.cpio.gz
-mv $KERNDIR/mkbootimg/boot.img $KERNDIR/mkbootimg/boot.img.bak
+rm $KERNDIR/mkbootimg/zImage $KERNDIR/mkbootimg/ramdisk.cpio.gz
+rm $KERNDIR/mkbootimg/*_boot.img
 rm -Rf $INITRAM_DIR
 mkdir $INITRAM_DIR
 cp -R $INITRAM_ORIG/* $INITRAM_DIR/
