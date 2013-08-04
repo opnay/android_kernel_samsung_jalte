@@ -3,7 +3,6 @@ export CROSS_COMPILE=/home/diadust/android/toolchain/android-toolchain-eabi-4.7/
 KERNDIR=/home/diadust/project/kernel_jalte
 INITRAM_DIR=$KERNDIR/initramfs
 JOBN=16
-export CONFIG_DEBUG_SECTION_MISMATCH=y
 
 
 if [  "$1"="skt" ]
