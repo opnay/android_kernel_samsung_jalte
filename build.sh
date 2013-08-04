@@ -39,6 +39,7 @@ make -j$JOBN
 echo "----------------------------------------------------------------------------------------------------------MODULES"
 find . -name "*.ko" -exec echo {} \;
 find . -name "*.ko" -exec cp {} $INITRAM_DIR/lib/modules/  \;
+cp $INITRAM_ORIG/../../../exfat/* $INITRAM_DIR/lib/modules/
 
 cp $KERNDIR/arch/arm/boot/zImage $KERNDIR/mkbootimg/zImage
 
