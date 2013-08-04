@@ -21,7 +21,6 @@ else
 	exit 1
 fi fi fi
 
-export CONFIG_LOCALVERSION="-Immortal-Test3-$1"
 DEFCONFIGS=immortal_"$1"_defconfig
 if [[ ! -e "$KERNDIR/arch/arm/configs/$DEFCONFIGS" ]]
 then
