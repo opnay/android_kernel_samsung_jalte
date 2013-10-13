@@ -974,7 +974,7 @@ static void do_dbs_timer(struct work_struct *work)
 			 */
 			struct cpufreq_policy *policy = dbs_info->cur_policy;
 			if (policy->cur >= 1400000)
-				dbs_info->rate_mult = 2;
+				dbs_info->rate_mult = 1;
 			else
 				dbs_info->rate_mult = 1;
 
