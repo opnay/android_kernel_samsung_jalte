@@ -29,7 +29,6 @@
 
 #include <mach/sec_debug.h>
 #include <mach/regs-clock.h>
-#include <mach/regs-pmu.h>
 #include <plat/map-base.h>
 #include <plat/map-s5p.h>
 #include <asm/mach/map.h>

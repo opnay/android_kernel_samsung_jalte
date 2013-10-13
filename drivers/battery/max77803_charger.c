@@ -15,7 +15,7 @@
 #ifdef CONFIG_USB_HOST_NOTIFY
 #include <linux/host_notify.h>
 #include <mach/usb3-drd.h>
-#endif 
+#endif
 
 
 #define DEBUG
@@ -29,11 +29,15 @@
 #define MINIMUM_INPUT_CURRENT	300
 
 #if defined(CONFIG_TARGET_LOCALE_KOR)
-#define SIOP_INPUT_LIMIT_CURRENT 1100
-
+#define SIOP_INPUT_LIMIT_CURRENT 1200
+#define SIOP_CHARGING_LIMIT_CURRENT 1000
+#define SIOP_INPUT_LIMIT_CURRENT_SPECIAL 1100
 static struct device_attribute sec_chg_attrs[] = {
 	SEC_CHG_ATTR(siop_input_limit),
 };
+#else
+#define SIOP_INPUT_LIMIT_CURRENT 1200
+#define SIOP_CHARGING_LIMIT_CURRENT 1000
 #endif
 
 struct max77803_charger_data {
@@ -321,7 +325,7 @@ static int max77803_get_input_current(struct max77803_charger_data *charger)
 		max77803_read_reg(charger->max77803->i2c,
 			MAX77803_CHG_REG_CHG_CNFG_10, &reg_data);
 		pr_info("%s: CHG_CNFG_10(0x%02x)\n", __func__, reg_data);
-	} else {		
+	} else {
 		max77803_read_reg(charger->max77803->i2c,
 			MAX77803_CHG_REG_CHG_CNFG_09, &reg_data);
 		pr_info("%s: CHG_CNFG_09(0x%02x)\n", __func__, reg_data);
@@ -441,14 +445,26 @@ static void max77803_recovery_work(struct work_struct *work)
 			pr_info("%s: siop_input_limit: %d, %d\n", __func__,
 					charger->siop_input_limit_activated, charger->is_input_limited);
 			max77803_set_input_current(charger,
+					SIOP_INPUT_LIMIT_CURRENT_SPECIAL);
+		} else if (charger->siop_level < 100 &&
+			charger->cable_type == POWER_SUPPLY_TYPE_MAINS) {
+			pr_info("%s : LCD on status and revocer current\n", __func__);
+			max77803_set_input_current(charger,
 					SIOP_INPUT_LIMIT_CURRENT);
 		} else {
 			max77803_set_input_current(charger,
 				charger->charging_current_max);
 		}
 #else
-		max77803_set_input_current(charger,
+		if (charger->siop_level < 100 &&
+			charger->cable_type == POWER_SUPPLY_TYPE_MAINS) {
+			pr_info("%s : LCD on status and revocer current\n", __func__);
+			max77803_set_input_current(charger,
+					SIOP_INPUT_LIMIT_CURRENT);
+		} else {
+			max77803_set_input_current(charger,
 				charger->charging_current_max);
+		}
 #endif
 
 	} else {
@@ -593,7 +609,7 @@ static int max77803_get_health_state(struct max77803_charger_data *charger)
 	case 0x00:
 		pr_info("%s: No battery and the charger is suspended\n",
 			__func__);
-		state = POWER_SUPPLY_HEALTH_UNKNOWN;
+		state = POWER_SUPPLY_HEALTH_UNSPEC_FAILURE;
 		break;
 	case 0x01:
 		pr_info("%s: battery is okay "
@@ -861,12 +877,26 @@ static int sec_chg_set_property(struct power_supply *psy,
 			else
 				set_charging_current_max =
 					charger->charging_current_max;
+
 #if defined(CONFIG_TARGET_LOCALE_KOR)
-			if (charger->siop_input_limit_activated && !charger->is_input_limited) {
+			if (val->intval == POWER_SUPPLY_TYPE_MAINS &&
+				charger->siop_input_limit_activated && !charger->is_input_limited) {
 				pr_info("%s: siop_input_limit: %d, %d\n", __func__,
 					charger->siop_input_limit_activated, charger->is_input_limited);
-				set_charging_current_max = SIOP_INPUT_LIMIT_CURRENT;
+				set_charging_current_max = SIOP_INPUT_LIMIT_CURRENT_SPECIAL;
 				charger->is_input_limited = true;
+			} else if (charger->siop_level < 100 &&
+				val->intval == POWER_SUPPLY_TYPE_MAINS) {
+				set_charging_current_max = SIOP_INPUT_LIMIT_CURRENT;
+				if (set_charging_current > SIOP_CHARGING_LIMIT_CURRENT)
+					set_charging_current = SIOP_CHARGING_LIMIT_CURRENT;
+			}
+#else
+			if (charger->siop_level < 100 &&
+				val->intval == POWER_SUPPLY_TYPE_MAINS) {
+				set_charging_current_max = SIOP_INPUT_LIMIT_CURRENT;
+				if (set_charging_current > SIOP_CHARGING_LIMIT_CURRENT)
+					set_charging_current = SIOP_CHARGING_LIMIT_CURRENT;
 			}
 #endif
 		}
@@ -906,10 +936,36 @@ static int sec_chg_set_property(struct power_supply *psy,
 			/* decrease the charging current according to siop level */
 			int current_now =
 				charger->charging_current * val->intval / 100;
+
+			/* do forced set charging current */
 			if (current_now > 0 &&
 					current_now < usb_charging_current)
 				current_now = usb_charging_current;
+
+			if (charger->cable_type == POWER_SUPPLY_TYPE_MAINS) {
+				if (charger->siop_level < 100 ) {
+#if defined(CONFIG_TARGET_LOCALE_KOR)
+					if (charger->siop_input_limit_activated)
+						set_charging_current_max = SIOP_INPUT_LIMIT_CURRENT_SPECIAL;
+					else
+						set_charging_current_max = SIOP_INPUT_LIMIT_CURRENT;
+#else
+					set_charging_current_max =
+						SIOP_INPUT_LIMIT_CURRENT;
+#endif
+				} else
+					set_charging_current_max =
+						charger->charging_current_max;
+
+				if (charger->siop_level < 100 &&
+						current_now > SIOP_CHARGING_LIMIT_CURRENT)
+					current_now = SIOP_CHARGING_LIMIT_CURRENT;
+				max77803_set_input_current(charger,
+					set_charging_current_max);
+			}
+
 			max77803_set_charge_current(charger, current_now);
+
 		}
 		break;
 	case POWER_SUPPLY_PROP_POWER_NOW:
@@ -1355,7 +1411,7 @@ ssize_t sec_chg_store_attrs(struct device *dev,
 				if (charger->cable_type == POWER_SUPPLY_TYPE_MAINS &&
 					!charger->is_input_limited) {
 					max77803_set_input_current(charger,
-						SIOP_INPUT_LIMIT_CURRENT);
+						SIOP_INPUT_LIMIT_CURRENT_SPECIAL);
 					charger->is_input_limited = true;
 				}
 			} else {
@@ -1363,14 +1419,20 @@ ssize_t sec_chg_store_attrs(struct device *dev,
 
 				if (charger->cable_type == POWER_SUPPLY_TYPE_MAINS &&
 					charger->is_input_limited) {
-					max77803_set_input_current(charger,
-						charger->pdata->charging_current[
-						POWER_SUPPLY_TYPE_MAINS].input_current_limit);
+					if (charger->siop_level < 100) {
+						max77803_set_input_current(charger,
+							SIOP_INPUT_LIMIT_CURRENT);
+					} else {
+						max77803_set_input_current(charger,
+							charger->pdata->charging_current[
+							POWER_SUPPLY_TYPE_MAINS].input_current_limit);
+					}
 					charger->is_input_limited = false;
 				}
 			}
-			pr_info("%s: siop_input_limit: %d, %d, %d\n", __func__,
-				x, charger->siop_input_limit_activated, charger->is_input_limited);
+			pr_info("%s: siop_input_limit: %d, %d, %d, %d\n", __func__,
+				x, charger->siop_input_limit_activated,
+				charger->is_input_limited, charger->siop_level);
 			ret = count;
 		}
 		break;

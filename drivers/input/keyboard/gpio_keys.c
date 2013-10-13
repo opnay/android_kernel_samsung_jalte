@@ -799,6 +799,21 @@ static void flip_cover_work(struct work_struct *work)
 }
 #endif
 
+#if !defined(CONFIG_MACH_JA_KOR_SKT) && !defined(CONFIG_MACH_JA_KOR_KT)\
+&& !defined(CONFIG_MACH_JA_KOR_LGT)
+static irqreturn_t flip_cover_detect(int irq, void *dev_id)
+{
+	struct gpio_keys_drvdata *ddata = dev_id;
+
+	cancel_delayed_work_sync(&ddata->flip_cover_dwork);
+#ifdef CONFIG_SEC_TSP_FACTORY
+	schedule_delayed_work(&ddata->flip_cover_dwork, HZ / 20);
+#else
+	schedule_delayed_work(&ddata->flip_cover_dwork, 0);
+#endif
+	return IRQ_HANDLED;
+}
+#else
 static irqreturn_t flip_cover_detect(int irq, void *dev_id)
 {
 	bool flip_status;
@@ -826,6 +841,7 @@ static irqreturn_t flip_cover_detect(int irq, void *dev_id)
 #endif
 	return IRQ_HANDLED;
 }
+#endif
 #endif
 
 static int gpio_keys_open(struct input_dev *input)

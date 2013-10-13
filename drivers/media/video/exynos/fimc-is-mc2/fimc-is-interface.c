@@ -372,6 +372,8 @@ static int fimc_is_set_cmd(struct fimc_is_interface *itf,
 	int ret = 0;
 	int wait_lock = 0;
 	u32 lock_pid = 0;
+	u32 id;
+	volatile struct is_common_reg __iomem *com_regs;
 
 	BUG_ON(!itf);
 	BUG_ON(!msg);
@@ -441,13 +443,14 @@ static int fimc_is_set_cmd(struct fimc_is_interface *itf,
 	}
 
 	set_busystate(itf, msg->command);
-	itf->com_regs->hicmd = msg->command;
-	itf->com_regs->hic_sensorid =
-		((msg->group<<GROUP_ID_SHIFT) | msg->instance);
-	itf->com_regs->hic_param1 = msg->parameter1;
-	itf->com_regs->hic_param2 = msg->parameter2;
-	itf->com_regs->hic_param3 = msg->parameter3;
-	itf->com_regs->hic_param4 = msg->parameter4;
+	com_regs = itf->com_regs;
+	id = (msg->group << GROUP_ID_SHIFT) | msg->instance;
+	writel(msg->command, &com_regs->hicmd);
+	writel(id, &com_regs->hic_sensorid);
+	writel(msg->parameter1, &com_regs->hic_param1);
+	writel(msg->parameter2, &com_regs->hic_param2);
+	writel(msg->parameter3, &com_regs->hic_param3);
+	writel(msg->parameter4, &com_regs->hic_param4);
 	send_interrupt(itf);
 
 	exit_process_barrier(itf);
@@ -516,6 +519,8 @@ static int fimc_is_set_cmd_shot(struct fimc_is_interface *this,
 	struct fimc_is_msg *msg)
 {
 	int ret = 0;
+	u32 id;
+	volatile struct is_common_reg __iomem *com_regs;
 
 	BUG_ON(!this);
 	BUG_ON(!msg);
@@ -540,13 +545,14 @@ static int fimc_is_set_cmd_shot(struct fimc_is_interface *this,
 	atomic_set(&this->shot_check[msg->instance], 1);
 	spin_unlock_irq(&this->shot_check_lock);
 
-	this->com_regs->hicmd = msg->command;
-	this->com_regs->hic_sensorid =
-		((msg->group<<GROUP_ID_SHIFT) | msg->instance);
-	this->com_regs->hic_param1 = msg->parameter1;
-	this->com_regs->hic_param2 = msg->parameter2;
-	this->com_regs->hic_param3 = msg->parameter3;
-	this->com_regs->hic_param4 = msg->parameter4;
+	com_regs = this->com_regs;
+	id = (msg->group << GROUP_ID_SHIFT) | msg->instance;
+	writel(msg->command, &com_regs->hicmd);
+	writel(id, &com_regs->hic_sensorid);
+	writel(msg->parameter1, &com_regs->hic_param1);
+	writel(msg->parameter2, &com_regs->hic_param2);
+	writel(msg->parameter3, &com_regs->hic_param3);
+	writel(msg->parameter4, &com_regs->hic_param4);
 	send_interrupt(this);
 
 	exit_process_barrier(this);
@@ -559,7 +565,9 @@ static int fimc_is_set_cmd_nblk(struct fimc_is_interface *this,
 	struct fimc_is_work *work)
 {
 	int ret = 0;
+	u32 id;
 	struct fimc_is_msg *msg;
+	volatile struct is_common_reg __iomem *com_regs;
 
 	msg = &work->msg;
 	switch (msg->command) {
@@ -580,12 +588,14 @@ static int fimc_is_set_cmd_nblk(struct fimc_is_interface *this,
 		goto exit;
 	}
 
-	this->com_regs->hicmd = msg->command;
-	this->com_regs->hic_sensorid = msg->instance;
-	this->com_regs->hic_param1 = msg->parameter1;
-	this->com_regs->hic_param2 = msg->parameter2;
-	this->com_regs->hic_param3 = msg->parameter3;
-	this->com_regs->hic_param4 = msg->parameter4;
+	com_regs = this->com_regs;
+	id = (msg->group << GROUP_ID_SHIFT) | msg->instance;
+	writel(msg->command, &com_regs->hicmd);
+	writel(id, &com_regs->hic_sensorid);
+	writel(msg->parameter1, &com_regs->hic_param1);
+	writel(msg->parameter2, &com_regs->hic_param2);
+	writel(msg->parameter3, &com_regs->hic_param3);
+	writel(msg->parameter4, &com_regs->hic_param4);
 	send_interrupt(this);
 
 exit:
@@ -596,50 +606,50 @@ exit:
 static inline void fimc_is_get_cmd(struct fimc_is_interface *itf,
 	struct fimc_is_msg *msg, u32 index)
 {
-	struct is_common_reg __iomem *com_regs = itf->com_regs;
+	volatile struct is_common_reg __iomem *com_regs = itf->com_regs;
 
 	switch (index) {
 	case INTR_GENERAL:
 		msg->id = 0;
-		msg->command = com_regs->ihcmd;
-		msg->instance = com_regs->ihc_sensorid;
-		msg->parameter1 = com_regs->ihc_param1;
-		msg->parameter2 = com_regs->ihc_param2;
-		msg->parameter3 = com_regs->ihc_param3;
-		msg->parameter4 = com_regs->ihc_param4;
+		msg->command = readl(&com_regs->ihcmd);
+		msg->instance = readl(&com_regs->ihc_sensorid);
+		msg->parameter1 = readl(&com_regs->ihc_param1);
+		msg->parameter2 = readl(&com_regs->ihc_param2);
+		msg->parameter3 = readl(&com_regs->ihc_param3);
+		msg->parameter4 = readl(&com_regs->ihc_param4);
 		break;
 	case INTR_SCC_FDONE:
 		msg->id = 0;
 		msg->command = IHC_FRAME_DONE;
-		msg->instance = com_regs->scc_sensor_id;
-		msg->parameter1 = com_regs->scc_param1;
-		msg->parameter2 = com_regs->scc_param2;
-		msg->parameter3 = com_regs->scc_param3;
+		msg->instance = readl(&com_regs->scc_sensor_id);
+		msg->parameter1 = readl(&com_regs->scc_param1);
+		msg->parameter2 = readl(&com_regs->scc_param2);
+		msg->parameter3 = readl(&com_regs->scc_param3);
 		msg->parameter4 = 0;
 		break;
 	case INTR_DIS_FDONE:
 		msg->id = 0;
 		msg->command = IHC_FRAME_DONE;
-		msg->instance = com_regs->dis_sensor_id;
-		msg->parameter1 = com_regs->dis_param1;
-		msg->parameter2 = com_regs->dis_param2;
-		msg->parameter3 = com_regs->dis_param3;
+		msg->instance = readl(&com_regs->dis_sensor_id);
+		msg->parameter1 = readl(&com_regs->dis_param1);
+		msg->parameter2 = readl(&com_regs->dis_param2);
+		msg->parameter3 = readl(&com_regs->dis_param3);
 		msg->parameter4 = 0;
 		break;
 	case INTR_SCP_FDONE:
 		msg->id = 0;
 		msg->command = IHC_FRAME_DONE;
-		msg->instance = com_regs->scp_sensor_id;
-		msg->parameter1 = com_regs->scp_param1;
-		msg->parameter2 = com_regs->scp_param2;
-		msg->parameter3 = com_regs->scp_param3;
+		msg->instance = readl(&com_regs->scp_sensor_id);
+		msg->parameter1 = readl(&com_regs->scp_param1);
+		msg->parameter2 = readl(&com_regs->scp_param2);
+		msg->parameter3 = readl(&com_regs->scp_param3);
 		msg->parameter4 = 0;
 		break;
 	case INTR_META_DONE:
 		msg->id = 0;
 		msg->command = IHC_FRAME_DONE;
-		msg->instance = com_regs->meta_sensor_id;
-		msg->parameter1 = com_regs->meta_param1;
+		msg->instance = readl(&com_regs->meta_sensor_id);
+		msg->parameter1 = readl(&com_regs->meta_param1);
 		msg->parameter2 = 0;
 		msg->parameter3 = 0;
 		msg->parameter4 = 0;
@@ -647,14 +657,11 @@ static inline void fimc_is_get_cmd(struct fimc_is_interface *itf,
 	case INTR_SHOT_DONE:
 		msg->id = 0;
 		msg->command = IHC_FRAME_DONE;
-		msg->instance = com_regs->shot_sensor_id;
-		msg->parameter1 = com_regs->shot_param1;
-		msg->parameter2 = com_regs->shot_param2;
-		msg->parameter3 = com_regs->shot_param3;
+		msg->instance = readl(&com_regs->shot_sensor_id);
+		msg->parameter1 = readl(&com_regs->shot_param1);
+		msg->parameter2 = readl(&com_regs->shot_param2);
+		msg->parameter3 = readl(&com_regs->shot_param3);
 		msg->parameter4 = 0;
-
-		/* debugging for lost shot done */
-		com_regs->shot_param1 = 0;
 		break;
 	default:
 		msg->id = 0;
@@ -675,14 +682,15 @@ static inline void fimc_is_get_cmd(struct fimc_is_interface *itf,
 static inline u32 fimc_is_get_intr(struct fimc_is_interface *itf)
 {
 	u32 status;
-	struct is_common_reg __iomem *com_regs = itf->com_regs;
+	volatile struct is_common_reg __iomem *com_regs = itf->com_regs;
 
-	status = readl(itf->regs + INTMSR1) | com_regs->ihcmd_iflag |
-		com_regs->scc_iflag |
-		com_regs->dis_iflag |
-		com_regs->scp_iflag |
-		com_regs->meta_iflag |
-		com_regs->shot_iflag;
+	status = readl(itf->regs + INTMSR1) |
+		readl(&com_regs->ihcmd_iflag) |
+		readl(&com_regs->scc_iflag) |
+		readl(&com_regs->dis_iflag) |
+		readl(&com_regs->scp_iflag) |
+		readl(&com_regs->meta_iflag) |
+		readl(&com_regs->shot_iflag);
 
 	return status;
 }
@@ -690,32 +698,32 @@ static inline u32 fimc_is_get_intr(struct fimc_is_interface *itf)
 static inline void fimc_is_clr_intr(struct fimc_is_interface *itf,
 	u32 index)
 {
-	struct is_common_reg __iomem *com_regs = itf->com_regs;
+	volatile struct is_common_reg __iomem *com_regs = itf->com_regs;
 
 	switch (index) {
 	case INTR_GENERAL:
 		writel((1<<INTR_GENERAL), itf->regs + INTCR1);
-		com_regs->ihcmd_iflag = 0;
+		writel(0, &com_regs->ihcmd_iflag);
 		break;
 	case INTR_SCC_FDONE:
 		writel((1<<INTR_SCC_FDONE), itf->regs + INTCR1);
-		com_regs->scc_iflag = 0;
+		writel(0, &com_regs->scc_iflag);
 		break;
 	case INTR_DIS_FDONE:
 		writel((1<<INTR_DIS_FDONE), itf->regs + INTCR1);
-		com_regs->dis_iflag = 0;
+		writel(0, &com_regs->dis_iflag);
 		break;
 	case INTR_SCP_FDONE:
 		writel((1<<INTR_SCP_FDONE), itf->regs + INTCR1);
-		com_regs->scp_iflag = 0;
+		writel(0, &com_regs->scp_iflag);
 		break;
 	case INTR_META_DONE:
 		writel((1<<INTR_META_DONE), itf->regs + INTCR1);
-		com_regs->meta_iflag = 0;
+		writel(0, &com_regs->meta_iflag);
 		break;
 	case INTR_SHOT_DONE:
 		writel((1<<INTR_SHOT_DONE), itf->regs + INTCR1);
-		com_regs->shot_iflag = 0;
+		writel(0, &com_regs->shot_iflag);
 		break;
 	default:
 		err("unknown command clear\n");
@@ -1751,6 +1759,14 @@ static void interface_timer(unsigned long data)
 				regs = (unsigned long)itf->com_regs;
 				for (j = 0; j < 64; ++j)
 					pr_err("MCTL[%d] : %08X\n", j, readl(regs + 4*j));
+
+				if (readl(&itf->com_regs->shot_iflag)) {
+					pr_err("\n### MCUCTL check ###\n");
+					fimc_is_clr_intr(itf, INTR_SHOT_DONE);
+
+					for (j = 0; j < 64; ++j)
+						pr_err("MCTL[%d] : %08X\n", j, readl(regs + 4*j));
+				}
 #ifdef BUG_ON_ENABLE
 				BUG();
 #endif
@@ -1927,12 +1943,12 @@ int fimc_is_interface_probe(struct fimc_is_interface *this,
 	this->com_regs = (struct is_common_reg *)(regs + ISSR0);
 
 	/* common register init */
-	this->com_regs->ihcmd_iflag = 0;
-	this->com_regs->scc_iflag = 0;
-	this->com_regs->dis_iflag = 0;
-	this->com_regs->scp_iflag = 0;
-	this->com_regs->meta_iflag = 0;
-	this->com_regs->shot_iflag = 0;
+	writel(0, &this->com_regs->ihcmd_iflag);
+	writel(0, &this->com_regs->scc_iflag);
+	writel(0, &this->com_regs->dis_iflag);
+	writel(0, &this->com_regs->scp_iflag);
+	writel(0, &this->com_regs->meta_iflag);
+	writel(0, &this->com_regs->shot_iflag);
 
 	ret = request_irq(irq, interface_isr, 0, "mcuctl", this);
 	if (ret)
@@ -2113,6 +2129,7 @@ int fimc_is_hw_enum(struct fimc_is_interface *this)
 {
 	int ret = 0;
 	struct fimc_is_msg msg;
+	volatile struct is_common_reg __iomem *com_regs;
 
 	dbg_interface("enum()\n");
 
@@ -2137,12 +2154,13 @@ int fimc_is_hw_enum(struct fimc_is_interface *this)
 	msg.parameter4 = 0;
 
 	waiting_is_ready(this);
-	this->com_regs->hicmd = msg.command;
-	this->com_regs->hic_sensorid = msg.instance;
-	this->com_regs->hic_param1 = msg.parameter1;
-	this->com_regs->hic_param2 = msg.parameter2;
-	this->com_regs->hic_param3 = msg.parameter3;
-	this->com_regs->hic_param4 = msg.parameter4;
+	com_regs = this->com_regs;
+	writel(msg.command, &com_regs->hicmd);
+	writel(msg.instance, &com_regs->hic_sensorid);
+	writel(msg.parameter1, &com_regs->hic_param1);
+	writel(msg.parameter2, &com_regs->hic_param2);
+	writel(msg.parameter3, &com_regs->hic_param3);
+	writel(msg.parameter4, &com_regs->hic_param4);
 	send_interrupt(this);
 
 exit:

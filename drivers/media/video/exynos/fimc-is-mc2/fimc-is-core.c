@@ -576,6 +576,11 @@ int fimc_is_set_dvfs(struct fimc_is_core *core,
 	if (core->clock.dvfs_level == __level)
 		goto exit;
 
+#ifdef CONFIG_TARGET_LOCALE_KOR	//KOR only for blackbox
+	if (__level == DVFS_L1_1)
+		pr_info("Blackbox mode\n");
+#endif
+
 	/* i2c lock */
 	ret = fimc_is_itf_i2c_lock(ischain, i2c_clk, true);
 	if (ret) {
