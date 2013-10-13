@@ -288,6 +288,7 @@ enum mc_result mc_open_session(struct mc_session_handle *session,
 				session->device_id,
 				*uuid,
 				(uint32_t)wsm->phys_addr,
+				wsm->handle,
 				len
 			}
 		};
@@ -899,7 +900,8 @@ enum mc_result mc_unmap(struct mc_session_handle *session_handle, void *buf,
 				{
 					session->session_id,
 					handle,
-					(uint32_t)(map_info->secure_virt_addr)
+					(uint32_t)(map_info->secure_virt_addr),
+					map_info->secure_virt_len
 				}
 			};
 
@@ -926,12 +928,6 @@ enum mc_result mc_unmap(struct mc_session_handle *session_handle, void *buf,
 			mc_result = MC_DRV_ERR_DAEMON_UNREACHABLE;
 			break;
 		}
-
-		struct mc_drv_rsp_unmap_bulk_mem_payload_t
-						rsp_unmap_bulk_mem_payload;
-		connection_read_datablock(dev_con,
-					  &rsp_unmap_bulk_mem_payload,
-					  sizeof(rsp_unmap_bulk_mem_payload));
 
 		/*
 		 * Unregister mapped bulk buffer from Kernel Module and

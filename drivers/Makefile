@@ -141,8 +141,7 @@ obj-$(CONFIG_VIBETONZ)		+= motor/
 
 obj-$(CONFIG_SENSORS_SSP)	+= sensorhub/
 
-obj-$(CONFIG_MOBICORE_DRIVER)	+= gud/
-
+obj-y				+= gud/
 obj-$(CONFIG_ACCESSORY)		+= accessory/
 obj-$(CONFIG_ICE4_FPGA)		+= ice4_fpga/
 obj-$(CONFIG_IR_REMOCON_MC96)		+= irda/

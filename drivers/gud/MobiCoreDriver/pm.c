@@ -37,7 +37,7 @@ static bool sleep_ready(void)
 	if (!ctx->mcp)
 		return false;
 
-	if (!ctx->mcp->flags.sleep_mode.ReadyToSleep & READY_TO_SLEEP)
+	if (!(ctx->mcp->flags.sleep_mode.ReadyToSleep & READY_TO_SLEEP))
 		return false;
 
 	return true;

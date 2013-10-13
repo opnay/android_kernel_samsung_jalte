@@ -1380,6 +1380,11 @@ config SEC_AVC_LOG
 	depends on SEC_DEBUG
 	help
 	  This option enables additional log buffer for audit log.
+config TIMA_DEBUG_LOG
+	default n
+	bool "Enable TIMA log support" if EMBEDDED
+	help
+	  This option enables TIMA_DEBUG log.
 
 config KOR_B10_DEBUG
 	bool "KOR ASTOOL debug feature"

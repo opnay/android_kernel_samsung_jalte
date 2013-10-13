@@ -92,7 +92,9 @@ size_t connection_read_data_msg(struct connection *conn, void *buffer,
 size_t connection_read_datablock(struct connection *conn, void *buffer,
 				 uint32_t len)
 {
-	return connection_read_data(conn, buffer, len, -1);
+	return connection_read_data(conn, buffer, len, 1000);
+	/* default timeout is -1, which may cause infinite waiting,
+	so that phone cannot boot. */
 }
 
 size_t connection_read_data(struct connection *conn, void *buffer, uint32_t len,
