@@ -985,10 +985,6 @@ static int exynos_min_qos_handler(struct notifier_block *b, unsigned long val, v
 	struct cpufreq_policy *policy;
 	int cpu = 0;
 
-#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
-	mutex_lock(&hotplug_mutex);
-#endif
-
 	freq = exynos_getspeed(cpu);
 	if (freq >= val)
 		goto good;
@@ -1006,12 +1002,6 @@ static int exynos_min_qos_handler(struct notifier_block *b, unsigned long val, v
 	}
 #endif
 
-#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
-	if (!cpumask_empty(&out_cpus)) {
-		hotplug_out = false;
-		__do_hotplug();
-	}
-#endif
 	ret = __cpufreq_driver_target(policy, val, CPUFREQ_RELATION_H);
 
 	cpufreq_cpu_put(policy);
@@ -1020,14 +1010,8 @@ static int exynos_min_qos_handler(struct notifier_block *b, unsigned long val, v
 		goto bad;
 
 good:
-#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
-	mutex_unlock(&hotplug_mutex);
-#endif
 	return NOTIFY_OK;
 bad:
-#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
-	mutex_unlock(&hotplug_mutex);
-#endif
 	return NOTIFY_BAD;
 }
 
@@ -1041,10 +1025,6 @@ static int exynos_max_qos_handler(struct notifier_block *b, unsigned long val, v
 	unsigned long freq;
 	struct cpufreq_policy *policy;
 	int cpu = 0;
-
-#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
-	mutex_lock(&hotplug_mutex);
-#endif
 
 	freq = exynos_getspeed(cpu);
 	if (freq <= val)
@@ -1063,12 +1043,6 @@ static int exynos_max_qos_handler(struct notifier_block *b, unsigned long val, v
 	}
 #endif
 
-#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
-	if (!cpumask_empty(&out_cpus)) {
-		hotplug_out = false;
-		__do_hotplug();
-	}
-#endif
 	ret = __cpufreq_driver_target(policy, val, CPUFREQ_RELATION_H);
 
 	cpufreq_cpu_put(policy);
@@ -1077,14 +1051,8 @@ static int exynos_max_qos_handler(struct notifier_block *b, unsigned long val, v
 		goto bad;
 
 good:
-#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
-	mutex_unlock(&hotplug_mutex);
-#endif
 	return NOTIFY_OK;
 bad:
-#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
-	mutex_unlock(&hotplug_mutex);
-#endif
 	return NOTIFY_BAD;
 }
 
