@@ -276,25 +276,25 @@ extern const struct flite_vb2 flite_vb2_ion;
 #endif
 
 /* inline function for performance-sensitive region */
-static inline void flite_hw_clear_irq(struct flite_dev *dev)
+static void flite_hw_clear_irq(struct flite_dev *dev)
 {
 	u32 cfg = readl(dev->regs + FLITE_REG_CISTATUS);
 	cfg &= ~FLITE_REG_CISTATUS_IRQ_CAM;
 	writel(cfg, dev->regs + FLITE_REG_CISTATUS);
 }
 
-static inline void flite_hw_get_int_src(struct flite_dev *dev, u32 *src)
+static void flite_hw_get_int_src(struct flite_dev *dev, u32 *src)
 {
 	*src = readl(dev->regs + FLITE_REG_CISTATUS);
 	*src &= FLITE_REG_CISTATUS_IRQ_MASK;
 }
 
-static inline void user_to_drv(struct v4l2_ctrl *ctrl, s32 value)
+static void user_to_drv(struct v4l2_ctrl *ctrl, s32 value)
 {
 	ctrl->cur.val = ctrl->val = value;
 }
 
-inline struct flite_fmt const *find_flite_format(struct v4l2_mbus_framefmt *mf);
+struct flite_fmt const *find_flite_format(struct v4l2_mbus_framefmt *mf);
 
 /*
  * Add buf to the capture active buffers queue.
