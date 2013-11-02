@@ -1,14 +1,12 @@
 export ARCH=arm
 export CROSS_COMPILE=/home/diadust/toolchain/android-toolchain-eabi-4.8-13.09/bin/arm-eabi-
-KERNDIR=$CURRENT_DIR
+KERNDIR=/home/diadust/project/jalte
 INITRAM_DIR=$KERNDIR/initramfs
 JOBN=16
-#OutputDirectory
-O=$KERNDIR/out
 
 if [  "$1" == "skt" ]
 then
-INITRAM_ORIG=/home/diadust/android/firmware/skt/MJA
+INITRAM_ORIG=/home/diadust/android/firmware/skt/MJC
 else if [ "$1" == "kt" ]
 then
 INITRAM_ORIG=/home/diadust/android/firmware/kt/MH2
@@ -38,23 +36,23 @@ then
 fi
 
 echo "----------------------------------------------------------------------------------------------------------CLEAN"
-rm -Rf $KERNDIR/bootimg $INITRAM_DIR $O
-mkdir $INITRAM_DIR $O
+rm -Rf $KERNDIR/bootimg $INITRAM_DIR $KERNDIR/out
+mkdir $KERNDIR/bootimg $INITRAM_DIR $KERNDIR/out
 cp -R $INITRAM_ORIG/* $INITRAM_DIR/
-make distclean
 echo "----------------------------------------------------------------------------------------------------------CONFIG"
-make $DEFCONFIGS
-make menuconfig
+make $DEFCONFIGS O=$KERNDIR/out
+make menuconfig O=$KERNDIR/out
 echo "----------------------------------------------------------------------------------------------------------BUILD"
-make -j$JOBN
+make -j$JOBN O=$KERNDIR/out
 echo "----------------------------------------------------------------------------------------------------------MODULES"
+rm $INITRAM_DIR/lib/modules/*
 find . -name "*.ko" -exec echo {} \;
 find . -name "*.ko" -exec cp {} $INITRAM_DIR/lib/modules/  \;
 
 echo "----------------------------------------------------------------------------------------------------------BOOTIMG"
 cd $INITRAM_DIR
-find . | cpio -o -H newc | gzip > $KERNDIR/mkbootimg/ramdisk.cpio.gz
+find . | cpio -o -H newc | gzip > $KERNDIR/bootimg/ramdisk.cpio.gz
 cd $KERNDIR/bootimg
-$KERNDIR/mkbootimg --cmdline console=ttySAC2,115200n8 vmalloc=512M androidboot.console=ttySAC2 --base 0x10000000 --pagesize 2048 --kernel $KERNDIR/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --output "$1"_boot.img
+$KERNDIR/mkbootimg --cmdline console=ttySAC2,115200n8 vmalloc=512M androidboot.console=ttySAC2 --base 0x10000000 --pagesize 2048 --kernel $KERNDIR/out/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --output "$1"_boot.img
 echo " Build Complete "
 
