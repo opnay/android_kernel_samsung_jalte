@@ -2763,6 +2763,7 @@ static int lkmauth(Elf_Ehdr * hdr, int len)
 		}
 		memset(&drv_mchandle, 0, sizeof(struct mc_session_handle));
 		drv_mchandle.device_id = MC_DEVICE_ID_DEFAULT;
+#if 0 // TIMA driver is loaded at mcDriverDaemon
 		mc_ret =
 		    mc_open_session(&drv_mchandle, &drv_uuid, drv_tci, 4096);
 		if (mc_ret != MC_DRV_OK) {
@@ -2772,6 +2773,7 @@ static int lkmauth(Elf_Ehdr * hdr, int len)
 			ret = RET_LKMAUTH_FAIL;
 			goto lkmauth_free_drv_wsm;
 		}
+#endif
 		lkmauth_tl_loaded = 1;	/* both lkmauth tl and tima secure driver is loaded */
 	}
 
@@ -2921,9 +2923,11 @@ static int lkmauth(Elf_Ehdr * hdr, int len)
 	goto lkmauth_ret;
 
 lkmauth_close_drv_session:
+#if 0 // TIMA driver is loaded at mcDriverDaemon
 	if (mc_close_session(&drv_mchandle) != MC_DRV_OK) {
 		pr_err("TIMA: lkmauth--failed to close mobicore session.\n");
 	}
+#endif
 
 lkmauth_free_drv_wsm:
 	if (mc_free_wsm(MC_DEVICE_ID_DEFAULT, drv_tci) != MC_DRV_OK) {

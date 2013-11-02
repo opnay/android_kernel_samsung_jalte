@@ -27,7 +27,7 @@
 static void irda_wake_en(bool onoff)
 {
 	gpio_direction_output(GPIO_IRDA_WAKE, onoff);
-#if defined(CONFIG_V1_3G_REV00)
+#if defined(CONFIG_V1_3G_REV00)  || defined(CONFIG_V1_3G_REV03)
 	gpio_set_value(GPIO_IR_LED_EN, onoff);
 #endif
 	printk(KERN_ERR "%s: %d\n", __func__, onoff);
@@ -46,7 +46,7 @@ static void irda_device_init(void)
 		return;
 	}
 	gpio_direction_output(GPIO_IRDA_WAKE, 0);
-#if defined(CONFIG_V1_3G_REV00)
+#if defined(CONFIG_V1_3G_REV00)  || defined(CONFIG_V1_3G_REV03)
 	ret = gpio_request(GPIO_IR_LED_EN, "ir_led_en");
 	if (ret) {
 		printk(KERN_ERR "%s: gpio_request fail[%d], ret = %d\n",

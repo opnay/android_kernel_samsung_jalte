@@ -89,8 +89,8 @@ static int __init sec_log_setup(char *str)
 		       "at base 0x%lx - 8\n", __func__, size, base);
 		goto out;
 	}
-#endif	
-	
+#endif
+
 #ifdef CONFIG_SEC_LOG_NONCACHED
 	log_buf_iodesc[0].pfn = __phys_to_pfn((unsigned long)base - 0x100000);
 	log_buf_iodesc[0].length = (unsigned long)(size + 0x100000);

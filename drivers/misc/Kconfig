@@ -565,9 +565,9 @@ config STMPE811_ADC
 
 config TIMA_LOG
 	tristate "Support for dumping TIMA log"
-	default m
+	default y
 	help
-	  This option enables support for dumping TIMA log
+	  This option enables support for dumping TIMA log.
 	 
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"

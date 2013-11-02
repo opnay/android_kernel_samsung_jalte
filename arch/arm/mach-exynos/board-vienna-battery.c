@@ -50,6 +50,10 @@ bool is_wpc_cable_attached = false;
 unsigned int lpcharge;
 EXPORT_SYMBOL(lpcharge);
 
+#ifdef CONFIG_MFD_MAX77693
+extern bool is_jig_attached;
+#endif
+
 static sec_charging_current_t charging_current_table[] = {
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
@@ -198,17 +202,17 @@ static void sec_bat_initial_check(void)
 
 static bool sec_bat_check_jig_status(void)
 {
-	if (system_rev < 0x03) {
-		if (gpio_get_value_cansleep(GPIO_JIG_ON_18))/*IF_CON_SENSE*/
-			return true;
-		else
-			return false;
-	} else {
-		if (current_cable_type == POWER_SUPPLY_TYPE_UARTOFF)
-			return true;
-		else
-			return false;
-	}
+#if defined(CONFIG_MFD_MAX77693)
+	if (is_jig_attached || gpio_get_value_cansleep(GPIO_JIG_ON_18))
+		return true;
+	else
+		return false;
+#else/*system_rev < 0x03*/
+	if (gpio_get_value_cansleep(GPIO_JIG_ON_18))/*IF_CON_SENSE*/
+		return true;
+	else
+		return false;
+#endif
 }
 
 static bool sec_bat_switch_to_check(void)
@@ -707,7 +711,7 @@ struct platform_device sec_device_fg = {
 	.dev.platform_data = &gpio_i2c_data_fg,
 };
 
-#if defined(CONFIG_CHARGER_BQ24260) || defined(CONFIG_CHARGER_SMB347)//dj
+#if defined(CONFIG_CHARGER_BQ24260) || defined(CONFIG_CHARGER_SMB347)
 static struct i2c_board_info sec_brdinfo_chg[] __initdata = {
 	{
 		I2C_BOARD_INFO("sec-charger",
@@ -726,7 +730,7 @@ static struct i2c_board_info sec_brdinfo_fg[] __initdata = {
 };
 
 static struct platform_device *vienna_battery_devices[] __initdata = {
-#if defined(CONFIG_CHARGER_BQ24260) || defined(CONFIG_CHARGER_SMB347)//dj
+#if defined(CONFIG_CHARGER_BQ24260) || defined(CONFIG_CHARGER_SMB347)
 	&sec_device_chg,
 #endif
 	&sec_device_fg,
@@ -789,7 +793,7 @@ void __init exynos5_vienna_battery_init(void)
 		vienna_battery_devices,
 		ARRAY_SIZE(vienna_battery_devices));
 
-#if defined(CONFIG_CHARGER_BQ24260) || defined(CONFIG_CHARGER_SMB347)//dj
+#if defined(CONFIG_CHARGER_BQ24260) || defined(CONFIG_CHARGER_SMB347)
 	i2c_register_board_info(SEC_CHG_I2C_ID, sec_brdinfo_chg,
 			ARRAY_SIZE(sec_brdinfo_chg));
 #endif
