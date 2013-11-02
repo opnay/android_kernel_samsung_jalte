@@ -53,6 +53,6 @@ echo "--------------------------------------------------------------------------
 cd $INITRAM_DIR
 find . | cpio -o -H newc | gzip > $KERNDIR/bootimg/ramdisk.cpio.gz
 cd $KERNDIR/bootimg
-$KERNDIR/mkbootimg --cmdline console=ttySAC2,115200n8 vmalloc=512M androidboot.console=ttySAC2 --base 0x10000000 --pagesize 2048 --kernel $KERNDIR/out/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --output "$1"_boot.img
+$KERNDIR/mkbootimg --base 0x10000000 --pagesize 2048 --kernel $KERNDIR/out/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --output "$1"_boot.img
 echo " Build Complete "
 
