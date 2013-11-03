@@ -4,7 +4,7 @@ KERNDIR=/home/diadust/project/jalte
 INITRAM_DIR=$KERNDIR/initramfs
 JOBN=16
 
-if [  "$1" == "skt" ]
+if [ "$1" == "skt" ]
 then
 INITRAM_ORIG=/home/diadust/android/firmware/skt/MJC
 else if [ "$1" == "kt" ]
@@ -40,8 +40,7 @@ rm -Rf $KERNDIR/bootimg $INITRAM_DIR $KERNDIR/out
 mkdir $KERNDIR/bootimg $INITRAM_DIR $KERNDIR/out
 cp -R $INITRAM_ORIG/* $INITRAM_DIR/
 echo "----------------------------------------------------------------------------------------------------------CONFIG"
-make $DEFCONFIGS O=$KERNDIR/out
-make menuconfig O=$KERNDIR/out
+make $DEFCONFIGS menuconfig O=$KERNDIR/out
 echo "----------------------------------------------------------------------------------------------------------BUILD"
 make -j$JOBN O=$KERNDIR/out
 echo "----------------------------------------------------------------------------------------------------------MODULES"
