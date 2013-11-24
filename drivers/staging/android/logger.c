@@ -464,14 +464,14 @@ static ssize_t do_write_log_from_user(struct logger_log *log,
 ssize_t logger_aio_write(struct kiocb *iocb, const struct iovec *iov,
 			 unsigned long nr_segs, loff_t ppos)
 {
-	if(!log_enabled)
-		return 0;
-
 	struct logger_log *log = file_get_log(iocb->ki_filp);
 	size_t orig = log->w_off;
 	struct logger_entry header;
 	struct timespec now;
 	ssize_t ret = 0;
+
+	if(!log_enabled)
+		return 0;
 
 	now = current_kernel_time();
 
