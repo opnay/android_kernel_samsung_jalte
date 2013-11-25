@@ -39,7 +39,9 @@ function build_defconfig() {
 
 function build_initramfs() {
 	# copy original initramfs directory to kernel directory
-	cp $1 $INITRAM_DIR
+	cp -r $1/* $INITRAM_DIR/
+	# remove backup files
+	find $INITRAM_DIR -name "*~" -exec rm -rf {} \;
 
 	# find and copy modulized files
 	for module_file in `find $KERNDIR_OUT -name "*.ko"`
@@ -54,7 +56,7 @@ function build_initramfs() {
 
 function build_bootimg() {
 	cd $KERNDIR/out_bootimg
-	$KERNDIR/mkbootimg --base 0x10000000 -pagesize 2048 --kernel $KERNDIR_OUT/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --output "$1"_boot.img
+	$KERNDIR/mkbootimg --base 0x10000000 --pagesize 2048 --kernel $KERNDIR_OUT/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --output "$1"_boot.img
 }
 
 if [ "$1" != "" -o "$2" != "" ]
