@@ -25,12 +25,8 @@ function echo_notify() {
 #Build function
 function build_clean() {
 	#Cean directory
-	if [ -e $KERNDIR/out_bootimg -o -e $KERNDIR_OUT -o -e $INITRAM_DIR ]
-	then
-		rm -rf $KERNDIR/out_bootimg/* $KERNDIR_OUT/* $INITRAM_DIR/*
-	else
-		mkdir $KERNDIR/out_bootimg $KERNDIR_OUT $INITRAM_DIR
-	fi
+	rm -rf $KERNDIR/out_bootimg $KERNDIR_OUT $INITRAM_DIR
+	mkdir $KERNDIR/out_bootimg $KERNDIR_OUT $INITRAM_DIR
 
 	#Clean objects
 	#is not used
@@ -41,13 +37,10 @@ function build_defconfig() {
 	make $1 menuconfig O=$KERNDIR_OUT
 }
 
-function build() {
-	make -j$jobn O=$KERNDIR_OUT
-}
-
 function build_initramfs() {
 	# find and copy modulized files
-	for module_file in find $KERNDIR_OUT -name "*.ko"; do
+	for module_file in `find $KERNDIR_OUT -name "*.ko"`
+	do
 		echo $module_file
 		cp $module_file $INITRAM_DIR/lib/modules/
 	done
@@ -91,10 +84,21 @@ build_clean
 echo_notify "----------------------------------------------------------------------------------------------------------CONFIG"
 build_defconfig $defconfig
 echo_notify "----------------------------------------------------------------------------------------------------------BUILD"
-build
+make -j$jobn O=$KERNDIR_OUT
+
+if [ ! -e $KERNDIR_OUT/arch/arm/boot/zImage ]
+then
+	echo_error "Error occured"
+	exit
+fi
 echo_notify "----------------------------------------------------------------------------------------------------------INITRAMFS"
 build_initramfs
 echo_notify "----------------------------------------------------------------------------------------------------------BOOTIMG"
 build_bootimg "$1"
-echo_info "Build Complete"
-
+if [ -e $KERNDIR/out_bootimg/"$1"_boot.img ]
+then
+	echo_info "Build Complete"
+else
+	echo_error "Couldn't make boot.img"
+	exit
+fi
