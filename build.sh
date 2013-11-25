@@ -38,6 +38,9 @@ function build_defconfig() {
 }
 
 function build_initramfs() {
+	# copy original initramfs directory to kernel directory
+	cp $1 $INITRAM_DIR
+
 	# find and copy modulized files
 	for module_file in `find $KERNDIR_OUT -name "*.ko"`
 	do
@@ -92,7 +95,7 @@ then
 	exit
 fi
 echo_notify "----------------------------------------------------------------------------------------------------------INITRAMFS"
-build_initramfs
+build_initramfs $INITRAM_ORIG
 echo_notify "----------------------------------------------------------------------------------------------------------BOOTIMG"
 build_bootimg "$1"
 if [ -e $KERNDIR/out_bootimg/"$1"_boot.img ]
