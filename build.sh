@@ -1,6 +1,7 @@
 export ARCH=arm
 export CROSS_COMPILE=/home/diadust/toolchain/android-toolchain-eabi-4.8-13.09/bin/arm-eabi-
-KERNDIR=/home/diadust/project/jalte
+#get kernel directory(current directory) from terminal
+KERNDIR=`pwd`
 KERNDIR_OUT=$KERNDIR/out
 INITRAM_DIR=$KERNDIR/initramfs
 jobn=16
