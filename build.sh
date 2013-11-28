@@ -1,9 +1,9 @@
 export ARCH=arm
-export CROSS_COMPILE=/home/diadust/toolchain/android-toolchain-eabi-4.8-13.09/bin/arm-eabi-
+export CROSS_COMPILE=/home/op_nay/Android/toolchain/android-toolchain-eabi-4.8-13.11/bin/arm-eabi-
 #get kernel directory(current directory) from terminal
 KERNDIR=`pwd`
 KERNDIR_OUT=$KERNDIR/out
-INITRAM_DIR=$KERNDIR/initramfs
+INITRAM_DIR=$KERNDIR_OUT/initramfs
 jobn=16
 
 #Set Color
@@ -26,7 +26,7 @@ function echo_notify() {
 #Build function
 function build_clean() {
 	#Cean directory
-	rm -rf $KERNDIR/out_bootimg $KERNDIR_OUT $INITRAM_DIR
+	rm -rf $KERNDIR/out_bootimg $KERNDIR_OUT
 	mkdir $KERNDIR/out_bootimg $KERNDIR_OUT $INITRAM_DIR
 
 	#Clean objects
@@ -60,15 +60,18 @@ function build_bootimg() {
 	$KERNDIR/mkbootimg --base 0x10000000 --pagesize 2048 --kernel $KERNDIR_OUT/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --output "$1"_boot.img
 }
 
-if [ "$1" != "" -o "$2" != "" ]
+if [ "$1" == "" -o "$2" == "" ]
 then
-	INITRAM_ORIG=/home/diadust/android/firmware/$1/$2
-else
-	echo_error "build.sh [ skt / kt / lg ] [ PDA Version ]"
+	echo_error "build.sh [ skt / kt / lg ] [ Your initram directory ]"
+	echo_error "Initramfs directory will be set \"/<Your initram>/<skt / kt / lg>\""
+	echo_info "\nexample: build.sh skt /home/test/initram"
+	echo_info "will set /home/test/initram/skt"
 	exit
+else
+	INITRAM_ORIG="$2/$1"
 fi
 
-echo_info "Check your Init Directory :" "$INITRAM_ORIG"
+echo_info "Check your Init Directory : $INITRAM_ORIG"
 if [ -e $INITRAM_ORIG ]
 then
         echo_info "Ramdisk is exist"
@@ -78,7 +81,7 @@ else
 fi
 
 defconfig=immortal_"$1"_defconfig
-if [[ ! -e "$KERNDIR/arch/arm/configs/$defconfig" ]]
+if [ ! -e "$KERNDIR/arch/arm/configs/$defconfig" ]
 then
         echo_error "Configuration file $defconfig don't exists"
         exit 1
