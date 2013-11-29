@@ -245,8 +245,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer
-HOSTCXXFLAGS = -Ofast
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer
+HOSTCXXFLAGS = -O3
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -368,7 +368,6 @@ KBUILD_CFLAGS   := -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security -Wno-unused \
-		   -Wno-maybe-uninitialized \
 		   -fno-delete-null-pointer-checks \
 		   -fno-schedule-insns2
 KBUILD_AFLAGS_KERNEL :=
