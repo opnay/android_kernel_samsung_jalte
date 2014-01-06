@@ -3,6 +3,7 @@ export CROSS_COMPILE=/home/op_nay/Android/toolchain/android-toolchain-eabi-4.8-1
 #get kernel directory(current directory) from terminal
 KERNDIR=`pwd`
 KERNDIR_OUT=$KERNDIR/out
+INITRAM_ORIG=/home/op_nay/Android/source/initram
 INITRAM_DIR=$KERNDIR_OUT/initramfs
 jobn=16
 
@@ -60,18 +61,24 @@ function build_bootimg() {
 	$KERNDIR/mkbootimg --base 0x10000000 --pagesize 2048 --kernel $KERNDIR_OUT/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --output "$1"_boot.img
 }
 
-if [ "$1" == "" -o "$2" == "" ]
+if [ "$1" == "" ]
 then
-	echo_error "build.sh [ skt / kt / lg ] [ Your initram directory ]"
-	echo_error "Initramfs directory will be set \"/<Your initram>/<skt / kt / lg>\""
-	echo_info "\nexample: build.sh skt /home/test/initram"
-	echo_info "will set /home/test/initram/skt"
+	echo_error "build.sh [ skt / kt / lg ]"
+	echo_error "Initramfs directory will be set \"$INITRAM_ORIG/<skt / kt / lg>\""
 	exit
 else
-	INITRAM_ORIG="$2/$1"
+	INITRAM_ORIG="$INITRAM_ORIG/$1"
 fi
+DEFCONFIG=immortal_"$1"_defconfig
 
-echo_info "Check your Init Directory : $INITRAM_ORIG"
+echo_notify "Check Settings"
+echo_info "ARCH : " $ARCH
+echo_info "Kernel Directory : " $KERNDIR
+echo_info "Tool Chain : " $CROSS_COMPILE
+echo_info "Initramfs Source : " $INITRAM_ORIG
+echo_info "Defconfig : " $DEFCONFIG
+
+
 if [ -e $INITRAM_ORIG ]
 then
         echo_info "Ramdisk is exist"
@@ -80,10 +87,9 @@ else
         exit 1
 fi
 
-defconfig=immortal_"$1"_defconfig
-if [ ! -e "$KERNDIR/arch/arm/configs/$defconfig" ]
+if [ ! -e "$KERNDIR/arch/arm/configs/$DEFCONFIG" ]
 then
-        echo_error "Configuration file $defconfig don't exists"
+        echo_error "Configuration file $DEFCONFIG don't exists"
         exit 1
 fi
 
