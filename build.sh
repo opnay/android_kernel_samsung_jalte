@@ -1,5 +1,5 @@
 export ARCH=arm
-export CROSS_COMPILE=/home/op_nay/Android/toolchain/android-toolchain-eabi-4.8-13.11/bin/arm-eabi-
+export CROSS_COMPILE=/home/op_nay/Android/toolchain/android-toolchain-eabi-4.8-13.12/bin/arm-eabi-
 #get kernel directory(current directory) from terminal
 KERNDIR=`pwd`
 KERNDIR_OUT=$KERNDIR/out
@@ -97,7 +97,7 @@ fi
 echo_notify "----------------------------------------------------------------------------------------------------------CLEAN"
 build_clean
 echo_notify "----------------------------------------------------------------------------------------------------------CONFIG"
-build_defconfig $defconfig
+build_defconfig $DEFCONFIG
 echo_notify "----------------------------------------------------------------------------------------------------------BUILD"
 make -j$jobn O=$KERNDIR_OUT
 
