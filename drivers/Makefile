@@ -150,5 +150,3 @@ obj-$(CONFIG_ICE4_FPGA)		+= ice4_fpga/
 obj-$(CONFIG_IR_REMOCON_MC96)		+= irda/
 
 obj-$(CONFIG_FELICA) += felica/
-
-obj-y   += exfat/
