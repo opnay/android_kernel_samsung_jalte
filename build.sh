@@ -49,6 +49,7 @@ function build_initramfs() {
 	for module_file in `find $KERNDIR_OUT -name "*.ko"`
 	do
 		echo $module_file
+		"$CROSS_COMPILE"strip --strip-unneeded $module_file
 		cp $module_file $INITRAM_DIR/lib/modules/
 	done
 	# make initramfs file
