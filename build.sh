@@ -1,9 +1,9 @@
 export ARCH=arm
-export CROSS_COMPILE=/home/op_nay/Android/toolchain/android-toolchain-eabi-4.8-13.12/bin/arm-eabi-
+export CROSS_COMPILE=/home/op_nay/toolchain/android-toolchain-eabi-4.8-13.12/bin/arm-eabi-
 #get kernel directory(current directory) from terminal
 KERNDIR=`pwd`
 KERNDIR_OUT=$KERNDIR/out
-INITRAM_ORIG=/home/op_nay/Android/source/initram
+INITRAM_ORIG=/home/op_nay/android/initram
 INITRAM_DIR=$KERNDIR_OUT/initramfs
 jobn=16
 
@@ -59,7 +59,7 @@ function build_initramfs() {
 
 function build_bootimg() {
 	cd $KERNDIR/out_bootimg
-	$KERNDIR/mkbootimg --base 0x10000000 --pagesize 2048 --kernel $KERNDIR_OUT/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --output "$1"_boot.img
+	$KERNDIR/mkbootimg --base 0x10000000 --pagesize 2048 --ramdisk_offset 0x01000000 --kernel $KERNDIR_OUT/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz -o "$1"_boot.img
 }
 
 if [ "$1" == "" ]
@@ -107,6 +107,7 @@ then
 	echo_error "Error occured"
 	exit
 fi
+
 echo_notify "----------------------------------------------------------------------------------------------------------INITRAMFS"
 build_initramfs $INITRAM_ORIG
 echo_notify "----------------------------------------------------------------------------------------------------------BOOTIMG"
