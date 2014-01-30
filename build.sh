@@ -58,8 +58,7 @@ function build_initramfs() {
 }
 
 function build_bootimg() {
-	cd $KERNDIR/out_bootimg
-	$KERNDIR/mkbootimg --base 0x10000000 --pagesize 2048 --ramdisk_offset 0x01000000 --kernel $KERNDIR_OUT/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz -o "$1"_boot.img
+	$KERNDIR/mkbootimg --base 0x10000000 --pagesize 2048 --ramdisk_offset 0x01000000 --kernel $KERNDIR_OUT/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz -o boot.img
 }
 
 if [ "$1" == "" ]
@@ -101,21 +100,22 @@ echo_notify "-------------------------------------------------------------------
 build_defconfig $DEFCONFIG
 echo_notify "----------------------------------------------------------------------------------------------------------BUILD"
 make -j$jobn O=$KERNDIR_OUT
-
 if [ ! -e $KERNDIR_OUT/arch/arm/boot/zImage ]
 then
 	echo_error "Error occured"
 	exit
 fi
-
 echo_notify "----------------------------------------------------------------------------------------------------------INITRAMFS"
 build_initramfs $INITRAM_ORIG
 echo_notify "----------------------------------------------------------------------------------------------------------BOOTIMG"
-build_bootimg "$1"
-if [ -e $KERNDIR/out_bootimg/"$1"_boot.img ]
+cd $KERNDIR/out_bootimg
+build_bootimg
+if [ -e $KERNDIR/out_bootimg/boot.img ]
 then
 	echo_info "Build Complete"
 else
 	echo_error "Couldn't make boot.img"
 	exit
 fi
+
+$KERNDIR/build_md5.sh ImmortalKernel_"$1" boot.img
