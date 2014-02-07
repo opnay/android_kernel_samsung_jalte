@@ -1,5 +1,5 @@
 export ARCH=arm
-export CROSS_COMPILE=/home/op_nay/toolchain/android-toolchain-eabi-4.8-13.12/bin/arm-eabi-
+export CROSS_COMPILE=/home/op_nay/toolchain/android-toolchain-eabi-4.8-14.01/bin/arm-eabi-
 #get kernel directory(current directory) from terminal
 KERNDIR=`pwd`
 KERNDIR_OUT=$KERNDIR/out
@@ -98,5 +98,3 @@ else
 	echo_error "Couldn't make boot.img"
 	exit
 fi
-
-$KERNDIR/build_md5.sh ImmortalKernel_"$1" boot.img
