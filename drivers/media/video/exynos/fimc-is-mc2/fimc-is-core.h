@@ -149,7 +149,7 @@
 #define DEBUG_INSTANCE 0xF
 #define DEBUG_DUMP_FIRMWARE
 #ifndef CONFIG_TARGET_LOCALE_KOR
-#define BUG_ON_ENABLE
+/* #define BUG_ON_ENABLE */
 #endif
 /* #define FIXED_FPS_DEBUG */
 #define FIXED_FPS_VALUE 24
@@ -165,7 +165,7 @@
 /* #define PRINT_CAPABILITY */
 /* #define PRINT_BUFADDR */
 /* #define PRINT_DZOOM */
-#define ISDRV_VERSION 232
+#define ISDRV_VERSION 234
 
 #if (defined(BAYER_CROP_DZOOM) && defined(SCALER_CROP_DZOOM))
 #error BAYER_CROP_DZOOM and SCALER_CROP_DZOOM can''t be enable together
