@@ -336,24 +336,12 @@ void __init atmel_tsp_init(void)
 
 static struct wacom_g5_callbacks *wacom_callbacks;
 
-#if defined(CONFIG_MACH_KONA) || defined(CONFIG_MACH_V1)
-#define GPIO_WACOM_LDO_EN	GPIO_PEN_LDO_EN
-#define GPIO_WACOM_SENSE	GPIO_PEN_DETECT
-#endif
-
 static int wacom_early_suspend_hw(void)
 {
-#if !(defined(CONFIG_MACH_KONA) || defined(CONFIG_MACH_V1))
+#ifdef GPIO_PEN_RESET_N
 	gpio_set_value(GPIO_PEN_RESET_N, 0);
 #endif
-#if defined(CONFIG_MACH_T0_EUR_OPEN) || defined(CONFIG_MACH_T0_CHN_OPEN)
-	if (system_rev >= 10)
-		gpio_direction_output(GPIO_WACOM_LDO_EN, 0);
-	else
-		gpio_direction_output(GPIO_WACOM_LDO_EN, 1);
-#else
-	gpio_direction_output(GPIO_WACOM_LDO_EN, 0);
-#endif
+	gpio_direction_output(GPIO_PEN_LDO_EN, 0);
 	/* Set GPIO_PEN_IRQ to pull-up to reduce leakage */
 	s3c_gpio_setpull(GPIO_PEN_IRQ, S3C_GPIO_PULL_UP);
 
@@ -364,10 +352,10 @@ static int wacom_late_resume_hw(void)
 {
 	gpio_direction_output(GPIO_PEN_PDCT, 1);
 	s3c_gpio_setpull(GPIO_PEN_IRQ, S3C_GPIO_PULL_NONE);
-	gpio_direction_output(GPIO_WACOM_LDO_EN, 1);
+	gpio_direction_output(GPIO_PEN_LDO_EN, 1);
 	msleep(100);
 	gpio_direction_input(GPIO_PEN_PDCT);
-#if !(defined(CONFIG_MACH_KONA) || defined(CONFIG_MACH_V1))
+#ifdef GPIO_PEN_RESET_N
 	gpio_set_value(GPIO_PEN_RESET_N, 1);
 #endif
 	return 0;
@@ -375,17 +363,10 @@ static int wacom_late_resume_hw(void)
 
 static int wacom_suspend_hw(void)
 {
-#if !(defined(CONFIG_MACH_KONA) || defined(CONFIG_MACH_V1))
+#ifdef GPIO_PEN_RESET_N
 	gpio_set_value(GPIO_PEN_RESET_N, 0);
 #endif
-#if defined(CONFIG_MACH_T0_EUR_OPEN) || defined(CONFIG_MACH_T0_CHN_OPEN)
-	if (system_rev >= 10)
-		gpio_direction_output(GPIO_WACOM_LDO_EN, 0);
-	else
-		gpio_direction_output(GPIO_WACOM_LDO_EN, 1);
-#else
-	gpio_direction_output(GPIO_WACOM_LDO_EN, 0);
-#endif
+	gpio_direction_output(GPIO_PEN_LDO_EN, 0);
 	/* Set GPIO_PEN_IRQ to pull-up to reduce leakage */
 	s3c_gpio_setpull(GPIO_PEN_IRQ, S3C_GPIO_PULL_UP);
 	return 0;
@@ -395,10 +376,10 @@ static int wacom_resume_hw(void)
 {
 	gpio_direction_output(GPIO_PEN_PDCT, 1);
 	s3c_gpio_setpull(GPIO_PEN_IRQ, S3C_GPIO_PULL_NONE);
-	gpio_direction_output(GPIO_WACOM_LDO_EN, 1);
+	gpio_direction_output(GPIO_PEN_LDO_EN, 1);
 	/*msleep(100);*/
 	gpio_direction_input(GPIO_PEN_PDCT);
-#if !(defined(CONFIG_MACH_KONA) || defined(CONFIG_MACH_V1))
+#ifdef GPIO_PEN_RESET_N
 	gpio_set_value(GPIO_PEN_RESET_N, 1);
 #endif
 	return 0;
@@ -437,13 +418,6 @@ static struct wacom_g5_platform_data wacom_platform_data = {
 	.min_pressure = 0,
 	.max_pressure = WACOM_PRESSURE_MAX,
 	.gpio_pendct = GPIO_PEN_PDCT,
-#ifdef WACOM_STATE_CHECK
-#if defined(CONFIG_TARGET_LOCALE_KOR)
-#if defined(CONFIG_MACH_T0) && defined(CONFIG_TDMB_ANT_DET)
-	.gpio_esd_check = GPIO_TDMB_ANT_DET_REV08,
-#endif
-#endif
-#endif
 	/*.init_platform_hw = wacom_init,*/
 	/*      .exit_platform_hw =,    */
 	.suspend_platform_hw = wacom_suspend_hw,
@@ -454,11 +428,9 @@ static struct wacom_g5_platform_data wacom_platform_data = {
 #endif
 	.reset_platform_hw = wacom_reset_hw,
 	.register_cb = wacom_register_callbacks,
-#ifdef WACOM_HAVE_FWE_PIN
 	.compulsory_flash_mode = wacom_compulsory_flash_mode,
-#endif
 #ifdef WACOM_PEN_DETECT
-	.gpio_pen_insert = GPIO_WACOM_SENSE,
+	.gpio_pen_insert = GPIO_PEN_DETECT,
 #endif
 };
 
@@ -529,7 +501,7 @@ void __init wacom_init(void)
 	s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(0xf));
 
 	/*LDO_EN*/
-	gpio = GPIO_WACOM_LDO_EN;
+	gpio = GPIO_PEN_LDO_EN;
 	ret = gpio_request(gpio, "PEN_LDO_EN");
 	if (ret) {
 		printk(KERN_ERR "epen:failed to request PEN_LDO_EN.(%d)\n",
@@ -539,7 +511,7 @@ void __init wacom_init(void)
 	s3c_gpio_cfgpin(gpio, S3C_GPIO_OUTPUT);
 	gpio_direction_output(gpio, 0);
 
-#if defined (CONFIG_V1_3G_REV00) || defined(CONFIG_V1_WIFI_REV00)
+#if defined (CONFIG_V1_3G_REV00) || defined(CONFIG_V1_WIFI_REV00)  || defined(CONFIG_V1_3G_REV03)
 	WACOM_SET_I2C(3, NULL, wacom_i2c_devs);
 #else
 	WACOM_SET_I2C(2, NULL, wacom_i2c_devs);

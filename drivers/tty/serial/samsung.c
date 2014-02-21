@@ -607,8 +607,11 @@ rx_use_cpu:
 
 			if (uerstat & S3C2410_UERSTAT_FRAME)
 				port->icount.frame++;
-			if (uerstat & S3C2410_UERSTAT_OVERRUN)
+			if (uerstat & S3C2410_UERSTAT_OVERRUN) {
 				port->icount.overrun++;
+				pr_err("%s: port %d overrun --- count=%d\n", 
+					__func__, port->line, port->icount.overrun);
+			}
 
 			uerstat &= port->read_status_mask;
 

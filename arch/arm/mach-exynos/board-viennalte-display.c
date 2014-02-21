@@ -204,6 +204,8 @@ struct platform_device platform_s6tndr3x_i2c = {
 #endif
 
 
+int resume_decay_bl;
+int lcd_on;
 static void vienna_lcd_on(void)
 {
 	s64 us = ktime_us_delta(lcd_on_time, ktime_get_boottime());
@@ -232,8 +234,17 @@ static void vienna_backlight_on(void)
 
 	printk(KERN_INFO "%s was called\n", __func__);
 #ifdef CONFIG_TCON_S6TNDR3X
-	if (get_lcd_type() == LCD_TYPE_PENTILE)
+	if (get_lcd_type() == LCD_TYPE_PENTILE) {
 		s6tndr3x_tune(1);
+#ifdef IMPROVE_BL_FLICKER
+		if (resume_decay_bl) {
+			ret = s6tndr3x_tune_decay(GET_RATIO_ROUND(resume_decay_bl, MAX_BRIGHTNESS));
+			if (ret)
+				pr_err("[S6TNDR3-TON] failed to tune decay value.. \n");
+			resume_decay_bl = 0;
+		}
+#endif
+	}
 #endif
 	if (get_bl_type() == BLIC_LP8556) {
 		gpio_set_value(GPIO_LED_BL_1, 1);
@@ -244,6 +255,8 @@ static void vienna_backlight_on(void)
 	ret = lp8556_init_registers();
 	if (ret)
 		printk(KERN_ERR "[DISPLAY:ERR] lp8556_init error(%d)\n", ret);
+
+	lcd_on = 1;
 }
 
 static void vienna_backlight_off(void)
@@ -256,6 +269,7 @@ static void vienna_backlight_off(void)
 	if (get_lcd_type() == LCD_TYPE_PENTILE)
 		s6tndr3x_tune(0);
 #endif
+	lcd_on = 0;
 }
 
 static void vienna_lcd_set_power(struct plat_lcd_data *pd,
@@ -409,8 +423,10 @@ static int vienna_bl_notify(struct device *dev, int brightness)
 	bl = brightness_table[brightness];
 
 #ifdef IMPROVE_BL_FLICKER
-	if (get_lcd_type() == LCD_TYPE_PENTILE)
+	if ((get_lcd_type() == LCD_TYPE_PENTILE) && (lcd_on == 1))
 		ret = s6tndr3x_tune_decay(GET_RATIO_ROUND(bl, MAX_BRIGHTNESS));
+	else
+		resume_decay_bl = bl;
 #endif
 	return bl;
 }

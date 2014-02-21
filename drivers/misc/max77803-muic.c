@@ -2658,7 +2658,7 @@ static int max77803_muic_handle_detach(struct max77803_muic_info *info, int irq)
 			info->cable_type = CABLE_TYPE_DESKDOCK_MUIC;
 			break;
 		}
-		if (mdata->dock_cb)
+		if (info->adc != ADC_DESKDOCK && mdata->dock_cb)
 			mdata->dock_cb(MAX77803_MUIC_DOCK_DETACHED);
 		break;
 	case CABLE_TYPE_CARDOCK_MUIC:
@@ -2670,7 +2670,7 @@ static int max77803_muic_handle_detach(struct max77803_muic_info *info, int irq)
 			info->cable_type = CABLE_TYPE_CARDOCK_MUIC;
 			break;
 		}
-		if (mdata->dock_cb)
+		if (info->adc != ADC_DESKDOCK && mdata->dock_cb)
 			mdata->dock_cb(MAX77803_MUIC_DOCK_DETACHED);
 		break;
 	case CABLE_TYPE_TA_MUIC:
@@ -2854,8 +2854,7 @@ static int max77803_muic_filter_dev(struct max77803_muic_info *info,
 				__func__, adc);
 		intr = INT_DETACH;
 		break;
-	case (ADC_CEA936ATYPE1_CHG) ... (ADC_DESKDOCK - 1):
-	case (ADC_CEA936ATYPE2_CHG) ... (ADC_JIG_UART_ON):
+	case (ADC_CEA936ATYPE1_CHG) ... (ADC_JIG_UART_ON):
 		if(info->cable_type != CABLE_TYPE_NONE_MUIC
 			&& chgtyp == CHGTYP_NO_VOLTAGE
 			&& info->chgtyp != chgtyp) {
@@ -3403,6 +3402,7 @@ static int __devinit max77803_muic_probe(struct platform_device *pdev)
 	struct max77803_muic_info *info;
 	struct input_dev *input;
 	int ret;
+	u8 val;
 
 	pr_info("func:%s\n", __func__);
 
@@ -3604,6 +3604,10 @@ static int __devinit max77803_muic_probe(struct platform_device *pdev)
 	INIT_DELAYED_WORK(&info->mhl_work, max77803_muic_mhl_detect);
 	schedule_delayed_work(&info->mhl_work, msecs_to_jiffies(25000));
 #endif
+
+	val = (0 << CTRL3_JIGSET_SHIFT) | (0 << CTRL3_BOOTSET_SHIFT);
+	ret = max77803_update_reg(info->muic, MAX77803_MUIC_REG_CTRL3, val,
+			CTRL3_JIGSET_MASK | CTRL3_BOOTSET_MASK);
 
 	return 0;
 
