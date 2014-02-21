@@ -2854,7 +2854,8 @@ static int max77803_muic_filter_dev(struct max77803_muic_info *info,
 				__func__, adc);
 		intr = INT_DETACH;
 		break;
-	case (ADC_CEA936ATYPE1_CHG) ... (ADC_JIG_UART_ON):
+	case (ADC_CEA936ATYPE1_CHG) ... (ADC_DESKDOCK - 1):
+	case (ADC_CEA936ATYPE2_CHG) ... (ADC_JIG_UART_ON):
 		if(info->cable_type != CABLE_TYPE_NONE_MUIC
 			&& chgtyp == CHGTYP_NO_VOLTAGE
 			&& info->chgtyp != chgtyp) {
