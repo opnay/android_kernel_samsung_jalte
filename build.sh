@@ -5,6 +5,7 @@ KERNDIR=`pwd`
 KERNDIR_OUT=$KERNDIR/out
 INITRAM_ORIG=/home/op_nay/android/initram
 INITRAM_DIR=$KERNDIR_OUT/initramfs
+DEVICE_CARRIER=$1
 jobn=16
 
 #Set Color
@@ -24,17 +25,18 @@ function echo_notify() {
 	echo -e "\e[33m$*\e[00m"
 }
 
-if [ "$1" == "" ]
+if [ "$DEVICE_CARRIER" == "" ]
 then
 	echo_error "build.sh [ skt / kt / lg ]"
 	echo_error "Initramfs directory will be set \"$INITRAM_ORIG/<skt / kt / lg>\""
 	exit
 else
-	INITRAM_ORIG="$INITRAM_ORIG/$1"
+	INITRAM_ORIG="$INITRAM_ORIG/$DEVICE_CARRIER"
 fi
-DEFCONFIG=immortal_"$1"_defconfig
+DEFCONFIG=immortal_"$DEVICE_CARRIER"_defconfig
 
 echo_notify "Check Settings"
+echo_info "Carrier : " $DEVICE_CARRIER
 echo_info "ARCH : " $ARCH
 echo_info "Kernel Directory : " $KERNDIR
 echo_info "Tool Chain : " $CROSS_COMPILE
@@ -98,3 +100,10 @@ else
 	echo_error "Couldn't make boot.img"
 	exit
 fi
+
+if [ "$DEVICE_CARRIER" = "lg" ]
+then
+	DEVICE_CARRIER=U
+fi
+
+$KERNDIR/build_md5.sh ImmortalKernel-140219-`echo $DEVICE_CARRIER | tr -s [:lower:] [:upper:]`-Odin  boot.img
