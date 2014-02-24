@@ -302,6 +302,9 @@ struct dw_mci_board {
 	void (*restore_drv_st)(void *data, u32 slot_id, int *compensation);
 	void (*tuning_drv_st)(void *data, u32 slot_id);
 
+	/* If necessary, add to the extra tuning */
+	s8 (*extra_tuning)(u8 map);
+
 	/* Phase Shift Value */
 	unsigned int sdr_timing;
 	unsigned int ddr_timing;

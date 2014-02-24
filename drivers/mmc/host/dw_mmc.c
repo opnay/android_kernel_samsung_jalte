@@ -1315,9 +1315,7 @@ static void dw_mci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 			}
 		}
 		/* reset host-controller */
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 		spin_lock(&slot->host->cclk_lock);
-#endif
 		dw_mci_ciu_clk_en(slot->host);
 		dw_mci_wait_reset(&slot->host->dev, slot->host,
 				(SDMMC_CTRL_RESET |
@@ -1325,9 +1323,7 @@ static void dw_mci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 				 SDMMC_CTRL_DMA_RESET));
 		mci_writel(slot->host, CTRL, SDMMC_CTRL_INT_ENABLE);
 		dw_mci_ciu_clk_dis(slot->host);
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 		spin_unlock(&slot->host->cclk_lock);
-#endif
 		break;
 #endif
 	case MMC_POWER_UP:
@@ -1468,7 +1464,7 @@ static u8 dw_mci_get_sampling(struct dw_mci *host)
 	return sample;
 }
 
-static s8 get_median_sample(u8 map)
+static s8 get_median_sample(struct dw_mci *host, u8 map)
 {
 	const u8 iter = 8;
 	u8 __map;
@@ -1489,6 +1485,9 @@ static s8 get_median_sample(u8 map)
 			goto out;
 		}
 	}
+
+	if (host->pdata->extra_tuning)
+		sel = host->pdata->extra_tuning(map);
 
 out:
 	return sel;
@@ -1531,7 +1530,7 @@ static int dw_mci_execute_tuning(struct mmc_host *mmc, u32 opcode)
 	u8 *tuning_blk;
 	u8 blksz;
 	u8 tune, start_tune, map = 0;
-	s8 mid;
+	s8 mid = -1;
 
 	if (opcode == MMC_SEND_TUNING_BLOCK_HS200) {
 		if (mmc->ios.bus_width == MMC_BUS_WIDTH_8) {
@@ -1614,7 +1613,9 @@ static int dw_mci_execute_tuning(struct mmc_host *mmc, u32 opcode)
 		}
 
 		if (start_tune == tune) {
-			mid = get_median_sample(map);
+			mid = get_median_sample(host, map);
+			dev_info(&host->dev,
+				"Tuning map: 0x %08x mid: %d\n", map, mid);
 			host->pdata->map[4 - retries] = map;
 
 			if ((map == 0xff || mid < 0) && retries) {
@@ -3400,15 +3401,12 @@ int dw_mci_suspend(struct dw_mci *host)
 		if (!slot)
 			continue;
 		if (slot->mmc) {
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 			int cclk_disabled;
 			spin_lock(&host->cclk_lock);
 			cclk_disabled = !atomic_read(&host->cclk_cnt);
 			if (cclk_disabled)
-			dw_mci_ciu_clk_en(host);
-#else
-			dw_mci_ciu_clk_en(host);
-#endif
+				dw_mci_ciu_clk_en(host);
+
 			if (host->pdata->cd_type == DW_MCI_CD_GPIO)
 				tflash_present = dw_mci_get_cd(slot->mmc);
 			clkena = mci_readl(host, CLKENA);
@@ -3416,13 +3414,9 @@ int dw_mci_suspend(struct dw_mci *host)
 			mci_writel(host, CLKENA, clkena);
 			mci_send_cmd(slot,
 				SDMMC_CMD_UPD_CLK | SDMMC_CMD_PRV_DAT_WAIT, 0);
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 			if (cclk_disabled)
-			dw_mci_ciu_clk_dis(host);
+				dw_mci_ciu_clk_dis(host);
 			spin_unlock(&host->cclk_lock);
-#else
-			dw_mci_ciu_clk_dis(host);
-#endif
 
 			slot->mmc->pm_flags |= slot->mmc->pm_caps;
 			if (slot->mmc->pm_flags & MMC_PM_KEEP_POWER)
@@ -3482,9 +3476,7 @@ EXPORT_SYMBOL(dw_mci_suspend);
 int dw_mci_resume(struct dw_mci *host)
 {
 	int i, ret;
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 	int cclk_disabled;
-#endif
 
 	host->current_speed = 0;
 
@@ -3503,34 +3495,22 @@ int dw_mci_resume(struct dw_mci *host)
 	if (host->vmmc)
 		regulator_enable(host->vmmc);
 
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 	spin_lock(&host->cclk_lock);
 	cclk_disabled = !atomic_read(&host->cclk_cnt);
 	if (cclk_disabled)
 		dw_mci_ciu_clk_en(host);
-#else
-	dw_mci_ciu_clk_en(host);
-#endif
 
 	if (!mci_wait_reset(&host->dev, host)) {
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 		if (cclk_disabled)
 			dw_mci_ciu_clk_dis(host);
-			spin_unlock(&host->cclk_lock);
-#else
-		dw_mci_ciu_clk_dis(host);
-#endif
+		spin_unlock(&host->cclk_lock);
 		ret = -ENODEV;
 		return ret;
 	}
 
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 	if (cclk_disabled)
 		dw_mci_ciu_clk_dis(host);
-		spin_unlock(&host->cclk_lock);
-#else
-	dw_mci_ciu_clk_dis(host);
-#endif
+	spin_unlock(&host->cclk_lock);
 
 	if (host->dma_ops->init)
 		host->dma_ops->init(host);
@@ -3563,14 +3543,10 @@ int dw_mci_resume(struct dw_mci *host)
 			ios.timing = MMC_TIMING_LEGACY;
 			dw_mci_set_ios(slot->mmc, &ios);
 			dw_mci_set_ios(slot->mmc, &slot->mmc->ios);
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 			spin_lock(&host->cclk_lock);
 			cclk_disabled = !atomic_read(&host->cclk_cnt);
 			if (cclk_disabled)
 				dw_mci_ciu_clk_en(host);
-#else
-			dw_mci_ciu_clk_en(host);
-#endif
 			dw_mci_setup_bus(slot, 1);
 			if (host->pdata->tuned) {
 				dw_mci_set_sampling(host,
@@ -3578,13 +3554,9 @@ int dw_mci_resume(struct dw_mci *host)
 				mci_writel(host, CDTHRCTL,
 						host->cd_rd_thr << 16 | 1);
 			}
-#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT) || defined(CONFIG_MACH_JA_KOR_LGT)
 			if (cclk_disabled)
 				dw_mci_ciu_clk_dis(host);
-				spin_unlock(&host->cclk_lock);
-#else
-			dw_mci_ciu_clk_dis(host);
-#endif
+			spin_unlock(&host->cclk_lock);
 		}
 
 		ret = mmc_resume_host(host->slot[i]->mmc);
