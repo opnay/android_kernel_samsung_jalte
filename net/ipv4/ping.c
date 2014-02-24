@@ -838,6 +838,9 @@ int ping_recvmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 
 	pr_debug("ping_recvmsg(sk=%p,sk->num=%u)\n", isk, isk->inet_num);
 
+	if (family == AF_INET6)
+		*addr_len = sizeof(*sin6);
+
 	err = -EOPNOTSUPP;
 	if (flags & MSG_OOB)
 		goto out;
@@ -847,7 +850,7 @@ int ping_recvmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 			return ip_recv_error(sk, msg, len, addr_len);
 #if IS_ENABLED(CONFIG_IPV6)
 		} else if (family == AF_INET6) {
-			return pingv6_ops.ipv6_recv_error(sk, msg, len, addr_len);
+			return pingv6_ops.ipv6_recv_error(sk, msg, len);
 #endif
 		}
 	}
@@ -889,7 +892,6 @@ int ping_recvmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 		sin6->sin6_family = AF_INET6;
 		sin6->sin6_port = 0;
 		sin6->sin6_addr = ip6->saddr;
-		*addr_len = sizeof(*sin6);
 
 		sin6->sin6_flowinfo = 0;
 		if (np->sndflow)
