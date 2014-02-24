@@ -1351,7 +1351,7 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 
 	/* if it is from resume. check bkops mode */
 	if (oldcard) {
-		if (oldcard->bkops_enable) {
+		if (oldcard->bkops_enable & 0xFE) {
 			/*
 			 * if bkops mode is enable before getting suspend.
 			 * turn on the bkops mode
