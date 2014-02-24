@@ -74,7 +74,7 @@ fi
 echo_notify "----------------------------------------------------------------------------------------------------------INITRAMFS"
 # copy original initramfs directory to kernel directory
 cp -r $INITRAM_ORIG/* $INITRAM_DIR/
-# remove backup files
+find $INITRAM_DIR -name EMPTY -exec rm -rf {} \;
 find $INITRAM_DIR -name "*~" -exec rm -rf {} \;
 
 # find and copy modulized files
