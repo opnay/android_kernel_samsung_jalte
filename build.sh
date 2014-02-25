@@ -106,4 +106,4 @@ then
 	DEVICE_CARRIER=U
 fi
 
-$KERNDIR/build_md5.sh ImmortalKernel-140219-`echo $DEVICE_CARRIER | tr -s [:lower:] [:upper:]`-Odin  boot.img
+$KERNDIR/build_md5.sh ImmortalKernel-140225-`echo $DEVICE_CARRIER | tr -s [:lower:] [:upper:]`-Odin  boot.img
