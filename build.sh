@@ -11,7 +11,7 @@ export CROSS_COMPILE=$TOOLCHAIN
 
 DEVICE_CA=$1
 DEFCONFIG=immortal_"$DEVICE_CA"_defconfig
-RAMDISK_ORIG=/project/ramdisk/$1
+RAMDISK_ORIG=$RAMDISK_ORIG/$1
 
 
 
