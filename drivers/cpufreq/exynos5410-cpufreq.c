@@ -24,7 +24,7 @@
 
 #include <plat/clock.h>
 
-#define CPUFREQ_LEVEL_END_CA7	(L13 + 1)
+#define CPUFREQ_LEVEL_END_CA7	(L11 + 1)
 #define CPUFREQ_LEVEL_END_CA15	(L18 + 1)
 
 #undef PRINT_DIV_VAL
@@ -58,20 +58,18 @@ static unsigned int exynos5410_volt_table_CA15[CPUFREQ_LEVEL_END_CA15];
 struct pm_qos_request exynos5_cpu_int_qos;
 
 static struct cpufreq_frequency_table exynos5410_freq_table_CA7[] = {
-	{L0, 1500 * 1000},
-	{L1, 1400 * 1000},
-	{L2, 1300 * 1000},
-	{L3, 1200 * 1000},
-	{L4, 1100 * 1000},
-	{L5, 1000 * 1000},
-	{L6,  900 * 1000},
-	{L7,  800 * 1000},
-	{L8,  700 * 1000},
-	{L9,  600 * 1000},
-	{L10, 500 * 1000},
-	{L11, 400 * 1000},
-	{L12, 300 * 1000},
-	{L13, 200 * 1000},
+	{L0, 1300 * 1000},
+	{L1, 1200 * 1000},
+	{L2, 1100 * 1000},
+	{L3, 1000 * 1000},
+	{L4,  900 * 1000},
+	{L5,  800 * 1000},
+	{L6,  700 * 1000},
+	{L7,  600 * 1000},
+	{L8,  500 * 1000},
+	{L9,  400 * 1000},
+	{L10, 300 * 1000},
+	{L11, 200 * 1000},
 	{0, CPUFREQ_TABLE_END},
 };
 
@@ -101,52 +99,46 @@ static struct cpufreq_frequency_table exynos5410_freq_table_CA15[] = {
 static struct cpufreq_clkdiv exynos5410_clkdiv_table_CA7[CPUFREQ_LEVEL_END_CA7];
 static struct cpufreq_clkdiv exynos5410_clkdiv_table_CA15[CPUFREQ_LEVEL_END_CA15];
 
-static unsigned int clkdiv_cpu0_5410_CA7[CPUFREQ_LEVEL_END_CA7][7] = {
+static unsigned int clkdiv_cpu0_5410_CA7[CPUFREQ_LEVEL_END_CA7][5] = {
 	/*
 	 * Clock divider value for following
 	 * { KFC, ACLK, HPM, PCLK, KPLL }
 	 */
 
-	/* ARM L0: 1.5GHz */
+	/* ARM L0: 1.3GHz */
 	{ 0, 2, 7, 6, 3 },
 
-	/* ARM L1: 1.4GMHz */
+	/* ARM L1: 1.2GMHz */
 	{ 0, 2, 7, 5, 3 },
 
-	/* ARM L2: 1.3GHz */
-	{ 0, 2, 7, 6, 3 },
-
-	/* ARM L3: 1.2GMHz */
+	/* ARM L2: 1.1GMHz */
 	{ 0, 2, 7, 5, 3 },
 
-	/* ARM L4: 1.1GMHz */
+	/* ARM L3: 1GHz */
 	{ 0, 2, 7, 5, 3 },
 
-	/* ARM L5: 1GHz */
+	/* ARM L4: 900MHz */
 	{ 0, 2, 7, 5, 3 },
 
-	/* ARM L6: 900MHz */
+	/* ARM L5: 800MHz */
 	{ 0, 2, 7, 5, 3 },
 
-	/* ARM L7: 800MHz */
-	{ 0, 2, 7, 5, 3 },
-
-	/* ARM L8: 700MHz */
+	/* ARM L6: 700MHz */
 	{ 0, 2, 7, 4, 3 },
 
-	/* ARM L9: 600MHz */
+	/* ARM L7: 600MHz */
 	{ 0, 2, 7, 4, 3 },
 
-	/* ARM L10: 500MHz */
+	/* ARM L8: 500MHz */
 	{ 0, 2, 7, 4, 3 },
 
-	/* ARM L11: 400MHz */
+	/* ARM L9: 400MHz */
 	{ 0, 2, 7, 3, 3 },
 
-	/* ARM L12: 300MHz */
+	/* ARM L10: 300MHz */
 	{ 0, 2, 7, 3, 3 },
 
-	/* ARM L13: 200MHz */
+	/* ARM L11: 200MHz */
 	{ 0, 2, 7, 3, 3 },
 };
 
@@ -279,46 +271,40 @@ unsigned int clkdiv_cpu1_5410_CA15[CPUFREQ_LEVEL_END_CA15][2] = {
 };
 
 static unsigned int exynos5410_kpll_pms_table_CA7[CPUFREQ_LEVEL_END_CA7] = {
-	/* KPLL FOUT L0: 1.5GHz */
-	((250 << 16) | (4 << 8) | (0x0)),
-
-	/* KPLL FOUT L1: 1.4GHz */
-	((175 << 16) | (3 << 8) | (0x0)),
-
-	/* KPLL FOUT L2: 1.3GHz */
+	/* KPLL FOUT L0: 1.3GHz */
 	((325 << 16) | (6 << 8) | (0x0)),
 
-	/* KPLL FOUT L3: 1.2GHz */
+	/* KPLL FOUT L1: 1.2GHz */
 	((200 << 16) | (2 << 8) | (0x1)),
 
-	/* KPLL FOUT L4: 1.1GHz */
+	/* KPLL FOUT L2: 1.1GHz */
 	((275 << 16) | (3 << 8) | (0x1)),
 
-	/* KPLL FOUT L5: 1GHz */
+	/* KPLL FOUT L3: 1GHz */
 	((250 << 16) | (3 << 8) | (0x1)),
 
-	/* KPLL FOUT L6: 900MHz */
+	/* KPLL FOUT L4: 900MHz */
 	((150 << 16) | (2 << 8) | (0x1)),
 
-	/* KPLL FOUT L7: 800MHz */
+	/* KPLL FOUT L5: 800MHz */
 	((200 << 16) | (3 << 8) | (0x1)),
 
-	/* KPLL FOUT L8: 700MHz */
+	/* KPLL FOUT L6: 700MHz */
 	((175 << 16) | (3 << 8) | (0x1)),
 
-	/* KPLL FOUT L9: 600MHz */
+	/* KPLL FOUT L7: 600MHz */
 	((150 << 16) | (3 << 8) | (0x1)),
 
-	/* KPLL FOUT L10: 500MHz */
+	/* KPLL FOUT L8: 500MHz */
 	((250 << 16) | (3 << 8) | (0x2)),
 
-	/* KPLL FOUT L11: 400MHz */
+	/* KPLL FOUT L9: 400MHz */
 	((200 << 16) | (3 << 8) | (0x2)),
 
-	/* KPLL FOUT L12: 300MHz */
+	/* KPLL FOUT L10: 300MHz */
 	((150 << 16) | (3 << 8) | (0x2)),
 
-	/* KPLL FOUT L13: 200MHz */
+	/* KPLL FOUT L11: 200MHz */
 	((200 << 16) | (3 << 8) | (0x3)),
 };
 
@@ -386,37 +372,33 @@ static unsigned int exynos5410_apll_pms_table_CA15[CPUFREQ_LEVEL_END_CA15] = {
  */
 
 static const unsigned int asv_voltage_5410_CA7[CPUFREQ_LEVEL_END_CA7] = {
-	1225000,	/* L0 1500 */
-	1225000,	/* L1 1400 */
-	1225000,	/* L2 1300 */
-	1225000,	/* L3 1200 */
-	1225000,	/* L4 1100 */
-	1225000,	/* L5 1000 */
-	1225000,	/* L6  900 */
-	1225000,	/* L7  800 */
-	1225000,	/* L8  700 */
-	1225000,	/* L9  600 */
-	1125000,	/* L10 500 */
-	 975000,	/* L11 400 */
-	 900000,	/* L12 300 */
-	 900000,	/* L13 200 */
+	1225000,	/* LO 1300 */
+	1225000,	/* L1 1200 */
+	1225000,	/* L2 1100 */
+	1225000,	/* L3 1000 */
+	1225000,	/* L4  900 */
+	1225000,	/* L5  800 */
+	1225000,	/* L6  700 */
+	1225000,	/* L7  600 */
+	1125000,	/* L8  500 */
+	 975000,	/* L9  400 */
+	 900000,	/* L10 300 */
+	 900000,	/* L11 200 */
 };
 
 static const unsigned int asv_voltage_5410_CA7_evt1[CPUFREQ_LEVEL_END_CA7] = {
-	1387500,	/* L0 1500 */
-	1387500,	/* L1 1400 */
-	1387500,	/* L2 1300 */
-	1387500,	/* L3 1200 */
-	1387500,	/* L4 1100 */
-	1387500,	/* L5 1000 */
-	1387500,	/* L6  900 */
-	1387500,	/* L7  800 */
-	1300000,	/* L8  700 */
-	1200000,	/* L9  600 */
-	1087500,	/* L10 500 */
-	1012500,	/* L11 400 */
-	 937500,	/* L12 300 */
-	 900000,	/* L13 200 */
+	1387500,	/* L0 1300 */
+	1387500,	/* L1 1200 */
+	1387500,	/* L2 1100 */
+	1387500,	/* L3 1000 */
+	1387500,	/* L4  900 */
+	1387500,	/* L5  800 */
+	1300000,	/* L6  700 */
+	1200000,	/* L7  600 */
+	1087500,	/* L8  500 */
+	1012500,	/* L9  400 */
+	 937500,	/* L10 300 */
+	 900000,	/* L11 200 */
 };
 
 static const unsigned int asv_voltage_5410_CA15[CPUFREQ_LEVEL_END_CA15] = {
@@ -829,7 +811,7 @@ static void __init set_volt_table_CA7(void)
 				exynos5410_volt_table_CA7[i]);
 	}
 
-	max_support_idx_CA7 = L0;
+	max_support_idx_CA7 = L1;
 
 	exynos5410_freq_table_CA7[L0].frequency = CPUFREQ_ENTRY_INVALID;
 	if (samsung_rev() < EXYNOS5410_REV_2_0) {
@@ -846,10 +828,8 @@ static void __init set_volt_table_CA7(void)
 	exynos5410_freq_table_CA7[L9].frequency = CPUFREQ_ENTRY_INVALID;
 	exynos5410_freq_table_CA7[L10].frequency = CPUFREQ_ENTRY_INVALID;
 	exynos5410_freq_table_CA7[L11].frequency = CPUFREQ_ENTRY_INVALID;
-	exynos5410_freq_table_CA7[L12].frequency = CPUFREQ_ENTRY_INVALID;
-	exynos5410_freq_table_CA7[L13].frequency = CPUFREQ_ENTRY_INVALID;
 
-	min_support_idx_CA7 = L13;
+	min_support_idx_CA7 = L8;
 }
 
 static void __init set_volt_table_CA15(void)
