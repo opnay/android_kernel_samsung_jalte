@@ -56,7 +56,7 @@ ENTRY(cpu_v7_switch_mm)
 	mcr	p15, 0, r0, c2, c0, 0		@ set TTB 0
 	isb
 #endif
-	mov	pc, lr
+	bx	lr
 ENDPROC(cpu_v7_switch_mm)
 
 /*
@@ -105,7 +105,7 @@ ENTRY(cpu_v7_set_pte_ext)
  THUMB(	str	r3, [r0] )
 	mcr	p15, 0, r0, c7, c10, 1		@ flush_pte
 #endif
-	mov	pc, lr
+	bx	lr
 ENDPROC(cpu_v7_set_pte_ext)
 
 	/*
