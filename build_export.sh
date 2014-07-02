@@ -7,7 +7,7 @@ RAMDISK_ORIG=/project/android/kernel/ramdisk
 RAMDISK_OUT_DIR=$KERNEL_OUT_DIR/ramdisk
 
 ## Binary
-TOOLCHAIN=/project/toolchain/gcc-linaro-arm-linux-gnueabihf-4.9-2014.05_linux/bin/arm-linux-gnueabihf-
+TOOLCHAIN=/project/toolchain/gcc-linaro-arm-linux-gnueabihf-4.9-2014.06_linux/bin/arm-linux-gnueabihf-
 MINIGZIP=$KERNEL_BIN_DIR/minigzip
 MKBOOTFS=$KERNEL_BIN_DIR/mkbootfs
 MKBOOTIMG=$KERNEL_BIN_DIR/mkbootimg

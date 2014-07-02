@@ -10,7 +10,7 @@ export ARCH=arm
 export CROSS_COMPILE=$TOOLCHAIN
 
 DEVICE_CA=$1
-DEFCONFIG=immortal_"$DEVICE_CA"_defconfig
+DEFCONFIG=jalte"$DEVICE_CA"_immortal_defconfig
 RAMDISK_ORIG=$RAMDISK_ORIG/$1
 
 
@@ -49,7 +49,7 @@ mkdir -p $KERNEL_BOOTIMG_DIR $KERNEL_OUT_DIR $RAMDISK_OUT_DIR
 ## Make
 ShowNoty "==Make Config"
 make $DEFCONFIG -j$NB_CPU O=$KERNEL_OUT_DIR
-#make menuconfig -j$NB_CPU O=$KERNEL_OUT_DIR
+make menuconfig -j$NB_CPU O=$KERNEL_OUT_DIR
 
 ShowNoty "==Start Make"
 make -j$NB_CPU O=$KERNEL_OUT_DIR
