@@ -2438,7 +2438,6 @@ details.</para>
       </orderedlist>
     </section>
 
->>>>>>> 6491d1a... [media] V4L: Extend V4L2_CID_COLORFX with more image effects
     <section id="other">
       <title>Relation of V4L2 to other Linux multimedia APIs</title>
 
