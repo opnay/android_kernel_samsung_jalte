@@ -259,7 +259,6 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 	codec_dai->active++;
 	rtd->codec->active++;
 	mutex_unlock(&rtd->pcm_mutex);
-
 	return 0;
 
 config_err:
@@ -376,9 +375,9 @@ static int soc_pcm_close(struct snd_pcm_substream *substream)
 		    rtd->dai_link->ignore_pmdown_time) {
 			/* powered down playback stream now */
 			snd_soc_dapm_stream_event(rtd,
-					  SNDRV_PCM_STREAM_PLAYBACK,
-					  codec_dai,
-					  SND_SOC_DAPM_STREAM_STOP);
+						  SNDRV_PCM_STREAM_PLAYBACK,
+						  codec_dai,
+						  SND_SOC_DAPM_STREAM_STOP);
 		} else {
 			/* start delayed pop wq here for playback streams */
 			codec_dai->pop_wait = 1;
@@ -388,7 +387,7 @@ static int soc_pcm_close(struct snd_pcm_substream *substream)
 	} else {
 		/* capture streams can be powered down now */
 		snd_soc_dapm_stream_event(rtd, SNDRV_PCM_STREAM_CAPTURE,
-				  codec_dai, SND_SOC_DAPM_STREAM_STOP);
+					  codec_dai, SND_SOC_DAPM_STREAM_STOP);
 	}
 
 	mutex_unlock(&rtd->pcm_mutex);
