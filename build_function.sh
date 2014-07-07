@@ -3,7 +3,7 @@ function Error() {
 }
 
 function ShowInfo() {
-	echo -e "\e[32m\e[01m$1 \e[30m$2 \e[00m"
+	echo -e "\e[32m\e[01m$1 \e[00m$2"
 }
 
 function ShowNoty() {
