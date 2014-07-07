@@ -77,4 +77,5 @@ ShowNoty "==Make Boot.img"
 $MKBOOTFS $RAMDISK_OUT_DIR > $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio
 $MINIGZIP < $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio > $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.gz
 $MKBOOTIMG --base 0x10000000 --pagesize 2048 --kernel $KERNEL_OUT_DIR/arch/arm/boot/zImage --ramdisk $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.gz -o $KERNEL_BOOTIMG_DIR/boot.img
-ShowNoty "==Complete Goto $KERNEL_BOOTIMG_DIR"
+ShowNoty "==Install boot.img"
+$KERNEL_DIR/build_install.sh $KERNEL_BOOTIMG_DIR/boot.img /dev/block/platform/dw_mmc.0/by-name/BOOT
