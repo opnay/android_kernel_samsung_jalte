@@ -1,8 +1,8 @@
 ## Kernel Directory
 KERNEL_DIR=`pwd`
-KERNEL_OUT_DIR=`pwd`/out
-KERNEL_BOOTIMG_DIR=`pwd`/bootimg
-KERNEL_BIN_DIR=`pwd`/bin
+KERNEL_OUT_DIR=$KERNEL_DIR/out
+KERNEL_BOOTIMG_DIR=$KERNEL_DIR/bootimg
+KERNEL_BIN_DIR=$KERNEL_DIR/bin
 RAMDISK_ORIG=/project/android/kernel/ramdisk
 RAMDISK_OUT_DIR=$KERNEL_OUT_DIR/ramdisk
 
