@@ -1,0 +1,5 @@
+#for SELinux
+on property:ro.build.selinux.enforce=1
+    write /sys/fs/selinux/enforce 0
+    exec /system/bin/setenforce 0
+    setprop selinux.reload_policy 0

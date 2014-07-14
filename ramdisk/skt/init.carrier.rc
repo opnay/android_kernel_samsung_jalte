@@ -1,0 +1,36 @@
+# init script for Korean SKT
+
+on init
+
+# SKT LAW Permanent memory access
+    mkdir /efs/sktdm_mem 0771 root root
+    chown radio system /efs/sktdm_mem
+    chmod 0771 /efs/sktdm_mem
+
+# SKT PM PlayReady
+    mkdir /data/playready 771 system skt
+    chown system skt /data/playready
+    chmod 0771 /data/playready
+
+# SKT DRM for hoppin
+    mkdir /data/data/.sktdrm 0775
+    chown system radio /data/data/.sktdrm
+    chmod 0775 /data/data/.sktdrm
+
+on post-fs-data
+
+# for SKT TBASED
+    mkdir /data/tbased 0775 root wifi
+    chown root wifi /data/tbased
+    chmod 0775 /data/tbased
+
+    chown wifi wifi /system/lib/libiwlan_module.so
+    chmod 0644 /system/lib/libiwlan_module.so
+    chmod 0755 /system/bin/tbased
+
+# SKT TBASE
+service tbased /system/bin/tbased
+    class main
+    user root
+    oneshot
+
