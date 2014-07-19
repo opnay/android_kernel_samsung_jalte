@@ -382,10 +382,6 @@ on fs
 # Permissions for usb_lock
     chown system radio /sys/class/sec/switch/.usb_lock/enable
 
-# MTP device permission
-    chmod 0660 /dev/usb_mtp_gadget
-    chown system system /dev/usb_mtp_gadget
-
     chown system system /sys/class/timed_output/vibrator/enable
 
 # NFC

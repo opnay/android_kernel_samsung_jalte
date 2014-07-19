@@ -82,6 +82,9 @@
 /dev/usb/lp*              0660   system     usb
 /dev/diag                 0660   system     radio
 
+# MTP
+/dev/usb_mtp_gadget   0660   system   mtp
+
 #ALP Audio
 /dev/srp                  0660   system     audio
 
