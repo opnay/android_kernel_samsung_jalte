@@ -10,6 +10,7 @@ import /init.${ro.hardware}.rc
 import /init.trace.rc
 import /init.container.rc
 import /init.carrier.rc
+import /init.immortal.rc
 
 on early-init
     # Set init and its forked children's oom_adj.
