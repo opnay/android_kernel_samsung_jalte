@@ -59,13 +59,12 @@
 
 # sensor sysfs properties
 /sys/devices/virtual/input/input*	poll_delay	0660	system	radio
-/sys/devices/virtual/input/input*	enabled		0660	system	radio
+/sys/devices/virtual/input/input*	enable		0660	system	radio
 
 # sensorhub
 /dev/ssp_sensorhub		  0660	 system     system
 
 /dev/ttySAC*	          0660	 root	 system
-/dev/ttyGS*	        0600    system    system
 
 /dev/block/mmcblk0p8      0660   system     root
 /dev/block/mmcblk0p13     0660   system     radio
@@ -79,12 +78,6 @@
 /dev/usb/lp*              0660   system     usb
 /dev/diag                 0660   system     radio
 
-# Core Control
-/dev/b.L_mem        0660    radio    system
-/dev/b.L_switcher        0660    radio    system
-/dev/b.L_operator        0660    radio    system
-/dev/bL_status        0660    radio    system
-
 #ALP Audio
 /dev/srp                  0660   system     audio
 
@@ -94,22 +87,3 @@
 
 # Secure MEM driver
 /dev/s5p-smem             0660   system     system
-
-# NFC
-/dev/bcm2079x          0600   nfc     nfc
-
-# Vibtonz
-/dev/tspdrv        0660    vibe    vibe
-
-# Bluetooth
-/dev/ttySAC0        0600    bluetooth    bluetooth
-/dev/btlock        0600    bluetooth    bluetooth
-
-# DMB
-/dev/tdmb        0660    system    system
-
-# Magnetic_Sensor
-/dev/akm8963        0600    system    radio
-
-# MTP
-/dev/usb_mtp_gadget        0660    system    mtp
