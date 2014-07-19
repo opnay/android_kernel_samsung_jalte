@@ -225,7 +225,6 @@
 # Device node
 #
 /dev/android_ssusbcon(/.*)?		u:object_r:usb_device:s0
-/dev/.secure_storage(/.*)?		u:object_r:secure_storage_device:s0
 /dev/__kmsg	u:object_r:klog_device:s0
 #remove it because of conflict with NSA
 #/dev/__properties__		u:object_r:prop_device:s0
@@ -322,7 +321,6 @@
 /system/bin/rfs_access	u:object_r:rfs_access_exec:s0
 /system/bin/samsungpowersoundplay	u:object_r:samsungpowersoundplay_exec:s0
 /system/bin/sec-ril	u:object_r:sec-ril_exec:s0
-/system/bin/secure_storage_daemon	u:object_r:secure_storage_exec:s0
 /system/bin/sensorhubservice	u:object_r:sensorhubservice_exec:s0
 /system/bin/selinux-network.sh	u:object_r:selinux_net_exec:s0
 /system/bin/ss_conn_daemon	u:object_r:ss_conn_daemon_exec:s0
