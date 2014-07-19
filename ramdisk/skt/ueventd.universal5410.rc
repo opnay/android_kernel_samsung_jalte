@@ -65,6 +65,10 @@
 /dev/ssp_sensorhub		  0660	 system     system
 
 /dev/ttySAC*	          0660	 root	 system
+/dev/ttySAC0                 0600       bluetooth   bluetooth
+/dev/ttySAC1                0660        root   system
+/dev/ttyGS*                  0600       system   system
+/dev/dun                      0600        system   system
 
 /dev/block/mmcblk0p8      0660   system     root
 /dev/block/mmcblk0p13     0660   system     radio
@@ -84,6 +88,28 @@
 # MobiCore
 /dev/mobicore             0700   system     system
 /dev/mobicore-user        0666   radio     	system
+/dev/s5p-smem            0660   system   system
 
 # Secure MEM driver
 /dev/s5p-smem             0660   system     system
+
+# Vibetonz
+/dev/tspdrv                 0660   vibe   vibe
+
+# NFC
+/dev/bcm2079x            0600   nfc   nfc
+/dev/pn547                 0600   nfc   nfc
+
+# SideSync
+/dev/android_ssusbcon   0660   system   system
+
+# CoreControl
+/dev/b.L_operator         0660   radio   system
+/dev/bL_status             0660   radio   system
+/dev/pvrsrvkm              0666   system   system
+
+# Sensor
+/dev/akm8963            0660   system   radio
+
+# DMB
+/dev/tdmb                  0660   system   system

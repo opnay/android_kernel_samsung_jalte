@@ -252,10 +252,6 @@ on post-fs-data
     chmod 0644 /dev/icdr
     chown system system /dev/tzic
 
-    #SideSync
-    chown system system /dev/android_ssusbcon
-    chmod 0660 /dev/android_ssusbcon
-
     # For security reasons, /data/local/tmp should always be empty.
     # Do not place files or directories in /data/local/tmp
     mkdir /data/local/tmp 0771 shell shell
@@ -371,10 +367,6 @@ on boot
     hostname localhost
     domainname localdomain
 
-# Vibetonz
-    chmod 0660 /dev/tspdrv
-    chown vibe vibe /dev/tspdrv
-
 # set RLIMIT_NICE to allow priorities from 19 to -20
     setrlimit 13 40 40
 
@@ -483,8 +475,6 @@ on boot
    chown system radio /sys/class/power_supply/battery/lte
 
 # NFC_BROADCOM
-    chmod 0600 /dev/bcm2079x
-    chown nfc nfc /dev/bcm2079x
     mkdir /data/bcmnfc
     mkdir /data/bcmnfc/param
     chmod 0700 /data/bcmnfc
@@ -783,14 +773,6 @@ service sdumpstate /system/bin/dumpstate -P
     class main
     disabled
     oneshot
-    
-# bugreport is triggered by holding down volume down, volume up and power
-service bugreport /system/bin/dumpstate -d -p -B \
-        -o /data/data/com.android.shell/files/bugreports/bugreport
-    class main
-    disabled
-    oneshot
-    keycodes 114 115 116
     
 # Vibetonz
 service immvibed /system/bin/immvibed
