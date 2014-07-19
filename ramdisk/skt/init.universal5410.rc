@@ -1,5 +1,5 @@
 import init.universal5410.usb.rc
-import init.wifi.rc
+import init.universal5410.wifi.rc
 
 on init
     # See storage config details at http://source.android.com/tech/storage/
