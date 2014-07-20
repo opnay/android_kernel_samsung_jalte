@@ -574,8 +574,10 @@ on property:ro.debuggable=1
 # LPM
 on property:ro.bootmode=charger
     mount ext4 /dev/block/mmcblk0p20 /system wait ro
-
-on property:ro.bootmode=charger
+    write /sys/devices/system/cpu/cpu1/online 0
+    write /sys/devices/system/cpu/cpu2/online 0
+    write /sys/devices/system/cpu/cpu3/online 0
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor powersave
     class_start sec-charger
 
 service playlpm /system/bin/lpm
