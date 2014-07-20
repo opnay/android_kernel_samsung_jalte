@@ -107,7 +107,6 @@ on post-fs-data
 
 on boot
     mount debugfs /sys/kernel/debug /sys/kernel/debug
-    # setprop ro.radio.noril yes
 
 # Define TCP buffer sizes for various networks
 #   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
@@ -376,8 +375,8 @@ on fs
     chown system radio /sys/module/asv_exynos/parameters/asv_group
 
 # terminal mode
-	chmod 0660 /sys/class/android_usb/android0/terminal_version
-	chown system system /sys/class/android_usb/android0/terminal_version
+    chmod 0660 /sys/class/android_usb/android0/terminal_version
+    chown system system /sys/class/android_usb/android0/terminal_version
 
 # Permissions for usb_lock
     chown system radio /sys/class/sec/switch/.usb_lock/enable
@@ -386,7 +385,6 @@ on fs
 
 # NFC
     setprop ro.nfc.port "I2C"
-# Broadcom NFC
     mkdir /data/bcmnfc
     mkdir /data/bcmnfc/param
     chmod 0700 /data/bcmnfc
@@ -435,11 +433,6 @@ on fs
     chown system radio /sys/class/audio/earjack/key_state
     chown system radio /sys/class/audio/earjack/state
 
-# Audio 2 MIC (Audience)
-    chown media audio /sys/class/2mic/es325/preset
-    chown media audio /sys/class/2mic/es325/sleep
-    chown media audio /sys/class/2mic/es325/veq
-
 #For Absolute Persistence Partition
     mkdir /persdata 0755 system system
     mkdir /persdata/absolute 0750 system system
@@ -452,9 +445,6 @@ on fs
     chmod 0755 /persdata
     chown system system /persdata/absolute
     chmod 0750 /persdata/absolute
-
-# FingerPrint_sensor
-    chown system system /sys/class/fingerprint/fingerprint/ocp_check
 
 # FingerPrint_sensor
     chown system system /sys/class/fingerprint/fingerprint/ocp_check
@@ -543,13 +533,6 @@ service dmb /system/bin/dmbserver
     user system
     group radio inet misc audio camera graphics net_bt net_bt_admin sdcard_rw sdcard_r shell
 
-# SA, System SW, SAMSUNG
-service bugreport /system/bin/bugmailer.sh -v
-    class main
-    disabled
-    oneshot
-    keycodes 114 115 116
-
 # bootchecker
 service bootchecker /system/bin/bootchecker
     class late_start
@@ -576,7 +559,9 @@ on property:sys.mobicoredaemon.enable=true
     start scranton_RD
 
 # MobiCore startup
-service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
+service mobicore /system/bin/mcDriverDaemon \
+        -r /system/app/FFFFFFFF000000000000000000000001.drbin \
+        -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
     class core
     user system
     group system
