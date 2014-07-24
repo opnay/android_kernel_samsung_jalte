@@ -225,6 +225,7 @@
 # Device node
 #
 /dev/android_ssusbcon(/.*)?		u:object_r:usb_device:s0
+/dev/.secure_storage(/.*)?		u:object_r:secure_storage_device:s0
 /dev/__kmsg	u:object_r:klog_device:s0
 #remove it because of conflict with NSA
 #/dev/__properties__		u:object_r:prop_device:s0
@@ -237,6 +238,13 @@
 /dev/diag	u:object_r:diag_device:s0
 /dev/dumpstate	u:object_r:dumpstate_device:s0
 /dev/i2c.*		u:object_r:i2c_device:s0
+
+## Knox Sensitive data protection, DEK engine driver access
+/dev/dek_evt	u:object_r:knox_dar_device:s0
+/dev/dek_kek	u:object_r:knox_dar_device:s0
+/dev/dek_log	u:object_r:knox_dar_device:s0
+/dev/dek_req	u:object_r:knox_dar_device:s0
+
 /dev/media[0-3]*	u:object_r:camera_device:s0
 /dev/mobicore	u:object_r:mobicore_device:s0
 /dev/mobicore-user	u:object_r:mobicore-user_device:s0
@@ -250,6 +258,7 @@
 /dev/socket/charon		u:object_r:charon_socket:s0
 /dev/socket/dumpstate	u:object_r:dumpstate_socket:s0
 /dev/socket/cs_socket	u:object_r:cs_socket:s0
+/dev/socket/msockets(/.*)?	u:object_r:msockets_socket:s0
 /dev/socket/mtpd		u:object_r:mtpd_socket:s0
 /dev/socket/dir_enc_report	u:object_r:vold_socket:s0
 /dev/socket/drsd        u:object_r:drsd_socket:s0
@@ -321,6 +330,7 @@
 /system/bin/rfs_access	u:object_r:rfs_access_exec:s0
 /system/bin/samsungpowersoundplay	u:object_r:samsungpowersoundplay_exec:s0
 /system/bin/sec-ril	u:object_r:sec-ril_exec:s0
+/system/bin/secure_storage_daemon	u:object_r:secure_storage_exec:s0
 /system/bin/sensorhubservice	u:object_r:sensorhubservice_exec:s0
 /system/bin/selinux-network.sh	u:object_r:selinux_net_exec:s0
 /system/bin/ss_conn_daemon	u:object_r:ss_conn_daemon_exec:s0
@@ -396,6 +406,7 @@
 # System files 
 # 
 /system/bin/brcm_patchram_plus	u:object_r:brcm_patchram_plus_exec:s0
+/system/bin/diagexe     u:object_r:diagexe_exec:s0
 /system/bin/gpsd        u:object_r:gpsd_exec:s0 
 /system/bin/mcDriverDaemon	u:object_r:mobicoredaemon_exec:s0
 /system/bin/mlexe    u:object_r:mlexe_exec:s0 
@@ -486,9 +497,6 @@
 # file_contests for JA_LTE_SKT
 /system/bin/dmbserver   u:object_r:dmb_exec:s0
 /dev/tdmb               u:object_r:tdmb_device:s0
-
-/system/bin/diagexe     u:object_r:diagexe_exec:s0
-
 /dev/icd                u:object_r:icd_dev_file:s0
 /dev/icdr               u:object_r:icd_dev_file:s0
 /data/playready(/.*)?   u:object_r:playready_file:s0

@@ -80,7 +80,7 @@ loglevel 3
 # [ SEC_MM_DRM
     mkdir /mnt/shell 0750 shell shell
 # ]
-    mkdir /mnt/media_rw 0700 media_rw media_rw
+    mkdir /mnt/media_rw 0750 media_rw media_rw
     mkdir /storage 0751 root sdcard_r
 
     # Directory for putting things only root should see.
@@ -263,7 +263,10 @@ on post-fs-data
     mkdir /data/property 0700 root root
     mkdir /data/ssh 0750 root shell
     mkdir /data/ssh/empty 0700 root root
-
+    mkdir /data/system 0775 system system
+    mkdir /data/system/container 0700 system system
+    restorecon -R /data/system
+    
     # SA, System SW, SAMSUNG create log directory
     mkdir /data/log 0775 system log
     chown system log /data/log
@@ -352,7 +355,8 @@ on post-fs-data
     mkdir /data/security/booleans 0711 system system
     mkdir /data/security/good 0700 system system
     mkdir /data/security/stig 0700 system system
-
+    mkdir /data/security/mycontainer 0700 system system
+    
     # Restorecon for backup data file
     mkdir /data/backup 0700 system system
     restorecon /data/backup
@@ -375,6 +379,12 @@ on boot
     chmod 0664 /sys/module/lowmemorykiller/parameters/adj
     chown root system /sys/module/lowmemorykiller/parameters/minfree
     chmod 0664 /sys/module/lowmemorykiller/parameters/minfree
+
+    # for BT MAC address
+    mkdir /efs/bluetooth 0775 radio system
+    # if already exist
+    chown radio system /efs/bluetooth
+    chmod 0775 /efs/bluetooth
 
     # Tweak background writeout
     write /proc/sys/vm/dirty_expire_centisecs 200
@@ -530,6 +540,10 @@ on property:vold.decrypt=trigger_shutdown_framework
     class_reset late_start
     class_reset main
 
+# Reload SE Android Policy for MDM
+on property:persist.security.mdm.policy=1
+    setprop selinux.reload_policy 1
+
 on property:selinux.reload_policy=1
     chown system system /sys/fs/selinux/enforce
     chown -R system system /sys/fs/selinux/booleans
@@ -624,6 +638,7 @@ service vold /system/bin/vold
     socket vold stream 0660 root mount
     ioprio be 2
     socket dir_enc_report stream 0660 root mount
+    socket epm stream 0660 system system
 
 service netd /system/bin/netd
     class main
