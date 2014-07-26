@@ -74,6 +74,9 @@ do
 	cp $module_file $RAMDISK_OUT_DIR/lib/modules/
 done
 
+## Set Immortal Kernel Version.
+echo -e "\nimmortal.version=$IMMORTAL_VERSION" >> $RAMDISK_OUT_DIR/default.prop
+
 ShowNoty "==Make Boot.img"
 ./build_ramdisk.sh $RAMDISK_OUT_DIR $COMPRESS
 $MKBOOTIMG --base 0x10000000 --pagesize 2048 --kernel $KERNEL_OUT_DIR/arch/arm/boot/zImage --ramdisk $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.$COMPRESS -o $KERNEL_BOOTIMG_DIR/boot.img

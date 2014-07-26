@@ -1,3 +1,5 @@
+IMMORTAL_VERSION=v0.1
+
 ## Kernel Directory
 KERNEL_DIR=`pwd`
 KERNEL_OUT_DIR=$KERNEL_DIR/out
