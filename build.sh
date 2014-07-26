@@ -22,6 +22,7 @@ ShowInfo "Kernel Directory :" $KERNEL_DIR
 ShowInfo "Kernel Output Directory :" $KERNEL_OUT_DIR
 ShowInfo "Kernel Output boot.img Directory :" $KERNEL_BOOTIMG_DIR
 ShowInfo "Ramdisk Directory :" $RAMDISK_ORIG
+ShowInfo "Compress :" $COMPRESS
 if [ ! -e $RAMDISK_ORIG ]
 then
 	Error "Ramdisk Directory Not Found!"
@@ -74,13 +75,8 @@ do
 done
 
 ShowNoty "==Make Boot.img"
-$MKBOOTFS $RAMDISK_OUT_DIR > $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio
-# GZip
-# $MINIGZIP < $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio > $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.gz
+./build_ramdisk.sh $RAMDISK_OUT_DIR $COMPRESS
+$MKBOOTIMG --base 0x10000000 --pagesize 2048 --kernel $KERNEL_OUT_DIR/arch/arm/boot/zImage --ramdisk $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.$COMPRESS -o $KERNEL_BOOTIMG_DIR/boot.img
 
-# LZ4
-lz4c -l -hc stdin $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.lz4 < $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio
-
-$MKBOOTIMG --base 0x10000000 --pagesize 2048 --kernel $KERNEL_OUT_DIR/arch/arm/boot/zImage --ramdisk $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.lz4 -o $KERNEL_BOOTIMG_DIR/boot.img
 ShowNoty "==Install boot.img"
-$KERNEL_DIR/build_install.sh $KERNEL_BOOTIMG_DIR/boot.img /dev/block/platform/dw_mmc.0/by-name/BOOT
+./build_install.sh $KERNEL_BOOTIMG_DIR/boot.img /dev/block/platform/dw_mmc.0/by-name/BOOT
