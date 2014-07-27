@@ -58,9 +58,6 @@
 /sys/devices/virtual/input/input* poll_delay   0660   system   radio
 /sys/devices/virtual/input/input* enable       0660   system   radio
 
-# sensorhub
-/dev/ssp_sensorhub        0660   system     system
-
 /dev/ttySAC*	          0660	 root	    system
 /dev/ttySAC0              0600   bluetooth  bluetooth
 /dev/ttySAC1              0660   root       system
@@ -78,6 +75,7 @@
 /dev/hsic*                0660   system     radio
 /dev/usb/lp*              0660   system     usb
 /dev/diag                 0660   system     radio
+/dev/android_ssusbcon     0660   system     system
 
 # MTP
 /dev/usb_mtp_gadget       0660   system     mtp
@@ -93,9 +91,6 @@
 # NFC
 /dev/bcm2079x             0600   nfc        nfc
 /dev/pn547                0600   nfc        nfc
-
-# SideSync
-/dev/android_ssusbcon     0660   system     system
 
 # CoreControl
 /dev/b.L_operator         0660   radio      system
