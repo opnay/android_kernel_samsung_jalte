@@ -1,3 +1,8 @@
+on init
+    chmod 755 /immortal/log.sh
+    chmod 755 /immortal/mount.sh
+    chmod 755 /immortal/bin/busybox
+
 #for SELinux
 on property:ro.build.selinux.enforce=1
     write /sys/fs/selinux/enforce 0
