@@ -45,9 +45,6 @@
 /dev/video18              0660   system     system
 /dev/video19              0660   system     system
 
-# FIMG2D
-/dev/fimg2d               0666   system     graphics
-
 #JPEG
 /dev/video11              0660   media      media
 /dev/video12              0660   media      media
@@ -58,17 +55,17 @@
 /dev/fimg2d               0666   system     graphics
 
 # sensor sysfs properties
-/sys/devices/virtual/input/input*	poll_delay	0660	system	radio
-/sys/devices/virtual/input/input*	enable		0660	system	radio
+/sys/devices/virtual/input/input* poll_delay   0660   system   radio
+/sys/devices/virtual/input/input* enable       0660   system   radio
 
 # sensorhub
-/dev/ssp_sensorhub		  0660	 system     system
+/dev/ssp_sensorhub        0660   system     system
 
-/dev/ttySAC*	          0660	 root	 system
-/dev/ttySAC0                 0600       bluetooth   bluetooth
-/dev/ttySAC1                0660        root   system
-/dev/ttyGS*                  0600       system   system
-/dev/dun                      0600        system   system
+/dev/ttySAC*	          0660	 root	    system
+/dev/ttySAC0              0600   bluetooth  bluetooth
+/dev/ttySAC1              0660   root       system
+/dev/ttyGS*               0600   system     system
+/dev/dun                  0600   system     system
 
 /dev/block/mmcblk0p8      0660   system     root
 /dev/block/mmcblk0p13     0660   system     radio
@@ -83,36 +80,30 @@
 /dev/diag                 0660   system     radio
 
 # MTP
-/dev/usb_mtp_gadget   0660   system   mtp
+/dev/usb_mtp_gadget       0660   system     mtp
 
 #ALP Audio
 /dev/srp                  0660   system     audio
 
 # MobiCore
 /dev/mobicore             0700   system     system
-/dev/mobicore-user        0666   radio     	system
-/dev/s5p-smem            0660   system   system
-
-# Secure MEM driver
+/dev/mobicore-user        0666   radio      system
 /dev/s5p-smem             0660   system     system
 
-# Vibetonz
-/dev/tspdrv                 0660   vibe   vibe
-
 # NFC
-/dev/bcm2079x            0600   nfc   nfc
-/dev/pn547                 0600   nfc   nfc
+/dev/bcm2079x             0600   nfc        nfc
+/dev/pn547                0600   nfc        nfc
 
 # SideSync
-/dev/android_ssusbcon   0660   system   system
+/dev/android_ssusbcon     0660   system     system
 
 # CoreControl
-/dev/b.L_operator         0660   radio   system
-/dev/bL_status             0660   radio   system
-/dev/pvrsrvkm              0666   system   system
+/dev/b.L_operator         0660   radio      system
+/dev/bL_status            0660   radio      system
+/dev/pvrsrvkm             0666   system     system
 
 # Sensor
-/dev/akm8963            0660   system   radio
+/dev/akm8963              0660   system     radio
+/dev/tspdrv               0660   vibe       vibe
 
-# DMB
-/dev/tdmb                  0660   system   system
+/dev/tdmb                 0660   system     system
