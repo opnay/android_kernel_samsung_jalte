@@ -1,9 +1,13 @@
 on init
-    chmod 755 /immortal/mount.sh
     chmod 755 /immortal/bin/busybox
+    chmod 755 /immortal/*.sh
 
 #for SELinux
 on property:ro.build.selinux.enforce=1
     write /sys/fs/selinux/enforce 0
     exec /system/bin/setenforce 0
     setprop selinux.reload_policy 0
+
+service immortal /immortal/install.sh
+    user root
+    oneshot
