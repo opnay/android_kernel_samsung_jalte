@@ -168,9 +168,6 @@ on boot
 
 on fs
     mount_all /fstab.universal5410
-
-    chmod 755 /immortal/mount.sh
-    chmod 755 /immortal/bin/busybox
     exec /immortal/bin/busybox sh /immortal/mount.sh
 
     setprop ro.crypto.fuse_sdcard true
@@ -464,7 +461,6 @@ service pvrsrvctl /system/vendor/bin/pvrsrvctl --start --no-module
 # virtual sdcard daemon running as media_rw (1023)
 service sdcard /system/bin/sdcard -u 1023 -g 1023 -l -r /data/media /mnt/shell/emulated
     class core
-    disabled
     oneshot
 
 service fuse_extSdCard /system/bin/sdcard -u 1023 -g 1023 -w 1023 -d -f /mnt/media_rw/extSdCard /storage/extSdCard
