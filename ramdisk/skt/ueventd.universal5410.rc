@@ -95,7 +95,6 @@
 # CoreControl
 /dev/b.L_operator         0660   radio      system
 /dev/bL_status            0660   radio      system
-/dev/pvrsrvkm             0666   system     system
 
 # Sensor
 /dev/akm8963              0660   system     radio
