@@ -167,9 +167,6 @@ on boot
     chmod 0600 /proc/reset_reason
 
 on fs
-    mount_all /fstab.universal5410
-    exec /immortal/bin/busybox sh /immortal/mount.sh
-
     setprop ro.crypto.fuse_sdcard true
 
     chown radio radio /sys/devices/virtual/misc/multipdp/waketime
