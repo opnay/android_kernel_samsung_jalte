@@ -1,4 +1,4 @@
-IMMORTAL_VERSION=v0.1T
+IMMORTAL_VERSION=v0.1R
 
 ## Kernel Directory
 KERNEL_DIR=`pwd`
