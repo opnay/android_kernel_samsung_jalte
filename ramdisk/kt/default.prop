@@ -8,5 +8,4 @@ ro.debuggable=0
 ro.adb.secure=1
 persist.sys.usb.config=mtp
 
-# Enable Wi-Fi
 ro.securestorage.support=false
