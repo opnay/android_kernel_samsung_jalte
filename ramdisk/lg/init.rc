@@ -80,7 +80,7 @@ loglevel 3
 # [ SEC_MM_DRM
     mkdir /mnt/shell 0750 shell shell
 # ]
-    mkdir /mnt/media_rw 0700 media_rw media_rw
+    mkdir /mnt/media_rw 0750 media_rw media_rw
     mkdir /storage 0751 root sdcard_r
 
     # Directory for putting things only root should see.
@@ -251,10 +251,6 @@ on post-fs-data
     chown system system /dev/icdr
     chmod 0644 /dev/icdr
     chown system system /dev/tzic
-
-    #SideSync
-    chown system system /dev/android_ssusbcon
-    chmod 0660 /dev/android_ssusbcon
 
     # For security reasons, /data/local/tmp should always be empty.
     # Do not place files or directories in /data/local/tmp
@@ -539,6 +535,13 @@ on property:selinux.reload_policy=1
     chown -R system system /sys/fs/selinux/booleans
     chown system system /sys/fs/selinux/commit_pending_bools
 
+on property:sys.powerctl=*
+    powerctl ${sys.powerctl}
+
+# system server cannot write to /proc/sys files, so proxy it through init
+on property:sys.sysctl.extra_free_kbytes=*
+    write /proc/sys/vm/extra_free_kbytes ${sys.sysctl.extra_free_kbytes}
+
 ## Daemon processes to be run by init.
 ##
 service sysmon /system/bin/sysmon
@@ -724,7 +727,6 @@ service installd /system/bin/installd
 service flash_recovery /system/etc/install-recovery.sh
     class main
     seclabel u:r:flash_recovery:s0
-    user root
     oneshot
 
 service racoon /system/bin/racoon
@@ -767,14 +769,6 @@ service sdumpstate /system/bin/dumpstate -P
     class main
     disabled
     oneshot
-    
-# bugreport is triggered by holding down volume down, volume up and power
-service bugreport /system/bin/dumpstate -d -p -B \
-        -o /data/data/com.android.shell/files/bugreports/bugreport
-    class main
-    disabled
-    oneshot
-    keycodes 114 115 116
     
 # Vibetonz
 service immvibed /system/bin/immvibed
@@ -865,3 +859,15 @@ service BCS-daemon /system/bin/connfwexe
     user root
     group system radio inet net_raw
 # end of RIL
+
+# for Bluetooth Tethering
+service dhcpcd_bt-pan /system/bin/dhcpcd -ABKL
+    class main
+    disabled
+    oneshot
+
+service iprenew_bt-pan /system/bin/dhcpcd -n
+    class late_start
+    disabled
+    oneshot
+# end of BT

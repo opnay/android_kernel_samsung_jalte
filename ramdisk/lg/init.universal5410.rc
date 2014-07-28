@@ -37,7 +37,7 @@ on init
     symlink /storage/UsbDriveF /mnt/UsbDriveF
 
     export SECONDARY_STORAGE /storage/extSdCard
-
+    
     mkdir /storage/extSdCard 0700 root root
     mkdir /storage/UsbDriveA 0700 root root
     mkdir /storage/UsbDriveB 0700 root root
@@ -50,11 +50,6 @@ on init
     symlink /dev/block/mmcblk0p13 /dev/mbin0
     restorecon /dev/mbin0
     symlink /sys/devices/platform/s5p-ehci/ehci_power /dev/ehci_power
-
-# Vibetonz
-    export VIBE_PIPE_PATH /dev/pipes
-    mkdir /dev/pipes 0771 vibe vibe
-    restorecon /dev/pipes
 
     symlink /dev/block/mmcblk0p8 /dev/block/param
 
@@ -80,6 +75,7 @@ on post-fs-data
 
     mkdir /data/misc/radio 0775 radio system
     mkdir /efs/imei 0775 radio system
+    
 
     # Added for TZ Playready DRM Support
     mkdir /efs/drm 0700 drm system
@@ -91,6 +87,10 @@ on post-fs-data
     chmod 0660 /sys/class/rfkill/rfkill0/state
     chown bluetooth bluetooth /sys/class/rfkill/rfkill0/state
     chown bluetooth bluetooth /sys/class/rfkill/rfkill0/type
+
+    # For kernel lock in BT/WiFi race condtion
+    chmod 0600 /dev/btlock
+    chown bluetooth bluetooth /dev/btlock
 
 on boot
     mount debugfs /sys/kernel/debug /sys/kernel/debug
@@ -137,12 +137,30 @@ on boot
 # mobicore
     mkdir /data/app/mcRegistry 0775 system system
 
+# LGT contents directory
+    mkdir /data/data/com.ubivelox.wipiplayer/W 0770 system lgt_gid
+    mkdir /data/LGTContents 0770 system lgt_gid
+    mkdir /data/LGTContents/video 0770 system lgt_gid
+    mkdir /data/LGTContents/music 0770 system lgt_gid
+    mkdir /data/LGTContents/bell 0770 system lgt_gid
+    mkdir /data/LGTContents/app 0770 system lgt_gid
+    mkdir /data/LGTContents/DLtmp 0770 system lgt_gid
+    mkdir /data/LGTContents/ringforme 0770 system lgt_gid
+
+    chown system lgt_gid /data/data/com.ubivelox.wipiplayer/W
+    chown system lgt_gid /data/LGTContents
+    chown system lgt_gid /data/LGTContents/video
+    chown system lgt_gid /data/LGTContents/music
+    chown system lgt_gid /data/LGTContents/bell
+    chown system lgt_gid /data/LGTContents/app
+    chown system lgt_gid /data/LGTContents/DLtmp
+    chown system lgt_gid /data/LGTContents/ringforme
+
 # reset_reason
     chown system system /proc/reset_reason
     chmod 0600 /proc/reset_reason
 
 on fs
-    mount_all /fstab.universal5410
     setprop ro.crypto.fuse_sdcard true
 
     chown radio radio /sys/devices/virtual/misc/multipdp/waketime
@@ -283,6 +301,42 @@ on fs
     chmod 0664 /sys/class/devfreq/exynos5-busfreq-mif/en_monitoring
     chmod 0664 /sys/class/devfreq/exynos5-busfreq-int/en_monitoring
 
+#MDM requirement
+    mkdir /data/cp_log
+    chmod 0775 /data/cp_log
+    chown system radio /data/cp_log
+
+    mkdir /dev/block/modem
+    symlink /dev/block/platform/dw_mmc.0/by-name/m9kefs1 /dev/block/modem/m9kefs1
+    symlink /dev/block/platform/dw_mmc.0/by-name/m9kefs2 /dev/block/modem/m9kefs2
+    symlink /dev/block/platform/dw_mmc.0/by-name/m9kefs3 /dev/block/modem/m9kefs3
+    symlink /dev/block/platform/dw_mmc.0/by-name/ /dev/block/modem/dump_path
+    chown system radio /dev/block/modem/m9kefs1
+    chmod 0775 /dev/block/modem/m9kefs1
+    chown system radio /dev/block/modem/m9kefs2
+    chmod 0775 /dev/block/modem/m9kefs2
+    chown system radio /dev/block/modem/m9kefs3
+    chmod 0775 /dev/block/modem/m9kefs3
+    chown system radio /dev/block/modem/dump_path
+    chmod 0775 /dev/block/modem/dump_path
+
+    mkdir /firmware 0771 system system
+    mount vfat /dev/block/mmcblk0p13 /firmware ro shortname=lower fmask=0133,dmask=0022
+    chown system system /tombstones
+    chmod 0775 /tombstones
+    restorecon -R /tombstones
+    mkdir /tombstones/modem 0775 system system
+    mkdir /tombstones/lpass 0775 system system
+    mkdir /tombstones/wcnss 0775 system system
+    mkdir /tombstones/dsps 0775 system system
+    rmdir /tombstones/qcks
+    mkdir /tombstones/qcks 771 system system
+    rmdir /tombstones/efs
+    mkdir /tombstones/efs 771 system system
+
+    chown system radio /dev/block/platform/dw_mmc.0/by-name
+    chmod 0775 /dev/block/platform/dw_mmc.0/by-name
+
 # SSRM
     chown radio system /sys/class/lcd/panel/siop_enable
     chown radio system /sys/class/graphics/fb0/lcdfreq/level
@@ -350,8 +404,8 @@ on fs
     chown system radio /sys/module/asv_exynos/parameters/asv_group
 
 # terminal mode
-	chmod 0660 /sys/class/android_usb/android0/terminal_version
-	chown system system /sys/class/android_usb/android0/terminal_version
+    chmod 0660 /sys/class/android_usb/android0/terminal_version
+    chown system system /sys/class/android_usb/android0/terminal_version
 
 # Permissions for usb_lock
     chown system radio /sys/class/sec/switch/.usb_lock/enable
@@ -360,7 +414,6 @@ on fs
 
 # NFC
     setprop ro.nfc.port "I2C"
-# Broadcom NFC
     mkdir /data/bcmnfc
     mkdir /data/bcmnfc/param
     chmod 0700 /data/bcmnfc
@@ -380,7 +433,7 @@ on fs
     chown system system /sys/class/lcd/panel/temperature
 
 # Permissions for MDNIE
-    chown system system /sys/class/mdnie/mdnie/mode
+    chown system media_rw /sys/class/mdnie/mdnie/mode
     chown system media_rw /sys/class/mdnie/mdnie/scenario
     chown system system /sys/class/mdnie/mdnie/accessibility
 
@@ -410,9 +463,6 @@ on fs
     chmod 0755 /persdata
     chown system system /persdata/absolute
     chmod 0750 /persdata/absolute
-
-# FingerPrint_sensor
-    chown system system /sys/class/fingerprint/fingerprint/ocp_check
 
 # FingerPrint_sensor
     chown system system /sys/class/fingerprint/fingerprint/ocp_check
@@ -473,43 +523,49 @@ service pvrsrvctl /system/vendor/bin/pvrsrvctl --start --no-module
 
 # virtual sdcard daemon running as media_rw (1023)
 service sdcard /system/bin/sdcard -u 1023 -g 1023 -l -r /data/media /mnt/shell/emulated
-    class late_start
+    class core
     oneshot
 
 service fuse_extSdCard /system/bin/sdcard -u 1023 -g 1023 -w 1023 -d -f /mnt/media_rw/extSdCard /storage/extSdCard
-    class late_start
+    class core
     disabled
     oneshot
 
 service fuse_UsbDriveA /system/bin/sdcard -u 1023 -g 1023 -d -f /mnt/media_rw/UsbDriveA /storage/UsbDriveA
-    class late_start
+    class core
     disabled
     oneshot
 
 service fuse_UsbDriveB /system/bin/sdcard -u 1023 -g 1023 -d -f /mnt/media_rw/UsbDriveB /storage/UsbDriveB
-    class late_start
+    class core
     disabled
     oneshot
 
 service fuse_UsbDriveC /system/bin/sdcard -u 1023 -g 1023 -d -f /mnt/media_rw/UsbDriveC /storage/UsbDriveC
-    class late_start
+    class core
     disabled
     oneshot
 
 service fuse_UsbDriveD /system/bin/sdcard -u 1023 -g 1023 -d -f /mnt/media_rw/UsbDriveD /storage/UsbDriveD
-    class late_start
+    class core
     disabled
     oneshot
 
 service fuse_UsbDriveE /system/bin/sdcard -u 1023 -g 1023 -d -f /mnt/media_rw/UsbDriveE /storage/UsbDriveE
-    class late_start
+    class core
     disabled
     oneshot
 
 service fuse_UsbDriveF /system/bin/sdcard -u 1023 -g 1023 -d -f /mnt/media_rw/UsbDriveF /storage/UsbDriveF
-    class late_start
+    class core
     disabled
     oneshot
+
+# Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
+service watchdogd /sbin/watchdogd 10 20
+    class core
+    seclabel u:r:watchdogd:s0
+    disabled
 
 #sensorhubservice start
 service sensorhubservice /system/bin/sensorhubservice
@@ -539,6 +595,10 @@ service bootchecker /system/bin/bootchecker
 on property:ro.dumpstate.dmesg=1
     write /proc/sys/kernel/dmesg_restrict 0
 
+# Kick watchdogd if debug_level is low
+on property:ro.debug_level=0x4f4c
+    start watchdogd
+
 # service for TZPR provisioning version check app
 service scranton_RD /system/bin/scranton_RD
      class main
@@ -551,7 +611,9 @@ on property:sys.mobicoredaemon.enable=true
     start scranton_RD
 
 # MobiCore startup
-service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
+service mobicore /system/bin/mcDriverDaemon \
+        -r /system/app/FFFFFFFF000000000000000000000001.drbin \
+        -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
     class core
     user system
     group system
@@ -587,6 +649,10 @@ service TvoutService_C /system/bin/bintvoutservice
      group graphics
 on property:ro.SecEDS.enable=false
     stop TvoutService_C
+
+# for LGU I-WLAN
+on property:sys.mobicoredaemon.enable=true
+    insmod /lib/modules/mwlan_aarp.ko
 
 # RTCC INIT
 service rtccd /system/bin/rtccd2 -a 500M
