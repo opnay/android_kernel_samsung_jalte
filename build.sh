@@ -81,5 +81,5 @@ ShowNoty "==Make Boot.img"
 ./build_ramdisk.sh $RAMDISK_OUT_DIR $COMPRESS
 $MKBOOTIMG --base 0x10000000 --pagesize 2048 --kernel $KERNEL_OUT_DIR/arch/arm/boot/zImage --ramdisk $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.$COMPRESS -o $KERNEL_BOOTIMG_DIR/boot.img
 
-ShowNoty "==Install boot.img"
-./build_install.sh $KERNEL_BOOTIMG_DIR/boot.img /dev/block/platform/dw_mmc.0/by-name/BOOT
+# ShowNoty "==Install boot.img"
+# ./build_install.sh $KERNEL_BOOTIMG_DIR/boot.img /dev/block/platform/dw_mmc.0/by-name/BOOT
