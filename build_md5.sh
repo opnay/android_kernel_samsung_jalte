@@ -1,10 +1,9 @@
 # usage : build_md5.sh <output file name> <compressing files>...
 # this script will make Odin Package (<output>.tar.md5)
 
-if [ "$1" == "" -o "$2" == "" ]
-then
-	echo "usage :"
-	echo "build_md5.sh <output filename> <compressing files>...\n"
+if [ "$1" == "" -o "$2" == "" ]; then
+	echo "Usage :"
+	echo "build_md5.sh <output filename> <compressing files>..."
 	echo "Waring: Do not use blank"
 	exit
 fi

@@ -9,7 +9,7 @@ RAMDISK_DIR=$1
 COMPRESS=$2
 
 if [ "$RAMDISK_DIR" = "" -o "$COMPRESS" = "" ]; then
-	Error "Usage : build_ramdisk.sh <Ramdisk directory> <compress (gz / lz4)>"
+	Error "Usage :\nbuild_ramdisk.sh <Ramdisk directory> <compress (gz / lz4)>"
 	exit
 fi
 

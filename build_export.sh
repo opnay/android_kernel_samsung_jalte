@@ -15,5 +15,5 @@ MKBOOTFS=$KERNEL_BIN_DIR/mkbootfs
 MKBOOTIMG=$KERNEL_BIN_DIR/mkbootimg
 STRIP="$TOOLCHAIN"strip
 
-NB_CPU=16 #`grep process /proc/cpuinfo | wc -l`
+JN=16 #`grep process /proc/cpuinfo | wc -l`
 COMPRESS=lz4 # gz / lz4
