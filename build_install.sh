@@ -1,8 +1,10 @@
 source build_function.sh
+
 ## Check adb.
 ## If you have sdk, set adb command line
 #ADB=/your/adb/path
 ADB=`which adb`
+
 # boot.img binary
 BOOTIMG=$1
 DEVPATH=$2
@@ -26,8 +28,6 @@ fi
 
 ShowNoty "Wait for device"
 $ADB wait-for-device
-
-# do
 
 ShowNoty "Push boot.img"
 $ADB push $BOOTIMG /sdcard/boot.img
