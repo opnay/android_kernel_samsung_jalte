@@ -82,6 +82,7 @@ ShowNoty "Make Boot.img"
 
 $MKBOOTIMG \
     --base 0x10000000 \
+    --ramdisk_offset 0x01000000 \
     --pagesize 2048 \
     --kernel $KERNEL_BOOTIMG_DIR/zImage \
     --ramdisk $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.$COMPRESS \
