@@ -48,10 +48,13 @@ user=_app seinfo=untrusted name=com.rageconsulting.android.lightflowlite domain=
 user=_app seinfo=untrusted name=rubberbigpepper.lgCamera domain=filtered_untrusted_app type=app_data_file
 user=_app seinfo=untrusted name=com.google.android.calendar domain=filtered_google_app type=app_data_file
 user=_app seinfo=untrusted name=com.google.android.gms domain=filtered_google_app type=app_data_file
+user=_app seinfo=untrusted name=com.google.android.gms:snet domain=filtered_google_app type=app_data_file
 user=_app seinfo=untrusted name=com.google.process.location domain=filtered_google_app type=app_data_file
 user=_app seinfo=vmware domain=vmware_app type=app_data_file
 user=_app seinfo=llk_untrusted name=com.customermobile.preload.main2 domain=llk_untrusted_app type=app_data_file
 user=_app seinfo=llk_untrusted name=com.customermobile.preload domain=llk_untrusted_app type=app_data_file
+user=_app seinfo=llk_untrusted name=com.verizon.llkagent domain=llk_untrusted_app type=app_data_file
+user=_app seinfo=llk_untrusted name=com.customermobile.preload.vzw domain=llk_untrusted_app type=app_data_file
 user=_app seinfo=vpn_untrusted name=net.juniper.junos.pulse.android domain=vpn_untrusted_app type=app_data_file
 user=_app seinfo=vpn_untrusted name=net.juniper.junos.pulse.android:remote domain=vpn_untrusted_app type=app_data_file
 user=sprintextension name=com.sec.sprextension domain=system_app type=system_data_file
