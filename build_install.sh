@@ -15,7 +15,7 @@ if [ "$BOOTIMG" == "" -o "$DEVPATH" == "" ]; then
 fi
 
 ShowInfo "ADB:" $ADB
-if [ ! -f $ADB ]; then
+if [ ! -e $ADB ] || [ "$ADB" == "" ]; then
 	Error "adb Not Found!!!"
 	exit
 fi
