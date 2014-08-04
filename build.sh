@@ -3,7 +3,7 @@ source build_export.sh
 
 # Check Usage
 if [ "$1" == "" ]; then
-	Error "Usage :\nbuild.sh <skt/kt/lg>"
+	Error "Usage :\nbuild.sh <skt/kt/lg> [recovery]"
 	exit
 fi
 
@@ -12,12 +12,19 @@ export ARCH=arm
 export CROSS_COMPILE=$TOOLCHAIN
 
 DEVICE_CA=$1
-DEFCONFIG=jalte"$DEVICE_CA"_immortal_defconfig
-RAMDISK_ORIG=$RAMDISK_ORIG/$1
+DEFCONFIG=jalte"$1"_immortal_defconfig
+if [ "$2" == "recovery" ]; then
+	RAMDISK_ORIG=$RAMDISK_ORIG/recovery
+else
+	RAMDISK_ORIG=$RAMDISK_ORIG/$1
+fi
 
 # Check Settings.
 ShowInfo "Check Script Settings"
 echo
+if [ "$2" == "recovery" ]; then
+	ShowInfo "Recovery Build :" "true"
+fi
 ShowInfo "Kernel Directory :" $KERNEL_DIR
 ShowInfo "Kernel Output Directory :" $KERNEL_OUT_DIR
 ShowInfo "Kernel Output boot.img Directory :" $KERNEL_BOOTIMG_DIR
@@ -80,6 +87,15 @@ echo -e "\nimmortal.version=$IMMORTAL_VERSION" >> $RAMDISK_OUT_DIR/default.prop
 ShowNoty "Make Boot.img"
 ./build_ramdisk.sh $RAMDISK_OUT_DIR $COMPRESS
 
+if [ "$2" == "recovery" ]; then
+$MKBOOTIMG \
+    --base 0x10000000 \
+    --ramdisk_offset 0x01000000 \
+    --pagesize 2048 \
+    --kernel $KERNEL_BOOTIMG_DIR/zImage \
+    --ramdisk $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.$COMPRESS \
+    -o $KERNEL_BOOTIMG_DIR/recovery.img
+else
 $MKBOOTIMG \
     --base 0x10000000 \
     --ramdisk_offset 0x01000000 \
@@ -87,6 +103,7 @@ $MKBOOTIMG \
     --kernel $KERNEL_BOOTIMG_DIR/zImage \
     --ramdisk $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.$COMPRESS \
     -o $KERNEL_BOOTIMG_DIR/boot.img
+fi
 
 # ShowNoty "==Install boot.img"
 # ./build_install.sh $KERNEL_BOOTIMG_DIR/boot.img /dev/block/platform/dw_mmc.0/by-name/BOOT
