@@ -11,13 +11,13 @@
 
 static inline int read_into(int *container, int size, const char *buf, size_t count)
 {
-	int i, j, t, n;
-	i=0; j=0; t=0; n=0;
+	int i=0, j=0, t=0, n=0;
 
-	for(j = 0; j < size; j++)
-		*(container + j) = 0;
+	//Initialize container array
+	for(i = 0; i < size; i++)
+		*(container + i) = 0;
 
-	for(j = 0; i < count; i++) {
+	for(i = 0; i < count; i++) {
 		char c = buf[i];
 		if(c >= '0' && c <= '9') {
 			if(t < (j + 1)) 
