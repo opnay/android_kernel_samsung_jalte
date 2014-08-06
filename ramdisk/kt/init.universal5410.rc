@@ -381,7 +381,7 @@ on fs
 
 # Permissions for LCD
     chown system radio /sys/class/lcd/panel/lcd_type
-    chown system system /sys/class/lcd/panel/power_reduce
+    chown system media_rw /sys/class/lcd/panel/power_reduce
     chown system system /sys/class/lcd/panel/siop_enable
     chown system system /sys/class/graphics/fb0/lcdfreq/level
     chown system system /sys/class/lcd/panel/temperature
