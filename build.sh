@@ -15,16 +15,16 @@ DEVICE_CA=$1
 DEFCONFIG=jalte"$1"_immortal_defconfig
 if [ "$2" == "recovery" ]; then
 	RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/recovery
-	IS_RECOVERY=true
+	BOOTIMG=recovery
 else
 	RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/$1
-	IS_RECOVERY=false
+	BOOTIMG=boot
 fi
 
 # Check Settings.
 ShowInfo "Check Script Settings\n"
 
-if [ $IS_RECOVERY ]; then
+if [ $BOOTIMG == "recovery" ]; then
 	ShowInfo "Recovery Build :" "true"
 fi
 ShowInfo "Kernel Directory :" $KERNEL_DIR
@@ -77,26 +77,13 @@ ShowNoty "Make Ramdisk"
 ## Make boot.img
 ShowNoty "Make Boot.img"
 
-if [ $IS_RECOVERY ]; then
-$MKBOOTIMG --base 0x10000000 \
-    --ramdisk_offset 0x01000000 \
-    --pagesize 2048 \
-    --kernel $KERNEL_DIR_BOOTIMG/zImage \
-    --ramdisk $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio.$COMPRESS \
-    -o $KERNEL_DIR_BOOTIMG/recovery.img
-else
-$MKBOOTIMG --base 0x10000000 \
-    --ramdisk_offset 0x01000000 \
-    --pagesize 2048 \
-    --kernel $KERNEL_DIR_BOOTIMG/zImage \
-    --ramdisk $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio.$COMPRESS \
-    -o $KERNEL_DIR_BOOTIMG/boot.img
-fi
+$MKBOOTIMG \
+    -o $KERNEL_DIR_BOOTIMG/$BOOTIMG.img
 
 # ShowNoty "==Install boot.img"
 # ./build_install.sh $KERNEL_DIR_BOOTIMG/boot.img /dev/block/platform/dw_mmc.0/by-name/BOOT
 
-if [ -e $KERNEL_DIR_BOOTIMG/boot.img -o -e $KERNEL_DIR_BOOTIMG/recovery.img ]; then
+if [ -e $KERNEL_DIR_BOOTIMG/$BOOTIMG.img ]; then
 ShowNoty "Build Complete!!"
 ShowInfo "boot.img: " "$KERNEL_DIR_BOOTIMG/boot.img"
 else
