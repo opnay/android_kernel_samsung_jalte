@@ -7,7 +7,7 @@ source build_function.sh
 
 KERNEL_DIR_BOOTIMG=`pwd`/bootimg
 RAMDISK_DIR_ORIG=$1
-COMPRESS=$2
+BOOTIMG=$2
 
 if [ "$RAMDISK_DIR" = "" -o "$COMPRESS" = "" ]; then
 	Error "Usage :\nbuild_ramdisk.sh <Ramdisk directory> <compress (gz / lz4)>"
@@ -21,6 +21,10 @@ if [ ! -e "$KERNEL_DIR_OUT" ]; then
 	exit
 fi
 # Clean
+
+rm -rf $RAMDISK_DIR $KERNEL_DIR_BOOTIMG
+mkdir -p $RAMDISK_DIR $KERNEL_DIR_BOOTIMG
+
 cp -r $RAMDISK_DIR_ORIG/* $RAMDISK_DIR/
 find $RAMDISK_DIR -name EMPTY -exec rm -rf {} \;
 find $RAMDISK_DIR -name "*~" -exec rm -rf {} \;
@@ -43,3 +47,7 @@ elif [ "$COMPRESS" = "lz4" ]; then
 	lz4c -l -hc stdin $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio.lz4 < $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio
 fi
 
+cp $KERNEL_DIR_OUT/arch/arm/boot/zImage $KERNEL_DIR_BOOTIMG/zImage
+
+$MKBOOTIMG \
+    -o $KERNEL_DIR_BOOTIMG/$BOOTIMG.img

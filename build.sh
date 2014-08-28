@@ -51,8 +51,8 @@ fi
 
 ## Clean output Directory
 ShowNoty "Clean Directory"
-rm -rf $KERNEL_DIR_BOOTIMG $KERNEL_DIR_OUT
-mkdir -p $KERNEL_DIR_BOOTIMG $KERNEL_DIR_OUT $RAMDISK_DIR
+rm -rf $KERNEL_DIR_OUT
+mkdir -p $KERNEL_DIR_OUT
 
 ## Make
 ShowNoty "Make Config"
@@ -67,25 +67,14 @@ if [ ! -e $KERNEL_DIR_OUT/arch/arm/boot/zImage ]; then
 	exit
 fi
 
-cp $KERNEL_DIR_OUT/arch/arm/boot/zImage $KERNEL_DIR_BOOTIMG/zImage
-
-## Copy Ramdisk
-ShowNoty "Make Ramdisk"
-# build_ramdisk.sh <original_directory> <compress_type>
-./build_ramdisk.sh $RAMDISK_DIR_ORIG $COMPRESS
-
 ## Make boot.img
-ShowNoty "Make Boot.img"
-
-$MKBOOTIMG \
-    -o $KERNEL_DIR_BOOTIMG/$BOOTIMG.img
-
-# ShowNoty "==Install boot.img"
-# ./build_install.sh $KERNEL_DIR_BOOTIMG/boot.img /dev/block/platform/dw_mmc.0/by-name/BOOT
+ShowNoty "Make boot.img"
+# build_bootimg.sh <original_directory> <out_file_name>
+./build_bootimg.sh $RAMDISK_DIR_ORIG $BOOTIMG
 
 if [ -e $KERNEL_DIR_BOOTIMG/$BOOTIMG.img ]; then
 ShowNoty "Build Complete!!"
-ShowInfo "boot.img: " "$KERNEL_DIR_BOOTIMG/boot.img"
+ShowInfo "boot.img: " "$KERNEL_DIR_BOOTIMG/$BOOTIMG.img"
 else
 Error "Couldn't make boot.img"
 fi
