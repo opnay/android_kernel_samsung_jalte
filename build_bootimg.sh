@@ -10,7 +10,7 @@ RAMDISK_DIR_ORIG=$1
 BOOTIMG=$2
 
 if [ "$RAMDISK_DIR" = "" -o "$COMPRESS" = "" ]; then
-	Error "Usage :\nbuild_ramdisk.sh <Ramdisk directory> <compress (gz / lz4)>"
+	Error "Usage :\nbuild_ramdisk.sh <Ramdisk original directory> <out_file_name>"
 	exit
 fi
 
