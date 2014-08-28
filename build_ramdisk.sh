@@ -2,10 +2,11 @@
 # $1 = Ramdisk directory
 # $2 = compress < gz / lz4 >
 #########
+source build_export.sh
 source build_function.sh
 
-KERNEL_BOOTIMG_DIR=`pwd`/bootimg
-RAMDISK_DIR=$1
+KERNEL_DIR_BOOTIMG=`pwd`/bootimg
+RAMDISK_DIR_ORIG=$1
 COMPRESS=$2
 
 if [ "$RAMDISK_DIR" = "" -o "$COMPRESS" = "" ]; then
@@ -13,13 +14,32 @@ if [ "$RAMDISK_DIR" = "" -o "$COMPRESS" = "" ]; then
 	exit
 fi
 
+## Copy Ramdisk Directory
+
+if [ ! -e "$KERNEL_DIR_OUT" ]; then
+	echo "module file not found"
+	exit
+fi
+# Clean
+cp -r $RAMDISK_DIR_ORIG/* $RAMDISK_DIR/
+find $RAMDISK_DIR -name EMPTY -exec rm -rf {} \;
+find $RAMDISK_DIR -name "*~" -exec rm -rf {} \;
+# Copy Module and strip.
+for i in `find $KERNDIR_DIR -name "*.ko"`; do
+	echo $i
+	$STRIP --strip-unneeded $i
+	cp $i $RAMDISK_DIR/lib/modules/
+done
+# Write Immortal Kernel Version.
+echo -e "\nimmortal.version=$IMMORTAL_VERSION" >> $RAMDISK_DIR/default.prop
+
 ShowInfo "Compress with" $COMPRESS
 
-./bin/mkbootfs $RAMDISK_DIR > $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio
+$MKBOOTFS $RAMDISK_DIR > $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio
 
 if [ "$COMPRESS" = "gz" ]; then
-	gzip -9 < $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio > $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.gz
+	gzip -9 < $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio > $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio.gz
 elif [ "$COMPRESS" = "lz4" ]; then
-	lz4c -l -hc stdin $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio.lz4 < $KERNEL_BOOTIMG_DIR/ramdisk-boot.cpio
+	lz4c -l -hc stdin $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio.lz4 < $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio
 fi
 

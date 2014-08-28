@@ -2,17 +2,18 @@ IMMORTAL_VERSION=v0.202T
 
 ## Kernel Directory
 KERNEL_DIR=`pwd`
-KERNEL_OUT_DIR=$KERNEL_DIR/out
-KERNEL_BOOTIMG_DIR=$KERNEL_DIR/bootimg
-KERNEL_BIN_DIR=$KERNEL_DIR/bin
-RAMDISK_ORIG=$KERNEL_DIR/ramdisk
-RAMDISK_OUT_DIR=$KERNEL_OUT_DIR/ramdisk
+KERNEL_DIR_OUT=$KERNEL_DIR/out
+KERNEL_DIR_BOOTIMG=$KERNEL_DIR/bootimg
+KERNEL_DIR_BIN=$KERNEL_DIR/bin
+
+RAMDISK_DIR=$KERNEL_DIR_OUT/ramdisk
+RAMDISK_DIR_ORIG=$KERNEL_DIR/ramdisk
 
 ## Binary
 TOOLCHAIN=/project/toolchain/gcc-linaro-arm-linux-gnueabihf-4.9-2014.07_linux/bin/arm-linux-gnueabihf-
-MINIGZIP=$KERNEL_BIN_DIR/minigzip
-MKBOOTFS=$KERNEL_BIN_DIR/mkbootfs
-MKBOOTIMG=$KERNEL_BIN_DIR/mkbootimg
+MINIGZIP=$KERNEL_DIR_BIN/minigzip
+MKBOOTFS=$KERNEL_DIR_BIN/mkbootfs
+MKBOOTIMG=$KERNEL_DIR_BIN/mkbootimg
 STRIP="$TOOLCHAIN"strip
 
 JN=16 #`grep process /proc/cpuinfo | wc -l`
