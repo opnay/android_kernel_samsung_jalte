@@ -2,7 +2,7 @@ source build_function.sh
 source build_export.sh
 
 # Check Usage
-if [ "$1" == "" ]; then
+if [ $# -lt 1 -o "$1" == "" ]; then
 	Error "Usage :\nbuild.sh <skt/kt/lg> [recovery]"
 	exit
 fi

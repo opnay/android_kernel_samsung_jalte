@@ -9,8 +9,9 @@ KERNEL_DIR_BOOTIMG=`pwd`/bootimg
 RAMDISK_DIR_ORIG=$1
 BOOTIMG=$2
 
-if [ "$RAMDISK_DIR" = "" -o "$COMPRESS" = "" ]; then
-	Error "Usage :\nbuild_ramdisk.sh <Ramdisk original directory> <out_file_name>"
+if [ $# != 2 -o "$RAMDISK_DIR" = "" -o "$COMPRESS" = "" ]; then
+	Error "Usage : build_ramdisk.sh <Ramdisk original directory> <out_file_name>"
+	ShowInfo "ex)" "build_bootimg.sh ramdisk/skt boot"
 	exit
 fi
 

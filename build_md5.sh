@@ -1,10 +1,11 @@
 # usage : build_md5.sh <output file name> <compressing files>...
 # this script will make Odin Package (<output>.tar.md5)
 
-if [ "$1" == "" -o "$2" == "" ]; then
-	echo "Usage :"
-	echo "build_md5.sh <output filename> <compressing files>..."
-	echo "Waring: Do not use blank"
+source build_function.sh
+
+if [ $# != 2 -o "$1" == "" -o "$2" == "" ]; then
+	Error "Usage : build_md5.sh <output filename> <compressing files>..."
+	ShowInfo "ex)" "build_md5.sh firmware boot.img system.img"
 	exit
 fi
 
