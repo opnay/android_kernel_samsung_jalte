@@ -118,6 +118,7 @@ void s5p_mfc_enc_calc_src_size(struct s5p_mfc_ctx *ctx);
 #define s5p_mfc_get_dec_frame()		(readl(dev->regs_base + \
 						S5P_FIMV_D_DECODED_FRAME_TYPE) \
 						& S5P_FIMV_DECODED_FRAME_MASK)
+#define mfc_get_info_stage_counter()	readl(dev->regs_base + 0xF088)
 
 #define mb_width(x_size)		((x_size + 15) / 16)
 #define mb_height(y_size)		((y_size + 15) / 16)

@@ -607,9 +607,6 @@ static int sec_debug_panic_handler(struct notifier_block *nb,
 {
 	int i;
 
-	if (!sec_debug_level.en.kernel_fault)
-		return -1;
-
 	local_irq_disable();
 
 #ifdef CONFIG_SEC_DEBUG_SCHED_LOG
@@ -643,16 +640,19 @@ static int sec_debug_panic_handler(struct notifier_block *nb,
 	sec_debug_disable_watchdog();
 #endif
 
+	if(sec_debug_level.en.kernel_fault) {
 #ifdef CONFIG_SEC_DEBUG_FUPLOAD_DUMP_MORE
-	dump_all_task_info();
-	dump_cpu_stat();
+		dump_all_task_info();
+		dump_cpu_stat();
 
-	show_state_filter(TASK_STATE_MAX);	/* no backtrace */
+		show_state_filter(TASK_STATE_MAX);	/* no backtrace */
 #else
-	show_state();
+		show_state();
 #endif
 
-	sec_debug_dump_stack();
+		sec_debug_dump_stack();
+	}
+
 	sec_debug_hw_reset();
 
 	return 0;

@@ -1127,6 +1127,7 @@ static int mmc_blk_err_check(struct mmc_card *card,
 	if ((!mmc_host_is_spi(card->host) && rq_data_dir(req) != READ) ||
 			(mq_mrq->packed_cmd == MMC_PACKED_WR_HDR)) {
 		u32 status;
+		unsigned long timeout = jiffies + msecs_to_jiffies(5000);
 
 		/* Check stop command response */
 		if (brq->stop.resp[0] & R1_ERROR) {
@@ -1151,13 +1152,29 @@ static int mmc_blk_err_check(struct mmc_card *card,
 				gen_err = 1;
 			}
 
+			if (R1_CURRENT_STATE(status) < R1_STATE_TRAN) {
+				pr_err("%s: error %d status is abnormal %#x.\n",
+						req->rq_disk->disk_name, err,
+						status);
+				return MMC_BLK_CMD_ERR;
+			}
+
 			/*
 			 * Some cards mishandle the status bits,
 			 * so make sure to check both the busy
 			 * indication and the card state.
 			 */
-		} while (!(status & R1_READY_FOR_DATA) ||
-			 (R1_CURRENT_STATE(status) == R1_STATE_PRG));
+		} while ((!(status & R1_READY_FOR_DATA) ||
+			 (R1_CURRENT_STATE(status) == R1_STATE_PRG)) &&
+			 time_before(jiffies, timeout));
+
+		/* in case of card stays on program status in 5 secs */
+		if (time_after_eq(jiffies, timeout)) {
+			pr_err("%s: error %d hang on checking status %#x.\n",
+					req->rq_disk->disk_name, -ETIMEDOUT,
+					status);
+			return MMC_BLK_CMD_ERR;
+		}
 	}
 
 	/* if general error occurs, retry the write operation. */
