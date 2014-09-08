@@ -130,7 +130,7 @@ enum dhd_op_flags {
 #define POWERUP_WAIT_MS		2000 /* ms: time out in waiting wifi to come up */
 #endif
 
-#define DEFAULT_WIFI_TURNON_DELAY		200
+#define DEFAULT_WIFI_TURNON_DELAY		250
 #ifndef WIFI_TURNON_DELAY
 #define WIFI_TURNON_DELAY		DEFAULT_WIFI_TURNON_DELAY
 #endif /* WIFI_TURNON_DELAY */

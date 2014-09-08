@@ -210,7 +210,8 @@ static int exynos_dwmci0_init(u32 slot_id, irq_handler_t handler, void *data)
 static struct dw_mci_board universal5410_dwmci0_pdata __initdata = {
 	.num_slots		= 1,
 	.quirks			= DW_MCI_QUIRK_BROKEN_CARD_DETECTION |
-				  DW_MCI_QUIRK_HIGHSPEED,
+				  DW_MCI_QUIRK_HIGHSPEED |
+				  DW_MMC_QUIRK_USE_FINE_TUNING,
 	.bus_hz			= 160 * 1000 * 1000,
 	.caps			= MMC_CAP_CMD23 | MMC_CAP_8_BIT_DATA |
 				  MMC_CAP_UHS_DDR50 | MMC_CAP_1_8V_DDR |

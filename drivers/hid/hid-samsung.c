@@ -149,6 +149,8 @@ static int samsung_kbd_input_mapping(struct hid_device *hdev,
 		/* key found */
 		case 0x32: samsung_kbd_mouse_map_key_clear(KEY_KBDILLUMTOGGLE); break;
 		case 0x64: samsung_kbd_mouse_map_key_clear(KEY_BACKSLASH); break;
+		/* Only for BR keyboard */
+		case 0x87: samsung_kbd_mouse_map_key_clear(KEY_RO); break;
 		default:
 			return 0;
 		}
@@ -225,6 +227,10 @@ static int samsung_gamepad_input_mapping(struct hid_device *hdev,
 		case 0x040: samsung_kbd_mouse_map_key_clear(KEY_MENU); break;
 		case 0x223: samsung_kbd_mouse_map_key_clear(KEY_HOMEPAGE); break;
 		case 0x224: samsung_kbd_mouse_map_key_clear(KEY_BACK); break;
+
+		/* Screen Capture */
+		case 0x303: samsung_kbd_mouse_map_key_clear(KEY_SYSRQ); break;
+
 		default:
 			return 0;
 		}
@@ -271,6 +277,8 @@ static int samsung_universal_kbd_input_mapping(struct hid_device *hdev,
 		/* key found */
 		case 0x32: samsung_kbd_mouse_map_key_clear(KEY_KBDILLUMTOGGLE); break;
 		case 0x64: samsung_kbd_mouse_map_key_clear(KEY_BACKSLASH); break;
+		/* Only for BR keyboard */
+		case 0x87: samsung_kbd_mouse_map_key_clear(KEY_RO); break;
 		default:
 			return 0;
 		}
@@ -305,7 +313,7 @@ static int samsung_universal_kbd_input_mapping(struct hid_device *hdev,
 		/* S-Finder */
 		case 0x304: samsung_kbd_mouse_map_key_clear(BTN_TRIGGER_HAPPY7); break;
 		/* Screen Capture */
-		case 0x303: samsung_kbd_mouse_map_key_clear(BTN_TRIGGER_HAPPY8); break;
+		case 0x303: samsung_kbd_mouse_map_key_clear(KEY_SYSRQ); break;
 		/* Multi Window */
 		case 0x309: samsung_kbd_mouse_map_key_clear(BTN_TRIGGER_HAPPY9); break;
 		default:
