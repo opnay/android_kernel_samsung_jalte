@@ -373,6 +373,9 @@ static struct inode *f2fs_alloc_inode(struct super_block *sb)
 	fi->i_advise = 0;
 	rwlock_init(&fi->ext.ext_lock);
 	init_rwsem(&fi->i_sem);
+	INIT_LIST_HEAD(&fi->atomic_pages);
+	spin_lock_init(&fi->atomic_lock);
+	INIT_RADIX_TREE(&fi->atomic_root, GFP_ATOMIC);
 
 	set_inode_flag(fi, FI_NEW_INODE);
 
@@ -434,14 +437,19 @@ static void f2fs_put_super(struct super_block *sb)
 	stop_gc_thread(sbi);
 
 	/* We don't need to do checkpoint when it's clean */
-	if (sbi->s_dirty)
-		write_checkpoint(sbi, true);
+	if (sbi->s_dirty) {
+		struct cp_control cpc = {
+			.reason = CP_UMOUNT,
+		};
+		write_checkpoint(sbi, &cpc);
+	}
 
 	/*
 	 * normally superblock is clean, so we need to release this.
 	 * In addition, EIO will skip do checkpoint, we need this as well.
 	 */
 	release_dirty_inode(sbi);
+	release_discard_addrs(sbi);
 
 	iput(sbi->node_inode);
 	iput(sbi->meta_inode);
@@ -466,8 +474,11 @@ int f2fs_sync_fs(struct super_block *sb, int sync)
 	trace_f2fs_sync_fs(sb, sync);
 
 	if (sync) {
+		struct cp_control cpc = {
+			.reason = CP_SYNC,
+		};
 		mutex_lock(&sbi->gc_mutex);
-		write_checkpoint(sbi, false);
+		write_checkpoint(sbi, &cpc);
 		mutex_unlock(&sbi->gc_mutex);
 	} else {
 		f2fs_balance_fs(sbi);

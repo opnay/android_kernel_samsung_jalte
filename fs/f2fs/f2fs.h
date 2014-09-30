@@ -97,6 +97,20 @@ enum {
 	SIT_BITMAP
 };
 
+enum {
+	CP_UMOUNT,
+	CP_SYNC,
+	CP_DISCARD,
+};
+
+struct cp_control {
+	int reason;
+	__u64 trim_start;
+	__u64 trim_end;
+	__u64 trim_minlen;
+	__u64 trimmed;
+};
+
 /*
  * For CP/NAT/SIT/SSA readahead
  */
@@ -151,6 +165,9 @@ struct fsync_inode_entry {
 #define sit_in_journal(sum, i)		(sum->sit_j.entries[i].se)
 #define segno_in_journal(sum, i)	(sum->sit_j.entries[i].segno)
 
+#define MAX_NAT_JENTRIES(sum)	(NAT_JOURNAL_ENTRIES - nats_in_cursum(sum))
+#define MAX_SIT_JENTRIES(sum)	(SIT_JOURNAL_ENTRIES - sits_in_cursum(sum))
+
 static inline int update_nats_in_cursum(struct f2fs_summary_block *rs, int i)
 {
 	int before = nats_in_cursum(rs);
@@ -169,16 +186,26 @@ static inline bool __has_cursum_space(struct f2fs_summary_block *sum, int size,
 								int type)
 {
 	if (type == NAT_JOURNAL)
-		return nats_in_cursum(sum) + size <= NAT_JOURNAL_ENTRIES;
-
-	return sits_in_cursum(sum) + size <= SIT_JOURNAL_ENTRIES;
+		return size <= MAX_NAT_JENTRIES(sum);
+	return size <= MAX_SIT_JENTRIES(sum);
 }
 
 /*
  * ioctl commands
  */
-#define F2FS_IOC_GETFLAGS               FS_IOC_GETFLAGS
-#define F2FS_IOC_SETFLAGS               FS_IOC_SETFLAGS
+#define F2FS_IOC_GETFLAGS		FS_IOC_GETFLAGS
+#define F2FS_IOC_SETFLAGS		FS_IOC_SETFLAGS
+
+#define F2FS_IOCTL_MAGIC		0xf5
+#define F2FS_IOC_ATOMIC_WRITE	_IOW(F2FS_IOCTL_MAGIC, 1, struct atomic_w)
+#define F2FS_IOC_ATOMIC_COMMIT	_IOW(F2FS_IOCTL_MAGIC, 2, u64)
+
+struct atomic_w {
+	u64 aid;		/* atomic write id */
+	const char __user *buf;	/* user data */
+	u64 count;		/* size to update */
+	u64 pos;		/* file offset */
+};
 
 #if defined(__KERNEL__) && defined(CONFIG_COMPAT)
 /*
@@ -248,6 +275,10 @@ struct f2fs_inode_info {
 	unsigned long long xattr_ver;	/* cp version of xattr modification */
 	struct extent_info ext;		/* in-memory extent cache entry */
 	struct dir_inode_entry *dirty_dir;	/* the pointer of dirty dir */
+
+	struct list_head atomic_pages;		/* atomic page indexes */
+	spinlock_t atomic_lock;			/* lock for atomic pages */
+	struct radix_tree_root atomic_root;	/* root of the atomic pages */
 };
 
 static inline void get_extent_info(struct extent_info *ext,
@@ -279,11 +310,10 @@ struct f2fs_nm_info {
 
 	/* NAT cache management */
 	struct radix_tree_root nat_root;/* root of the nat entry cache */
+	struct radix_tree_root nat_set_root;/* root of the nat set cache */
 	rwlock_t nat_tree_lock;		/* protect nat_tree_lock */
-	unsigned int nat_cnt;		/* the # of cached nat entries */
 	struct list_head nat_entries;	/* cached nat entry list (clean) */
-	struct list_head dirty_nat_entries; /* cached nat entry list (dirty) */
-	struct list_head nat_entry_set;	/* nat entry set list */
+	unsigned int nat_cnt;		/* the # of cached nat entries */
 	unsigned int dirty_nat_cnt;	/* total num of nat entries in set */
 
 	/* free node ids management */
@@ -1037,7 +1067,8 @@ enum {
 	FI_INLINE_DATA,		/* used for inline data*/
 	FI_APPEND_WRITE,	/* inode has appended data */
 	FI_UPDATE_WRITE,	/* inode has in-place-update data */
-	FI_NEED_IPU,		/* used fo ipu for fdatasync */
+	FI_NEED_IPU,		/* used for ipu for fdatasync */
+	FI_ATOMIC_FILE,		/* used for atomic writes support */
 };
 
 static inline void set_inode_flag(struct f2fs_inode_info *fi, int flag)
@@ -1185,6 +1216,7 @@ void update_inode(struct inode *, struct page *);
 void update_inode_page(struct inode *);
 int f2fs_write_inode(struct inode *, struct writeback_control *);
 void f2fs_evict_inode(struct inode *);
+void handle_failed_inode(struct inode *);
 
 /*
  * namei.c
@@ -1265,6 +1297,9 @@ void destroy_node_manager_caches(void);
 /*
  * segment.c
  */
+void register_atomic_pages(struct inode *, struct atomic_w *);
+void prepare_atomic_page(struct inode *, struct page *);
+void commit_atomic_pages(struct inode *, u64, bool);
 void f2fs_balance_fs(struct f2fs_sb_info *);
 void f2fs_balance_fs_bg(struct f2fs_sb_info *);
 int f2fs_issue_flush(struct f2fs_sb_info *);
@@ -1273,9 +1308,11 @@ void destroy_flush_cmd_control(struct f2fs_sb_info *);
 void invalidate_blocks(struct f2fs_sb_info *, block_t);
 void refresh_sit_entry(struct f2fs_sb_info *, block_t, block_t);
 void clear_prefree_segments(struct f2fs_sb_info *);
+void release_discard_addrs(struct f2fs_sb_info *);
 void discard_next_dnode(struct f2fs_sb_info *, block_t);
 int npages_for_summary_flush(struct f2fs_sb_info *);
 void allocate_new_segments(struct f2fs_sb_info *);
+int f2fs_trim_fs(struct f2fs_sb_info *, struct fstrim_range *);
 struct page *get_sum_page(struct f2fs_sb_info *, unsigned int);
 void write_meta_page(struct f2fs_sb_info *, struct page *);
 void write_node_page(struct f2fs_sb_info *, struct page *,
@@ -1292,7 +1329,7 @@ void write_data_summaries(struct f2fs_sb_info *, block_t);
 void write_node_summaries(struct f2fs_sb_info *, block_t);
 int lookup_journal_in_cursum(struct f2fs_summary_block *,
 					int, unsigned int, int);
-void flush_sit_entries(struct f2fs_sb_info *);
+void flush_sit_entries(struct f2fs_sb_info *, struct cp_control *);
 int build_segment_manager(struct f2fs_sb_info *);
 void destroy_segment_manager(struct f2fs_sb_info *);
 int __init create_segment_manager_caches(void);
@@ -1303,6 +1340,7 @@ void destroy_segment_manager_caches(void);
  */
 struct page *grab_meta_page(struct f2fs_sb_info *, pgoff_t);
 struct page *get_meta_page(struct f2fs_sb_info *, pgoff_t);
+struct page *get_meta_page_ra(struct f2fs_sb_info *, pgoff_t);
 int ra_meta_pages(struct f2fs_sb_info *, block_t, int, int);
 long sync_meta_pages(struct f2fs_sb_info *, enum page_type, long);
 void add_dirty_inode(struct f2fs_sb_info *, nid_t, int type);
@@ -1319,7 +1357,7 @@ void update_dirty_page(struct inode *, struct page *);
 void add_dirty_dir_inode(struct inode *);
 void remove_dirty_dir_inode(struct inode *);
 void sync_dirty_dir_inodes(struct f2fs_sb_info *);
-void write_checkpoint(struct f2fs_sb_info *, bool);
+void write_checkpoint(struct f2fs_sb_info *, struct cp_control *);
 void init_ino_entry_info(struct f2fs_sb_info *);
 int __init create_checkpoint_caches(void);
 void destroy_checkpoint_caches(void);

@@ -173,14 +173,10 @@ static int find_fsync_dnodes(struct f2fs_sb_info *sbi, struct list_head *head)
 	while (1) {
 		struct fsync_inode_entry *entry;
 
-		if (blkaddr < SM_I(sbi)->main_blkaddr ||
-					blkaddr > TOTAL_BLKS(sbi))
+		if (blkaddr < MAIN_BLKADDR(sbi) || blkaddr >= MAX_BLKADDR(sbi))
 			return 0;
 
-		page = get_meta_page(sbi, blkaddr);
-
-		ra_meta_pages(sbi, next_blkaddr_of_node(page),
-					MAX_BIO_BLOCKS(sbi), META_POR);
+		page = get_meta_page_ra(sbi, blkaddr);
 
 		if (cp_ver != cpver_of_node(page))
 			break;
@@ -437,14 +433,10 @@ static int recover_data(struct f2fs_sb_info *sbi,
 	while (1) {
 		struct fsync_inode_entry *entry;
 
-		if (blkaddr < SM_I(sbi)->main_blkaddr ||
-					blkaddr > TOTAL_BLKS(sbi))
+		if (blkaddr < MAIN_BLKADDR(sbi) || blkaddr >= MAX_BLKADDR(sbi))
 			break;
 
-		page = get_meta_page(sbi, blkaddr);
-
-		ra_meta_pages(sbi, next_blkaddr_of_node(page),
-					MAX_BIO_BLOCKS(sbi), META_POR);
+		page = get_meta_page_ra(sbi, blkaddr);
 
 		if (cp_ver != cpver_of_node(page)) {
 			f2fs_put_page(page, 1);
@@ -463,8 +455,10 @@ static int recover_data(struct f2fs_sb_info *sbi,
 			recover_inode(entry->inode, page);
 		if (entry->last_dentry == blkaddr) {
 			err = recover_dentry(entry->inode, page);
-			if (err)
+			if (err) {
+				f2fs_put_page(page, 1);
 				break;
+			}
 		}
 		err = do_recover_data(sbi, entry->inode, page, blkaddr);
 		if (err) {
@@ -529,7 +523,7 @@ out:
 
 	/* truncate meta pages to be used by the recovery */
 	truncate_inode_pages_range(META_MAPPING(sbi),
-		SM_I(sbi)->main_blkaddr << PAGE_CACHE_SHIFT, -1);
+			MAIN_BLKADDR(sbi) << PAGE_CACHE_SHIFT, -1);
 
 	if (err) {
 		truncate_inode_pages(NODE_MAPPING(sbi), 0);
@@ -546,8 +540,11 @@ out:
 		set_ckpt_flags(sbi->ckpt, CP_ERROR_FLAG);
 		mutex_unlock(&sbi->cp_mutex);
 	} else if (need_writecp) {
+		struct cp_control cpc = {
+			.reason = CP_SYNC,
+		};
 		mutex_unlock(&sbi->cp_mutex);
-		write_checkpoint(sbi, false);
+		write_checkpoint(sbi, &cpc);
 	} else {
 		mutex_unlock(&sbi->cp_mutex);
 	}

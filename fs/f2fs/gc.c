@@ -193,7 +193,7 @@ static unsigned int check_bg_victims(struct f2fs_sb_info *sbi)
 	 * selected by background GC before.
 	 * Those segments guarantee they have small valid blocks.
 	 */
-	for_each_set_bit(secno, dirty_i->victim_secmap, TOTAL_SECS(sbi)) {
+	for_each_set_bit(secno, dirty_i->victim_secmap, MAIN_SECS(sbi)) {
 		if (sec_usage_check(sbi, secno))
 			continue;
 		clear_bit(secno, dirty_i->victim_secmap);
@@ -281,9 +281,8 @@ static int get_victim_by_default(struct f2fs_sb_info *sbi,
 		unsigned long cost;
 		unsigned int segno;
 
-		segno = find_next_bit(p.dirty_segmap,
-						TOTAL_SEGS(sbi), p.offset);
-		if (segno >= TOTAL_SEGS(sbi)) {
+		segno = find_next_bit(p.dirty_segmap, MAIN_SEGS(sbi), p.offset);
+		if (segno >= MAIN_SEGS(sbi)) {
 			if (sbi->last_victim[p.gc_mode]) {
 				sbi->last_victim[p.gc_mode] = 0;
 				p.offset = 0;
@@ -694,6 +693,9 @@ int f2fs_gc(struct f2fs_sb_info *sbi)
 	int gc_type = BG_GC;
 	int nfree = 0;
 	int ret = -1;
+	struct cp_control cpc = {
+		.reason = CP_SYNC,
+	};
 
 	INIT_LIST_HEAD(&ilist);
 gc_more:
@@ -704,7 +706,7 @@ gc_more:
 
 	if (gc_type == BG_GC && has_not_enough_free_secs(sbi, nfree)) {
 		gc_type = FG_GC;
-		write_checkpoint(sbi, false);
+		write_checkpoint(sbi, &cpc);
 	}
 
 	if (!__get_victim(sbi, &segno, gc_type, NO_CHECK_TYPE))
@@ -729,7 +731,7 @@ gc_more:
 		goto gc_more;
 
 	if (gc_type == FG_GC)
-		write_checkpoint(sbi, false);
+		write_checkpoint(sbi, &cpc);
 stop:
 	mutex_unlock(&sbi->gc_mutex);
 

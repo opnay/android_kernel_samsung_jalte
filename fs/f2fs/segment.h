@@ -45,16 +45,26 @@
 	 (secno == CURSEG_I(sbi, CURSEG_COLD_NODE)->segno /		\
 	  sbi->segs_per_sec))	\
 
-#define START_BLOCK(sbi, segno)						\
-	(SM_I(sbi)->seg0_blkaddr +					\
+#define MAIN_BLKADDR(sbi)	(SM_I(sbi)->main_blkaddr)
+#define SEG0_BLKADDR(sbi)	(SM_I(sbi)->seg0_blkaddr)
+
+#define MAIN_SEGS(sbi)	(SM_I(sbi)->main_segments)
+#define MAIN_SECS(sbi)	(sbi->total_sections)
+
+#define TOTAL_SEGS(sbi)	(SM_I(sbi)->segment_count)
+#define TOTAL_BLKS(sbi)	(TOTAL_SEGS(sbi) << sbi->log_blocks_per_seg)
+
+#define MAX_BLKADDR(sbi)	(SEG0_BLKADDR(sbi) + TOTAL_BLKS(sbi))
+#define SEGMENT_SIZE(sbi)	(1ULL << (sbi->log_blocksize +		\
+					sbi->log_blocks_per_seg))
+
+#define START_BLOCK(sbi, segno)	(SEG0_BLKADDR(sbi) +			\
 	 (GET_R2L_SEGNO(FREE_I(sbi), segno) << sbi->log_blocks_per_seg))
+
 #define NEXT_FREE_BLKADDR(sbi, curseg)					\
 	(START_BLOCK(sbi, curseg->segno) + curseg->next_blkoff)
 
-#define MAIN_BASE_BLOCK(sbi)	(SM_I(sbi)->main_blkaddr)
-
-#define GET_SEGOFF_FROM_SEG0(sbi, blk_addr)				\
-	((blk_addr) - SM_I(sbi)->seg0_blkaddr)
+#define GET_SEGOFF_FROM_SEG0(sbi, blk_addr)	((blk_addr) - SEG0_BLKADDR(sbi))
 #define GET_SEGNO_FROM_SEG0(sbi, blk_addr)				\
 	(GET_SEGOFF_FROM_SEG0(sbi, blk_addr) >> sbi->log_blocks_per_seg)
 #define GET_BLKOFF_FROM_SEG0(sbi, blk_addr)				\
@@ -82,12 +92,9 @@
 #define	START_SEGNO(segno)		\
 	(SIT_BLOCK_OFFSET(segno) * SIT_ENTRY_PER_BLOCK)
 #define SIT_BLK_CNT(sbi)			\
-	((TOTAL_SEGS(sbi) + SIT_ENTRY_PER_BLOCK - 1) / SIT_ENTRY_PER_BLOCK)
+	((MAIN_SEGS(sbi) + SIT_ENTRY_PER_BLOCK - 1) / SIT_ENTRY_PER_BLOCK)
 #define f2fs_bitmap_size(nr)			\
 	(BITS_TO_LONGS(nr) * sizeof(unsigned long))
-#define TOTAL_SEGS(sbi)	(SM_I(sbi)->main_segments)
-#define TOTAL_SECS(sbi)	(sbi->total_sections)
-#define TOTAL_BLKS(sbi)	(SM_I(sbi)->segment_count << sbi->log_blocks_per_seg)
 
 #define SECTOR_FROM_BLOCK(blk_addr)					\
 	(((sector_t)blk_addr) << F2FS_LOG_SECTORS_PER_BLOCK)
@@ -166,6 +173,12 @@ struct sec_entry {
 
 struct segment_allocation {
 	void (*allocate_segment)(struct f2fs_sb_info *, int, bool);
+};
+
+struct atomic_pages {
+	struct list_head list;
+	u64 aid;
+	struct page *page;
 };
 
 struct sit_info {
@@ -323,7 +336,7 @@ static inline void __set_free(struct f2fs_sb_info *sbi, unsigned int segno)
 	clear_bit(segno, free_i->free_segmap);
 	free_i->free_segments++;
 
-	next = find_next_bit(free_i->free_segmap, TOTAL_SEGS(sbi), start_segno);
+	next = find_next_bit(free_i->free_segmap, MAIN_SEGS(sbi), start_segno);
 	if (next >= start_segno + sbi->segs_per_sec) {
 		clear_bit(secno, free_i->free_secmap);
 		free_i->free_sections++;
@@ -438,8 +451,9 @@ static inline int reserved_sections(struct f2fs_sb_info *sbi)
 static inline bool need_SSR(struct f2fs_sb_info *sbi)
 {
 	int node_secs = get_blocktype_secs(sbi, F2FS_DIRTY_NODES);
-	return (prefree_segments(sbi) / sbi->segs_per_sec) +
-		free_sections(sbi) < (reserved_sections(sbi) + node_secs);
+	int dent_secs = get_blocktype_secs(sbi, F2FS_DIRTY_DENTS);
+	return free_sections(sbi) <= (node_secs + 2 * dent_secs +
+						reserved_sections(sbi) + 1);
 }
 
 static inline bool has_not_enough_free_secs(struct f2fs_sb_info *sbi, int freed)
@@ -494,9 +508,10 @@ static inline bool need_inplace_update(struct inode *inode)
 {
 	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
 	unsigned int policy = SM_I(sbi)->ipu_policy;
+	struct f2fs_inode_info *fi = F2FS_I(inode);
 
 	/* IPU can be done only for the user data */
-	if (S_ISDIR(inode->i_mode))
+	if (S_ISDIR(inode->i_mode) || is_inode_flag_set(fi, FI_ATOMIC_FILE))
 		return false;
 
 	if (policy & (0x1 << F2FS_IPU_FORCE))
@@ -512,7 +527,7 @@ static inline bool need_inplace_update(struct inode *inode)
 
 	/* this is only set during fdatasync */
 	if (policy & (0x1 << F2FS_IPU_FSYNC) &&
-			is_inode_flag_set(F2FS_I(inode), FI_NEED_IPU))
+			is_inode_flag_set(fi, FI_NEED_IPU))
 		return true;
 
 	return false;
@@ -547,12 +562,8 @@ static inline void check_seg_range(struct f2fs_sb_info *sbi, unsigned int segno)
 
 static inline void verify_block_addr(struct f2fs_sb_info *sbi, block_t blk_addr)
 {
-	struct f2fs_sm_info *sm_info = SM_I(sbi);
-	block_t total_blks = TOTAL_BLKS(sbi);
-	block_t start_addr = sm_info->seg0_blkaddr;
-	block_t end_addr = start_addr + total_blks - 1;
-	BUG_ON(blk_addr < start_addr);
-	BUG_ON(blk_addr > end_addr);
+	BUG_ON(blk_addr < SEG0_BLKADDR(sbi));
+	BUG_ON(blk_addr >= MAX_BLKADDR(sbi));
 }
 
 /*
@@ -600,12 +611,7 @@ static inline void check_seg_range(struct f2fs_sb_info *sbi, unsigned int segno)
 
 static inline void verify_block_addr(struct f2fs_sb_info *sbi, block_t blk_addr)
 {
-	struct f2fs_sm_info *sm_info = SM_I(sbi);
-	block_t total_blks = TOTAL_BLKS(sbi);
-	block_t start_addr = sm_info->seg0_blkaddr;
-	block_t end_addr = start_addr + total_blks - 1;
-
-	if (blk_addr < start_addr || blk_addr > end_addr)
+	if (blk_addr < SEG0_BLKADDR(sbi) || blk_addr >= MAX_BLKADDR(sbi))
 		sbi->need_fsck = true;
 }
 

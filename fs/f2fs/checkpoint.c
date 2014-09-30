@@ -72,6 +72,21 @@ out:
 	return page;
 }
 
+struct page *get_meta_page_ra(struct f2fs_sb_info *sbi, pgoff_t index)
+{
+	bool readahead = false;
+	struct page *page;
+
+	page = find_get_page(META_MAPPING(sbi), index);
+	if (!page || (page && !PageUptodate(page)))
+		readahead = true;
+	f2fs_put_page(page, 0);
+
+	if (readahead)
+		ra_meta_pages(sbi, index, MAX_BIO_BLOCKS(sbi), META_POR);
+	return get_meta_page(sbi, index);
+}
+
 static inline block_t get_max_meta_blks(struct f2fs_sb_info *sbi, int type)
 {
 	switch (type) {
@@ -83,7 +98,7 @@ static inline block_t get_max_meta_blks(struct f2fs_sb_info *sbi, int type)
 	case META_CP:
 		return 0;
 	case META_POR:
-		return SM_I(sbi)->main_blkaddr + sbi->user_block_count;
+		return MAX_BLKADDR(sbi);
 	default:
 		BUG();
 	}
@@ -98,7 +113,6 @@ int ra_meta_pages(struct f2fs_sb_info *sbi, block_t start, int nrpages, int type
 	struct page *page;
 	block_t blkno = start;
 	block_t max_blks = get_max_meta_blks(sbi, type);
-	block_t min_blks = SM_I(sbi)->seg0_blkaddr;
 
 	struct f2fs_io_info fio = {
 		.type = META,
@@ -129,7 +143,9 @@ int ra_meta_pages(struct f2fs_sb_info *sbi, block_t start, int nrpages, int type
 		case META_SSA:
 		case META_CP:
 		case META_POR:
-			if (blkno >= max_blks || blkno < min_blks)
+			if (unlikely(blkno >= max_blks))
+				goto out;
+			if (unlikely(blkno < SEG0_BLKADDR(sbi)))
 				goto out;
 			blk_addr = blkno;
 			break;
@@ -809,7 +825,7 @@ static void wait_on_all_pages_writeback(struct f2fs_sb_info *sbi)
 	finish_wait(&sbi->cp_wait, &wait);
 }
 
-static void do_checkpoint(struct f2fs_sb_info *sbi, bool is_umount)
+static void do_checkpoint(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 {
 	struct f2fs_checkpoint *ckpt = F2FS_CKPT(sbi);
 	struct curseg_info *curseg = CURSEG_I(sbi, CURSEG_WARM_NODE);
@@ -877,7 +893,7 @@ static void do_checkpoint(struct f2fs_sb_info *sbi, bool is_umount)
 	ckpt->cp_pack_start_sum = cpu_to_le32(1 + cp_payload_blks +
 			orphan_blocks);
 
-	if (is_umount) {
+	if (cpc->reason == CP_UMOUNT) {
 		set_ckpt_flags(ckpt, CP_UMOUNT_FLAG);
 		ckpt->cp_pack_total_block_count = cpu_to_le32(F2FS_CP_PACKS+
 				cp_payload_blks + data_sum_blocks +
@@ -931,7 +947,7 @@ static void do_checkpoint(struct f2fs_sb_info *sbi, bool is_umount)
 
 	write_data_summaries(sbi, start_blk);
 	start_blk += data_sum_blocks;
-	if (is_umount) {
+	if (cpc->reason == CP_UMOUNT) {
 		write_node_summaries(sbi, start_blk);
 		start_blk += NR_CURSEG_NODE_TYPE;
 	}
@@ -971,23 +987,23 @@ static void do_checkpoint(struct f2fs_sb_info *sbi, bool is_umount)
 /*
  * We guarantee that this checkpoint procedure will not fail.
  */
-void write_checkpoint(struct f2fs_sb_info *sbi, bool is_umount)
+void write_checkpoint(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 {
 	struct f2fs_checkpoint *ckpt = F2FS_CKPT(sbi);
 	unsigned long long ckpt_ver;
 
-	trace_f2fs_write_checkpoint(sbi->sb, is_umount, "start block_ops");
+	trace_f2fs_write_checkpoint(sbi->sb, cpc->reason, "start block_ops");
 
 	mutex_lock(&sbi->cp_mutex);
 
-	if (!sbi->s_dirty)
+	if (!sbi->s_dirty && cpc->reason != CP_DISCARD)
 		goto out;
 	if (unlikely(f2fs_cp_error(sbi)))
 		goto out;
 	if (block_operations(sbi))
 		goto out;
 
-	trace_f2fs_write_checkpoint(sbi->sb, is_umount, "finish block_ops");
+	trace_f2fs_write_checkpoint(sbi->sb, cpc->reason, "finish block_ops");
 
 	f2fs_submit_merged_bio(sbi, DATA, WRITE);
 	f2fs_submit_merged_bio(sbi, NODE, WRITE);
@@ -1003,16 +1019,16 @@ void write_checkpoint(struct f2fs_sb_info *sbi, bool is_umount)
 
 	/* write cached NAT/SIT entries to NAT/SIT area */
 	flush_nat_entries(sbi);
-	flush_sit_entries(sbi);
+	flush_sit_entries(sbi, cpc);
 
 	/* unlock all the fs_lock[] in do_checkpoint() */
-	do_checkpoint(sbi, is_umount);
+	do_checkpoint(sbi, cpc);
 
 	unblock_operations(sbi);
 	stat_inc_cp_count(sbi->stat_info);
 out:
 	mutex_unlock(&sbi->cp_mutex);
-	trace_f2fs_write_checkpoint(sbi->sb, is_umount, "finish checkpoint");
+	trace_f2fs_write_checkpoint(sbi->sb, cpc->reason, "finish checkpoint");
 }
 
 void init_ino_entry_info(struct f2fs_sb_info *sbi)
