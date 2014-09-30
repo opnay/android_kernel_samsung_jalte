@@ -244,6 +244,7 @@
 /dev/dek_kek	u:object_r:knox_dar_device:s0
 /dev/dek_log	u:object_r:knox_dar_device:s0
 /dev/dek_req	u:object_r:knox_dar_device:s0
+/dev/sdp_mm	u:object_r:knox_dar_device:s0
 
 /dev/media[0-3]*	u:object_r:camera_device:s0
 /dev/mobicore	u:object_r:mobicore_device:s0
@@ -263,6 +264,7 @@
 /dev/socket/dir_enc_report	u:object_r:vold_socket:s0
 /dev/socket/drsd        u:object_r:drsd_socket:s0
 /dev/socket/epm     u:object_r:epm_socket:s0
+/dev/socket/ppm     u:object_r:epm_socket:s0
 /dev/socket/rild[0-9]*	u:object_r:rild_socket:s0
 /dev/socket/rild-debug[0-9]* u:object_r:rild_debug_socket:s0
 /dev/ssp_sensorhub	u:object_r:input_device:s0
@@ -312,6 +314,8 @@
 /system/bin/dumpstate	u:object_r:dumpstate_exec:s0
 /system/bin/dumpsys	u:object_r:dumpsys_exec:s0
 /system/bin/edmaudit	u:object_r:edmaudit_exec:s0
+/system/bin/epmd	u:object_r:epmd_exec:s0
+/system/bin/gpu_snapshotd	u:object_r:gpu_snapshotd_exec:s0
 /system/bin/gsiff_daemon	u:object_r:gsiff_daemon_exec:s0
 /system/bin/icd	u:object_r:icd_exec:s0
 /system/bin/immvibed	u:object_r:immvibed_exec:s0
@@ -323,9 +327,13 @@
 /system/bin/kiesexe	u:object_r:kiesexe_exec:s0
 /system/bin/logwrapper	u:object_r:logwrapper_exec:s0
 /system/bin/mdnsd	u:object_r:mdnsd_exec:s0
+/system/bin/mdm_helper	u:object_r:mdm_helper_exec:s0
+/system/bin/mdm_helper_proxy	u:object_r:mdm_helper_proxy_exec:s0
 /system/bin/netmgrd	u:object_r:netmgrd_exec:s0
 /system/bin/npsmobex	u:object_r:mobexdaemon_exec:s0
+/system/bin/nqs	u:object_r:nqs_exec:s0
 /system/bin/p2p_supplicant	u:object_r:p2p_supplicant_exec:s0
+/system/bin/ptt_socket_app	u:object_r:ptt_socket_app_exec:s0
 /system/bin/prepare_param.sh	u:object_r:prepare_param_sh_file:s0
 /system/bin/rfs_access	u:object_r:rfs_access_exec:s0
 /system/bin/samsungpowersoundplay	u:object_r:samsungpowersoundplay_exec:s0
@@ -338,6 +346,7 @@
 /system/bin/sysmon	u:object_r:sysmon_exec:s0
 /system/bin/tima_dump_log	u:object_r:tima_dump_exec:s0
 /system/bin/vcsFPService	u:object_r:vcsFPService_exec:s0
+/system/bin/vfmService		u:object_r:vcsFPService_exec:s0
 /system/bin/wcnss_service	u:object_r:wcnss_service_exec:s0
 /system/bin/wpa_supplicant_real u:object_r:wpa_exec:s0
 /system/bin/sysprof	u:object_r:sysprof_exec:s0
@@ -481,6 +490,8 @@
 /system/vendor/itson(/.*)?  u:object_r:sprintitson_file:s0
 #/vendor/app(/.*)?  u:object_r:sprintitson_file:s0
 /carrier/itson(/.*)?  u:object_r:sprintitson_file:s0
+/system/vendor/itson/itson-bootstrapper.sh	u:object_r:itsonbs_exec:s0
+
 #line 1 "vendor/samsung/common/sepolicy/slsi_common/QC_MDM/file_contexts"
 # System
 /system/bin/efsks     u:object_r:efsks_exec:s0
