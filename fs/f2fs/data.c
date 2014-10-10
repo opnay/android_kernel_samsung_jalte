@@ -14,7 +14,6 @@
 #include <linux/mpage.h>
 #include <linux/aio.h>
 #include <linux/writeback.h>
-#include <linux/mount.h>
 #include <linux/backing-dev.h>
 #include <linux/blkdev.h>
 #include <linux/bio.h>
@@ -1053,8 +1052,8 @@ static int f2fs_write_end(struct file *file,
 
 	trace_f2fs_write_end(inode, pos, len, copied);
 
-	if (is_inode_flag_set(F2FS_I(inode), FI_ATOMIC_FILE))
-		prepare_atomic_page(inode, page);
+	if (f2fs_is_atomic_file(inode) || f2fs_is_volatile_file(inode))
+		register_inmem_page(inode, page);
 	else
 		set_page_dirty(page);
 

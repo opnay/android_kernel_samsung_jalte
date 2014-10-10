@@ -175,9 +175,8 @@ struct segment_allocation {
 	void (*allocate_segment)(struct f2fs_sb_info *, int, bool);
 };
 
-struct atomic_pages {
+struct inmem_pages {
 	struct list_head list;
-	u64 aid;
 	struct page *page;
 };
 
@@ -508,10 +507,9 @@ static inline bool need_inplace_update(struct inode *inode)
 {
 	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
 	unsigned int policy = SM_I(sbi)->ipu_policy;
-	struct f2fs_inode_info *fi = F2FS_I(inode);
 
 	/* IPU can be done only for the user data */
-	if (S_ISDIR(inode->i_mode) || is_inode_flag_set(fi, FI_ATOMIC_FILE))
+	if (S_ISDIR(inode->i_mode) || f2fs_is_atomic_file(inode))
 		return false;
 
 	if (policy & (0x1 << F2FS_IPU_FORCE))
@@ -527,7 +525,7 @@ static inline bool need_inplace_update(struct inode *inode)
 
 	/* this is only set during fdatasync */
 	if (policy & (0x1 << F2FS_IPU_FSYNC) &&
-			is_inode_flag_set(fi, FI_NEED_IPU))
+			is_inode_flag_set(F2FS_I(inode), FI_NEED_IPU))
 		return true;
 
 	return false;
@@ -556,8 +554,7 @@ static inline unsigned short curseg_blkoff(struct f2fs_sb_info *sbi, int type)
 #ifdef CONFIG_F2FS_CHECK_FS
 static inline void check_seg_range(struct f2fs_sb_info *sbi, unsigned int segno)
 {
-	unsigned int end_segno = SM_I(sbi)->segment_count - 1;
-	BUG_ON(segno > end_segno);
+	BUG_ON(segno > TOTAL_SEGS(sbi) - 1);
 }
 
 static inline void verify_block_addr(struct f2fs_sb_info *sbi, block_t blk_addr)
@@ -572,8 +569,6 @@ static inline void verify_block_addr(struct f2fs_sb_info *sbi, block_t blk_addr)
 static inline void check_block_count(struct f2fs_sb_info *sbi,
 		int segno, struct f2fs_sit_entry *raw_sit)
 {
-	struct f2fs_sm_info *sm_info = SM_I(sbi);
-	unsigned int end_segno = sm_info->segment_count - 1;
 	bool is_valid  = test_bit_le(0, raw_sit->valid_map) ? true : false;
 	int valid_blocks = 0;
 	int cur_pos = 0, next_pos;
@@ -582,7 +577,7 @@ static inline void check_block_count(struct f2fs_sb_info *sbi,
 	BUG_ON(GET_SIT_VBLOCKS(raw_sit) > sbi->blocks_per_seg);
 
 	/* check boundary of a given segment number */
-	BUG_ON(segno > end_segno);
+	BUG_ON(segno > TOTAL_SEGS(sbi) - 1);
 
 	/* check bitmap with valid block count */
 	do {
@@ -603,9 +598,7 @@ static inline void check_block_count(struct f2fs_sb_info *sbi,
 #else
 static inline void check_seg_range(struct f2fs_sb_info *sbi, unsigned int segno)
 {
-	unsigned int end_segno = SM_I(sbi)->segment_count - 1;
-
-	if (segno > end_segno)
+	if (segno > TOTAL_SEGS(sbi) - 1)
 		sbi->need_fsck = true;
 }
 
@@ -621,14 +614,12 @@ static inline void verify_block_addr(struct f2fs_sb_info *sbi, block_t blk_addr)
 static inline void check_block_count(struct f2fs_sb_info *sbi,
 		int segno, struct f2fs_sit_entry *raw_sit)
 {
-	unsigned int end_segno = SM_I(sbi)->segment_count - 1;
-
 	/* check segment usage */
 	if (GET_SIT_VBLOCKS(raw_sit) > sbi->blocks_per_seg)
 		sbi->need_fsck = true;
 
 	/* check boundary of a given segment number */
-	if (segno > end_segno)
+	if (segno > TOTAL_SEGS(sbi) - 1)
 		sbi->need_fsck = true;
 }
 #endif

@@ -877,55 +877,53 @@ out:
 	return ret;
 }
 
-static int f2fs_ioc_atomic_write(struct file *filp, unsigned long arg)
+static int f2fs_ioc_start_atomic_write(struct file *filp)
 {
 	struct inode *inode = file_inode(filp);
-	struct atomic_w aw;
-	loff_t pos;
+	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
+
+	if (!inode_owner_or_capable(inode))
+		return -EACCES;
+
+	f2fs_balance_fs(sbi);
+
+	set_inode_flag(F2FS_I(inode), FI_ATOMIC_FILE);
+
+	return f2fs_convert_inline_data(inode, MAX_INLINE_DATA + 1, NULL);
+}
+
+static int f2fs_ioc_commit_atomic_write(struct file *filp)
+{
+	struct inode *inode = file_inode(filp);
 	int ret;
 
 	if (!inode_owner_or_capable(inode))
 		return -EACCES;
 
-	if (copy_from_user(&aw, (struct atomic_w __user *)arg, sizeof(aw)))
-		return -EFAULT;
+	if (f2fs_is_volatile_file(inode))
+		return 0;
 
 	ret = mnt_want_write_file(filp);
 	if (ret)
 		return ret;
 
-	pos = aw.pos;
-	set_inode_flag(F2FS_I(inode), FI_ATOMIC_FILE);
-	ret = vfs_write(filp, aw.buf, aw.count, &pos);
-	if (ret >= 0)
-		register_atomic_pages(inode, &aw);
-	else
-		clear_inode_flag(F2FS_I(inode), FI_ATOMIC_FILE);
+	if (f2fs_is_atomic_file(inode))
+		commit_inmem_pages(inode, false);
 
+	ret = f2fs_sync_file(filp, 0, LONG_MAX, 0);
 	mnt_drop_write_file(filp);
 	return ret;
 }
 
-static int f2fs_ioc_atomic_commit(struct file *filp, unsigned long arg)
+static int f2fs_ioc_start_volatile_write(struct file *filp)
 {
 	struct inode *inode = file_inode(filp);
-	int ret;
-	u64 aid;
 
 	if (!inode_owner_or_capable(inode))
 		return -EACCES;
 
-	if (copy_from_user(&aid, (u64 __user *)arg, sizeof(u64)))
-		return -EFAULT;
-
-	ret = mnt_want_write_file(filp);
-	if (ret)
-		return ret;
-
-	commit_atomic_pages(inode, aid, false);
-	ret = f2fs_sync_file(filp, 0, LONG_MAX, 0);
-	mnt_drop_write_file(filp);
-	return ret;
+	set_inode_flag(F2FS_I(inode), FI_VOLATILE_FILE);
+	return 0;
 }
 
 static int f2fs_ioc_fitrim(struct file *filp, unsigned long arg)
@@ -965,10 +963,12 @@ long f2fs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return f2fs_ioc_getflags(filp, arg);
 	case F2FS_IOC_SETFLAGS:
 		return f2fs_ioc_setflags(filp, arg);
-	case F2FS_IOC_ATOMIC_WRITE:
-		return f2fs_ioc_atomic_write(filp, arg);
-	case F2FS_IOC_ATOMIC_COMMIT:
-		return f2fs_ioc_atomic_commit(filp, arg);
+	case F2FS_IOC_START_ATOMIC_WRITE:
+		return f2fs_ioc_start_atomic_write(filp);
+	case F2FS_IOC_COMMIT_ATOMIC_WRITE:
+		return f2fs_ioc_commit_atomic_write(filp);
+	case F2FS_IOC_START_VOLATILE_WRITE:
+		return f2fs_ioc_start_volatile_write(filp);
 	case FITRIM:
 		return f2fs_ioc_fitrim(filp, arg);
 	default:

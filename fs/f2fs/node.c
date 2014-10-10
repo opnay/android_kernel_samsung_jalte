@@ -126,7 +126,7 @@ static void __del_from_nat_cache(struct f2fs_nm_info *nm_i, struct nat_entry *e)
 static void __set_nat_cache_dirty(struct f2fs_nm_info *nm_i,
 						struct nat_entry *ne)
 {
-	nid_t set = ne->ni.nid / NAT_ENTRY_PER_BLOCK;
+	nid_t set = NAT_BLOCK_OFFSET(ne->ni.nid);
 	struct nat_entry_set *head;
 
 	if (get_nat_flag(ne, IS_DIRTY))
@@ -1827,15 +1827,11 @@ static void __adjust_nat_entry_set(struct nat_entry_set *nes,
 						struct list_head *head, int max)
 {
 	struct nat_entry_set *cur;
-	nid_t dirty_cnt = 0;
 
 	if (nes->entry_cnt >= max)
 		goto add_out;
 
 	list_for_each_entry(cur, head, set_list) {
-		dirty_cnt += cur->entry_cnt;
-		if (dirty_cnt > max)
-			break;
 		if (cur->entry_cnt >= nes->entry_cnt) {
 			list_add(&nes->set_list, cur->set_list.prev);
 			return;
@@ -1878,6 +1874,9 @@ static void __flush_nat_entry_set(struct f2fs_sb_info *sbi,
 		nid_t nid = nat_get_nid(ne);
 		int offset;
 
+		if (nat_get_blkaddr(ne) == NEW_ADDR)
+			continue;
+
 		if (to_journal) {
 			offset = lookup_journal_in_cursum(sum,
 							NAT_JOURNAL, nid, 1);
@@ -1903,9 +1902,10 @@ static void __flush_nat_entry_set(struct f2fs_sb_info *sbi,
 	else
 		f2fs_put_page(page, 1);
 
-	f2fs_bug_on(sbi, set->entry_cnt);
-	radix_tree_delete(&NM_I(sbi)->nat_set_root, set->set);
-	kmem_cache_free(nat_entry_set_slab, set);
+	if (!set->entry_cnt) {
+		radix_tree_delete(&NM_I(sbi)->nat_set_root, set->set);
+		kmem_cache_free(nat_entry_set_slab, set);
+	}
 }
 
 /*
