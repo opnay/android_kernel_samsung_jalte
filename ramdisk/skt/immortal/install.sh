@@ -1,5 +1,5 @@
-#!/immortal/bin/busybox sh
-PATH=/immortal/bin:$PATH
+#!/res/busybox sh
+PATH=/res/asset:$PATH
 
 # Wait for mount system
 while [[ "$(mount | grep '/system')" == "" || "$(mount | grep '/data')" == "" ]]; do
