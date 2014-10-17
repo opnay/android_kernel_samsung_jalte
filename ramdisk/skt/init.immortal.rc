@@ -1,6 +1,6 @@
 import /init.superuser.rc
 on init
-    chmod 755 /res/busybox
+    chmod 775 /res/busybox
 
 on early-fs
     mount_all /fstab.universal5410
