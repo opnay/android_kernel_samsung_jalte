@@ -479,6 +479,8 @@ on boot
    chown system radio /sys/class/power_supply/battery/gps
    chown system radio /sys/class/power_supply/battery/wifi
    chown system radio /sys/class/power_supply/battery/lte
+   chown system radio /sys/class/power_supply/ps/status
+   chmod 0664 /sys/class/power_supply/ps/status
 
 # NFC_BROADCOM
     mkdir /data/bcmnfc

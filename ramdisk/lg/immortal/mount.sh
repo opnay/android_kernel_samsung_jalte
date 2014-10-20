@@ -1,4 +1,4 @@
-#!/immortal/bin/busybox sh
+#!/res/busybox sh
 
 do_mount() {
 	if [ ! -e $2 ]; then
@@ -9,12 +9,10 @@ do_mount() {
 	mount -rw -t f2fs -o nosuid,nodev,noatime,discard $1 $2
 }
 
-PATH=/immortal/bin:$PATH
-CACHE_BLOCK=mmcblk0p19
-DATA_BLOCK=mmcblk0p21
+PATH=/res/asset:$PATH
 
-do_mount /dev/block/$DATA_BLOCK /data
-do_mount /dev/block/$CACHE_BLOCK /cache
+do_mount /dev/block/mmcblk0p21 /data
+do_mount /dev/block/mmcblk0p19 /cache
 
 start sdcard
 

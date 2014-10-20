@@ -1,9 +1,10 @@
+import /init.superuser.rc
 on init
-    chmod 755 /immortal/bin/busybox
+    chmod 775 /res/busybox
 
 on early-fs
     mount_all /fstab.universal5410
-    exec /immortal/bin/busybox sh /immortal/mount.sh
+    exec /res/busybox sh /immortal/mount.sh
 
 on property:init.svc.bootanim=running
     start immortal
@@ -14,7 +15,7 @@ on property:ro.build.selinux.enforce=1
     exec /system/bin/setenforce 0
     setprop selinux.reload_policy 0
 
-service immortal /immortal/bin/busybox sh /immortal/install.sh
+service immortal /res/busybox sh /immortal/install.sh
     user root
     oneshot
     disabled
