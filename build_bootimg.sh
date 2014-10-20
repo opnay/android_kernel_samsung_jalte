@@ -30,7 +30,7 @@ cp -r $RAMDISK_DIR_ORIG/* $RAMDISK_DIR/
 find $RAMDISK_DIR -name EMPTY -exec rm -rf {} \;
 find $RAMDISK_DIR -name "*~" -exec rm -rf {} \;
 # Copy Module and strip.
-for i in `find $KERNDIR_DIR -name "*.ko"`; do
+for i in `find $KERNEL_DIR_OUT -name "*.ko"`; do
 	echo $i
 	$STRIP --strip-unneeded $i
 	cp $i $RAMDISK_DIR/lib/modules/
