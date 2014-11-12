@@ -21,6 +21,7 @@
 
 
 #include <linux/linkage.h>
+#include <asm/assembler.h>
 #include <asm/bL_vlock.h>
 
 #if VLOCK_VOTING_SIZE > 4
@@ -92,5 +93,5 @@ ENTRY(vlock_unlock)
         strb    r1, [r0, #VLOCK_OWNER_OFFSET]
         dsb
         sev
-        mov     pc, lr
+        ret     lr
 ENDPROC(vlock_unlock)
