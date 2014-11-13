@@ -6,15 +6,13 @@ do_mount() {
 		mkdir -p $2
 	fi
 	mount -rw -t ext4 -o nosuid,nodev,noatime,noauto_da_alloc,discard,journal_async_commit,errors=panic $1 $2
-	mount -rw -t f2fs -o nosuid,nodev,noatime,discard,errors=panic $1 $2
+	mount -rw -t f2fs -o nosuid,nodev,noatime,discard $1 $2
 }
 
 PATH=/res/asset:$PATH
-DEV_CACHE=/dev/block/platform/dw_mmc.0/by-name/CACHE
-DEV_DATA=/dev/block/platform/dw_mmc.0/by-name/DATA
 
-do_mount $DEV_DATA /data
-do_mount $DEV_CACHE /cache
+do_mount /dev/block/mmcblk0p21 /data
+do_mount /dev/block/mmcblk0p19 /cache
 
 start sdcard
 
