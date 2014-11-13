@@ -7,10 +7,11 @@ ADB=`which adb`
 
 # boot.img binary
 BOOTIMG=$1
-DEVPATH=$2
+DEVPATH=/dev/block/mmcblk0p9
+
 if [ $# != 2 -o "$BOOTIMG" == "" -o "$DEVPATH" == "" ]; then
-	Error "Usage : build_install.sh <boot.img path> <install device partition>"
-	ShowInfo "ex)" "build_install.sh boot.img /dev/block/mmcblk0p1"
+	Error "Usage : build_install.sh <boot.img path>"
+	ShowInfo "ex)" "build_install.sh boot.img"
 	exit
 fi
 
