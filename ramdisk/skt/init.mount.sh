@@ -9,11 +9,13 @@ do_mount() {
 	mount -rw -t f2fs -o nosuid,nodev,noatime,discard $1 $2
 }
 
-PATH=/res/asset:$PATH
+PATH=/res/asset
+DEV_CACHE=/dev/block/mmcblk0p19
+DEV_DATA=/dev/block/mmcblk0p21
 
-do_mount /dev/block/mmcblk0p21 /data
-do_mount /dev/block/mmcblk0p19 /cache
+mount -o rw,remount rootfs
 
-start sdcard
+do_mount $DEV_DATA /data
+do_mount $DEV_CACHE /cache
 
 exit
