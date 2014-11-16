@@ -570,19 +570,6 @@ on property:ro.debuggable=1
     write /sys/module/kgdboc/parameters/kgdboc ttyFIQ1
     write /sys/module/fiq_debugger/parameters/kgdb_enable 1
 
-# LPM
-on property:ro.bootmode=charger
-    mount ext4 /dev/block/mmcblk0p20 /system wait ro
-    write /sys/devices/system/cpu/cpu1/online 0
-    write /sys/devices/system/cpu/cpu2/online 0
-    write /sys/devices/system/cpu/cpu3/online 0
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor powersave
-    class_start sec-charger
-
-service playlpm /system/bin/lpm
-    class sec-charger
-    critical
-
 on post-fs-data
 # MOBILE OFFICE Permanent memory access
     mkdir /efs/security 0771 root root
