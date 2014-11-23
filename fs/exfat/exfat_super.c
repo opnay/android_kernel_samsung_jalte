@@ -175,9 +175,13 @@ void exfat_time_fat2unix(struct exfat_sb_info *sbi, struct timespec *ts,
 		ld++;
 
 	ts->tv_sec =  tp->Second  + tp->Minute * SECS_PER_MIN
-				  + tp->Hour * SECS_PER_HOUR
-				  + (year * 365 + ld + accum_days_in_year[(tp->Month)] + (tp->Day - 1) + DAYS_DELTA_DECADE) * SECS_PER_DAY
-				  + sys_tz.tz_minuteswest * SECS_PER_MIN;
+			+ tp->Hour * SECS_PER_HOUR
+			+ (year * 365 + ld + accum_days_in_year[(tp->Month)] 
+			+ (tp->Day - 1) + DAYS_DELTA_DECADE) * SECS_PER_DAY;
+
+	if(!sbi->options.tz_utc)
+		ts->tv_sec += sys_tz.tz_minuteswest * SECS_PER_MIN;
+
 	ts->tv_nsec = 0;
 }
 
@@ -188,7 +192,8 @@ void exfat_time_unix2fat(struct exfat_sb_info *sbi, struct timespec *ts,
 	time_t day, month, year;
 	time_t ld;
 
-	second -= sys_tz.tz_minuteswest * SECS_PER_MIN;
+	if (!sbi->options.tz_utc)
+		second -= sys_tz.tz_minuteswest * SECS_PER_MIN;
 
 	if (second < UNIX_SECS_1980) {
 		tp->Second  = 0;
@@ -1501,8 +1506,8 @@ static ssize_t exfat_direct_IO(int rw, struct kiocb *iocb,
 #ifdef CONFIG_AIO_OPTIMIZATION
 					struct iov_iter *iter, loff_t offset)
 #else
-					const struct iovec *iov,
-					loff_t offset, unsigned long nr_segs)
+					   const struct iovec *iov,
+					   loff_t offset, unsigned long nr_segs)
 #endif
 {
 	struct inode *inode = iocb->ki_filp->f_mapping->host;
@@ -1528,7 +1533,7 @@ static ssize_t exfat_direct_IO(int rw, struct kiocb *iocb,
 					offset, nr_segs, exfat_get_block);
 #endif
 #else
-	ret = blockdev_direct_IO(rw, iocb, inode, inode->i_sb->s_bdev, iov,
+        ret = blockdev_direct_IO(rw, iocb, inode, inode->i_sb->s_bdev, iov,
 					offset, nr_segs, exfat_get_block, NULL);
 #endif
 
