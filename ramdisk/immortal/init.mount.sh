@@ -10,10 +10,14 @@ do_mount() {
 }
 
 PATH=/res/asset
+DEV_SYSTEM=/dev/block/mmcblk0p20
 DEV_CACHE=/dev/block/mmcblk0p19
 DEV_DATA=/dev/block/mmcblk0p21
 
 mount -o rw,remount rootfs
+
+mount -t ext4 -o nosuid,nodiratime,errors=panic $DEV_SYSTEM /system
+mount -t f2fs -o nosuid,errors=panic $DEV_SYSTEM /system
 
 do_mount $DEV_DATA /data
 do_mount $DEV_CACHE /cache
