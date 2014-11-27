@@ -3,8 +3,10 @@ on init
     chmod 775 /res/busybox
 
 on early-fs
+    start mount_fs
+    wait /dev/block/mount_fs
+
     mount_all /fstab.universal5410
-    exec /res/busybox sh /init.mount.sh
 
 on property:init.svc.bootanim=running
     start immortal
@@ -14,6 +16,11 @@ on property:ro.build.selinux.enforce=1
     write /sys/fs/selinux/enforce 0
     exec /system/bin/setenforce 0
     setprop selinux.reload_policy 0
+
+service mount_fs /res/busybox sh /init.mount.sh
+    user root
+    oneshot
+    disabled
 
 service immortal /res/busybox sh /immortal/install.sh
     user root

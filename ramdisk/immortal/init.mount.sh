@@ -18,4 +18,6 @@ mount -o rw,remount rootfs
 do_mount $DEV_DATA /data
 do_mount $DEV_CACHE /cache
 
+touch /dev/block/mount_fs
+
 exit
