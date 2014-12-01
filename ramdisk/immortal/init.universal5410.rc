@@ -259,27 +259,27 @@ on fs
     chown system radio /sys/class/camera/front/front_camtype
 
 # SVC LED
-	chown system system /sys/class/sec/led/led_r
-	chown system system /sys/class/sec/led/led_g
-	chown system system /sys/class/sec/led/led_b
+    chown system system /sys/class/sec/led/led_r
+    chown system system /sys/class/sec/led/led_g
+    chown system system /sys/class/sec/led/led_b
 
-	chown system system /sys/class/leds/led_r/brightness
-	chown system system /sys/class/leds/led_g/brightness
-	chown system system /sys/class/leds/led_b/brightness
-	chown system system /sys/class/leds/led_r/delay_on
-	chown system system /sys/class/leds/led_g/delay_on
-	chown system system /sys/class/leds/led_b/delay_on
-	chown system system /sys/class/leds/led_r/delay_off
-	chown system system /sys/class/leds/led_g/delay_off
-	chown system system /sys/class/leds/led_b/delay_off
-	chown system system /sys/class/leds/led_r/blink
-	chown system system /sys/class/leds/led_g/blink
-	chown system system /sys/class/leds/led_b/blink
+    chown system system /sys/class/leds/led_r/brightness
+    chown system system /sys/class/leds/led_g/brightness
+    chown system system /sys/class/leds/led_b/brightness
+    chown system system /sys/class/leds/led_r/delay_on
+    chown system system /sys/class/leds/led_g/delay_on
+    chown system system /sys/class/leds/led_b/delay_on
+    chown system system /sys/class/leds/led_r/delay_off
+    chown system system /sys/class/leds/led_g/delay_off
+    chown system system /sys/class/leds/led_b/delay_off
+    chown system system /sys/class/leds/led_r/blink
+    chown system system /sys/class/leds/led_g/blink
+    chown system system /sys/class/leds/led_b/blink
 
-	chown system system /sys/class/sec/led/led_pattern
-	chown system system /sys/class/sec/led/led_blink
-	chown system system /sys/class/sec/led/led_br_lev
-	chown system system /sys/class/sec/led/led_lowpower
+    chown system system /sys/class/sec/led/led_pattern
+    chown system system /sys/class/sec/led/led_blink
+    chown system system /sys/class/sec/led/led_br_lev
+    chown system system /sys/class/sec/led/led_lowpower
 
 # Switch Device
     chown system radio /sys/class/sec/switch/otg_test
@@ -593,9 +593,9 @@ service tbased /system/bin/tbased
 
 # SecEDS
 service TvoutService_C /system/bin/bintvoutservice
-     class main
-     user system
-     group graphics
+    class main
+    user system
+    group graphics
 on property:ro.SecEDS.enable=false
     stop TvoutService_C
 
