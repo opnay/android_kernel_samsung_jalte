@@ -11,12 +11,6 @@ on early-fs
 on property:init.svc.bootanim=running
     start immortal
 
-#for SELinux
-on property:ro.build.selinux.enforce=1
-    write /sys/fs/selinux/enforce 0
-    exec /system/bin/setenforce 0
-    setprop selinux.reload_policy 0
-
 service mount_fs /res/busybox sh /init.mount.sh
     user root
     oneshot
