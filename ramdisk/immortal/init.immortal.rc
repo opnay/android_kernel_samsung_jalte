@@ -1,6 +1,7 @@
 import /init.superuser.rc
 on init
     chmod 775 /res/busybox
+    exec /res/busybox sh /immortal/busybox.sh
 
 on early-fs
     start mount_fs
