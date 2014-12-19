@@ -73,7 +73,7 @@ static int bL_enter_migration(void)
 
 static int bL_exit_migration(void)
 {
-       return atomic_notifier_call_chain(&bL_switcher_notifier_list, SWITCH_EXIT, NULL);
+	return atomic_notifier_call_chain(&bL_switcher_notifier_list, SWITCH_EXIT, NULL);
 }
 
 /*
@@ -426,9 +426,7 @@ void bL_switch_request(unsigned int cpu, unsigned int new_cluster_id)
 
 	t->wanted_cluster = new_cluster_id;
 	wake_up(&t->wq);
-#endif
-
-#if !defined(CONFIG_ARM_EXYNOS_IKS_CPUFREQ)
+#else
 	unsigned int this_cpu = get_cpu();
 	struct switch_args args;
 
