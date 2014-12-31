@@ -363,7 +363,6 @@ static int make_empty_dir(struct inode *inode,
 	make_dentry_ptr(&d, (void *)dentry_blk, 1);
 	do_make_empty_dir(inode, parent, &d);
 
-	flush_dcache_page(dentry_page);
 	kunmap_atomic(dentry_blk);
 
 	set_page_dirty(dentry_page);
@@ -577,7 +576,6 @@ fail:
 		update_inode_page(dir);
 		clear_inode_flag(F2FS_I(dir), FI_UPDATE_DIR);
 	}
-	flush_dcache_page(dentry_page);
 	kunmap(dentry_page);
 	f2fs_put_page(dentry_page, 1);
 	return err;
@@ -660,7 +658,6 @@ void f2fs_delete_entry(struct f2fs_dir_entry *dentry, struct page *page,
 	bit_pos = find_next_bit_le(&dentry_blk->dentry_bitmap,
 			NR_DENTRY_IN_BLOCK,
 			0);
-	flush_dcache_page(page);
 	kunmap(page); /* kunmap - pair of f2fs_find_entry */
 	set_page_dirty(page);
 
