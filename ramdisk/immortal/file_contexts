@@ -515,6 +515,7 @@
 /data/playready(/.*)?   u:object_r:playready_file:s0
 /efs/.drm(/.*)?         u:object_r:drm_efs_file:s0
 /efs/drm(/.*)?          u:object_r:drm_efs_file:s0
+
 #line 1 "vendor/samsung/common/sepolicy/slsi_common/jalteskt/file_contexts"
 
 # file_contests for JA_LTE_SKT
@@ -522,3 +523,11 @@
 /system/bin/iwland      u:object_r:iwland_exec:s0
 /dev/iwland(/.*)?       u:object_r:skt_socket:s0
 /system/bin/tbased      u:object_r:tbased_exec:s0
+
+#line 1 "vendor/samsung/common/sepolicy/slsi_common/jaltelgt/file_contexts"
+
+# file_contests for JA_LTE_LGT
+/data/LGTContents(/.*)?  u:object_r:lgt_contents_file:s0
+/dev/mwlan_aarp  u:object_r:lgt_mwlan_dev_file:s0
+/dev/ipsecdrvtl  u:object_r:lgt_ipsecdrvtl_dev_file:s0
+

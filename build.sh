@@ -17,11 +17,7 @@ if [ "$2" == "recovery" ]; then
 	RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/recovery
 	BOOTIMG=recovery
 else
-if [ "$1" == "skt" ] || [ "$1" == "kt" ]; then
 	RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/immortal
-else
-	RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/$1
-fi
 	BOOTIMG=boot
 fi
 

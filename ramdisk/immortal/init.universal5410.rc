@@ -60,21 +60,6 @@ on post-fs-data
     mkdir /data/container 0770 system system
     chown system system /data/container
 
-# SKT LAW Permanent memory access
-    mkdir /efs/sktdm_mem 0771 root root
-    chown radio system /efs/sktdm_mem
-    chmod 0771 /efs/sktdm_mem
-
-# SKT PM PlayReady
-    mkdir /data/playready 771 system skt
-    chown system skt /data/playready
-    chmod 0771 /data/playready
-
-# SKT DRM for hoppin
-    mkdir /data/data/.sktdrm 0775
-    chown system radio /data/data/.sktdrm
-    chmod 0775 /data/data/.sktdrm
-    
 # SA, System SW, SAMSUNG create log directory
     mkdir /data/log 0775 system log
     mkdir /data/anr 0775 system system
@@ -107,18 +92,6 @@ on post-fs-data
 
 on boot
     mount debugfs /sys/kernel/debug /sys/kernel/debug
-
-# Define TCP buffer sizes for various networks
-#   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
-    setprop net.tcp.buffersize.default 4096,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.lte     4094,281250,1220608,4096,140625,1220608
-    setprop net.tcp.buffersize.umts    4094,87380,1220608,4096,16384,1220608
-    setprop net.tcp.buffersize.hspa    4094,87380,1220608,4096,16384,1220608
-    setprop net.tcp.buffersize.hsupa   4094,87380,1220608,4096,16384,1220608
-    setprop net.tcp.buffersize.hsdpa   4094,87380,1220608,4096,16384,1220608
-    setprop net.tcp.buffersize.hspap   4094,87380,1220608,4096,16384,1220608
-    setprop net.tcp.buffersize.edge    4093,26280,35040,4096,16384,35040
-    setprop net.tcp.buffersize.gprs    4092,8760,11680,4096,8760,11680
 
     # Reduce reserved lowmem from ~48MB to ~12MB
     write /proc/sys/vm/lowmem_reserve_ratio "128 128"
@@ -390,6 +363,7 @@ on fs
     chmod 0700 /data/bcmnfc/param
     chown nfc nfc /data/bcmnfc
     chown nfc nfc /data/bcmnfc/param
+
 # GPS
     chown root system /sys/class/sec/gps/GPS_PWR_EN/value
     chmod 0664 /sys/class/sec/gps/GPS_PWR_EN/value
@@ -501,12 +475,6 @@ service watchdogd /sbin/watchdogd 10 20
     seclabel u:r:watchdogd:s0
     disabled
 
-service cpboot-daemon /sbin/cbd -d -t ss222 -b s -m c -p 13
-    class main
-    user root
-    group radio cache inet misc audio sdcard_rw log sdcard_r shell
-    seclabel u:r:cbd:s0
-
 #sensorhubservice start
 service sensorhubservice /system/bin/sensorhubservice
     class main
@@ -575,21 +543,6 @@ on post-fs-data
     mkdir /efs/security 0771 root root
     chown radio system /efs/security
     chmod 0771 /efs/security
-
-# for SKT TBASED
-    mkdir /data/tbased 0775 root wifi
-    chown root wifi /data/tbased
-    chmod 0775 /data/tbased
-
-    chown wifi wifi /system/lib/libiwlan_module.so
-    chmod 0644 /system/lib/libiwlan_module.so
-    chmod 0755 /system/bin/tbased
-
-# SKT TBASE
-service tbased /system/bin/tbased
-    class main
-    user root
-    oneshot
 
 # SecEDS
 service TvoutService_C /system/bin/bintvoutservice
