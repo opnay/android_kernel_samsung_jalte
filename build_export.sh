@@ -1,4 +1,4 @@
-IMMORTAL_VERSION=v0.21T
+IMMORTAL_VERSION=v0.22T
 
 JN=16 #`grep process /proc/cpuinfo | wc -l`
 COMPRESS=lz4 # gz / lz4
