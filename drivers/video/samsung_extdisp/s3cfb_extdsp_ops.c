@@ -123,7 +123,6 @@ int s3cfb_extdsp_init_fbinfo(struct s3cfb_extdsp_global *fbdev, int id)
 	struct fb_fix_screeninfo *fix = &fb->fix;
 	struct fb_var_screeninfo *var = &fb->var;
 	struct s3cfb_extdsp_window *win = fb->par;
-	struct s3c_fb_pd_win *lcd = fbdev->lcd;
 
 	memset(win, 0, sizeof(struct s3cfb_extdsp_window));
 	platform_set_drvdata(to_platform_device(fbdev->dev), fb);
@@ -623,7 +622,6 @@ int s3cfb_extdsp_ioctl(struct fb_info *fb, unsigned int cmd, unsigned long arg)
 	struct s3cfb_extdsp_time_stamp time_stamp2;
 	void *argp = (void *)arg;
 	int ret = 0;
-	dma_addr_t start_addr = 0;
 	int i;
 	struct dma_buf *cur_dmabuf;
 	struct dma_buf *cur_dmabuf_uv;

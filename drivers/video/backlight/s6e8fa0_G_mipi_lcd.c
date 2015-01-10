@@ -813,29 +813,29 @@ static int init_aid_dimming_table(struct lcd_info *lcd)
 
 static int init_elvss_table(struct lcd_info *lcd, u8 *elvss_data)
 {
-	int i, j, k, ret;
+	int i, j, ret;
 
-	for (k = 0; k < 2; k++) {
-		lcd->elvss_table[k] = kzalloc(ELVSS_STATUS_MAX * sizeof(u8 *), GFP_KERNEL);
+	for (j = 0; j < 2; j++) {
+		lcd->elvss_table[j] = kzalloc(ELVSS_STATUS_MAX * sizeof(u8 *), GFP_KERNEL);
 
-		if (IS_ERR_OR_NULL(lcd->elvss_table[k])) {
+		if (IS_ERR_OR_NULL(lcd->elvss_table[j])) {
 			pr_err("failed to allocate elvss table\n");
 			ret = -ENOMEM;
 			goto err_alloc_elvss_table;
 		}
 
 		for (i = 0; i < ELVSS_STATUS_MAX; i++) {
-			lcd->elvss_table[k][i] = kzalloc(ELVSS_PARAM_SIZE * sizeof(u8), GFP_KERNEL);
-			if (IS_ERR_OR_NULL(lcd->elvss_table[k][i])) {
+			lcd->elvss_table[j][i] = kzalloc(ELVSS_PARAM_SIZE * sizeof(u8), GFP_KERNEL);
+			if (IS_ERR_OR_NULL(lcd->elvss_table[j][i])) {
 				pr_err("failed to allocate elvss\n");
 				ret = -ENOMEM;
 				goto err_alloc_elvss;
 			}
 
-			lcd->elvss_table[k][i][0] = 0xB6;
-			lcd->elvss_table[k][i][1] = 0x2C;
-			lcd->elvss_table[k][i][2] = elvss_data[1];
-			lcd->elvss_table[k][i][2] += ELVSS_TABLE[i];
+			lcd->elvss_table[j][i][0] = 0xB6;
+			lcd->elvss_table[j][i][1] = 0x2C;
+			lcd->elvss_table[j][i][2] = elvss_data[1];
+			lcd->elvss_table[j][i][2] += ELVSS_TABLE[i];
 		}
 
 	}
@@ -847,12 +847,12 @@ static int init_elvss_table(struct lcd_info *lcd, u8 *elvss_data)
 	return 0;
 
 err_alloc_elvss:
-	/* should be kfree elvss with k */
+	/* should be kfree elvss with j */
 	while (i > 0) {
-		kfree(lcd->elvss_table[k][i-1]);
+		kfree(lcd->elvss_table[j][i-1]);
 		i--;
 	}
-	kfree(lcd->elvss_table[k]);
+	kfree(lcd->elvss_table[j]);
 err_alloc_elvss_table:
 	return ret;
 }

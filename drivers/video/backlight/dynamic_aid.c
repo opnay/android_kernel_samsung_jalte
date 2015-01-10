@@ -83,10 +83,7 @@ static int calc_point_voltages(struct dynamic_aid_info d_aid)
 		}
 	}
 
-	iv = d_aid.iv_max - 1;
-
-	/* iv == (IV_MAX-1) ~ 1; */
-	for (iv; iv > 0; iv--) {
+	for (iv = d_aid.iv_max - 1; iv > 0; iv--) {
 		vt = &point_voltages[0];
 		vp = &point_voltages[iv+1];
 		vd = (int *)&d_aid.param.gamma_default[iv*CI_MAX];
@@ -133,10 +130,8 @@ static int calc_output_voltages(struct dynamic_aid_info d_aid)
 
 	output_voltages = d_aid.output_voltages;
 	point_voltages = d_aid.point_voltages;
-	iv = d_aid.iv_max - 1;
 
-	/* iv == (IV_MAX-1) ~ 0; */
-	for (iv; iv > 0; iv--) {
+	for (iv = d_aid.iv_max - 1; iv > 0; iv--) {
 		v_cnt = d_aid.iv_tbl[iv] - d_aid.iv_tbl[iv-1];
 		v_idx = d_aid.iv_tbl[iv];
 
@@ -236,10 +231,8 @@ static int calc_l_values(struct dynamic_aid_info d_aid, int ibr)
 	gamma_curve = (int *)d_aid.param.gc_tbls[ibr];
 	br_base = (int *)d_aid.param.br_base;
 	l_value = d_aid.l_value;
-	iv = d_aid.iv_max - 1;
 
-	/* iv == (IV_MAX - 1) ~ 0; */
-	for (iv; iv >= 0; iv--) {
+	for (iv = d_aid.iv_max - 1; iv >= 0; iv--) {
 		if (iv == d_aid.iv_max - 1)
 			l_value[iv] = MUL_10000(br_base[ibr]);
 		else
@@ -267,10 +260,8 @@ static int calc_m_gray_values(struct dynamic_aid_info d_aid, int ibr)
 	l_lookup_table = d_aid.l_lookup_table;
 	l_value = d_aid.l_value;
 	m_gray = d_aid.m_gray;
-	iv = d_aid.iv_max - 1;
 
-	/* iv == (IV_MAX - 1) ~ 0; */
-	for (iv; iv >= 0; iv--) {
+	for (iv = d_aid.iv_max - 1; iv >= 0; iv--) {
 		m_gray[iv] = min_diff_gray(l_value[iv], l_lookup_table, d_aid.iv_top);
 		if (offset_gra)
 			m_gray[iv] += offset_gra[ibr][iv];
@@ -298,10 +289,8 @@ static int calc_m_rgb_voltages(struct dynamic_aid_info d_aid, int ibr)
 	point_voltages = d_aid.point_voltages;
 	m_gray = d_aid.m_gray;
 	m_voltage = d_aid.m_voltage;
-	iv = d_aid.iv_max - 1;
 
-	/* iv == (IV_MAX - 1) ~ 1; */
-	for (iv; iv > 0; iv--) {
+	for (iv = d_aid.iv_max - 1; iv > 0; iv--) {
 		for (c = 0; c < CI_MAX; c++)
 			m_voltage[iv].rgb[c] = output_voltages[m_gray[iv]].rgb[c];
 	}
@@ -334,11 +323,9 @@ static int calc_gamma(struct dynamic_aid_info d_aid, int ibr, int *result)
 
 	offset_color = (struct rgb_t(*)[])d_aid.param.offset_color;
 	m_voltage = d_aid.m_voltage;
-	iv = d_aid.iv_max - 1;
 	ret = 0;
 
-	/* iv == (IV_MAX - 1) ~ 1; */
-	for (iv; iv > 0; iv--) {
+	for (iv = d_aid.iv_max - 1; iv > 0; iv--) {
 		mtp = &d_aid.mtp[iv*CI_MAX];
 		res = &result[iv*CI_MAX];
 		numerator = d_aid.param.formular[iv].numerator;

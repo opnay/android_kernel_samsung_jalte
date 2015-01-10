@@ -462,7 +462,7 @@ static void mdnie_update_table(struct mdnie_info *mdnie)
 {
 	struct mdnie_tuning_info *table = NULL;
 	unsigned short *wbuf = NULL;
-	u8 cabc, mode, scenario, lux, i;
+	u8 cabc, mode, scenario, i;
 	int ret;
 
 	if (!mdnie->enable) {

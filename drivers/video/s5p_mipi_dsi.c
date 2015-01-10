@@ -292,7 +292,7 @@ int s5p_mipi_dsi_wr_data(struct mipi_dsim_device *dsim,
 		dev_warn(dsim->dev,
 			"data id %x is not supported current DSI spec.\n", cmd);
 
-		ret -EINVAL;
+		ret = -EINVAL;
         goto exit;
 	}
 exit:
