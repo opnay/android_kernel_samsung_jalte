@@ -95,12 +95,6 @@ ssize_t sec_chg_store_attrs(struct device *dev,
 	.store = sec_chg_store_attrs,			\
 }
 
-static struct device_attribute sec_charger_attrs[] = {
-	SEC_CHARGER_ATTR(reg),
-	SEC_CHARGER_ATTR(data),
-	SEC_CHARGER_ATTR(regs),
-};
-
 enum {
 	CHG_REG = 0,
 	CHG_DATA,

@@ -83,8 +83,6 @@ static unsigned int exynos_pd_gscl_clock_control(bool on)
 	struct clk *aclk_333_432_gscl_sub;
 	struct clk *target_parent;
 
-	unsigned int tmp;
-
 	aclk_333_432_gscl_sub = clk_get(NULL, "aclk_333_432_gscl");
 
 	if (IS_ERR(aclk_333_432_gscl_sub)) {
@@ -126,8 +124,6 @@ static unsigned int exynos_pd_gscl_clock_control(bool on)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"  /* gscl0, gscl1 */
 static void exynos_gscl_ctrl_save(unsigned int *gscl0, unsigned int *gscl1, bool on)
 {
-	unsigned int tmp;
-
 	if (on) {
 		*gscl0 = __raw_readl(EXYNOS5_CLKGATE_IP_GSCL0);
 		__raw_writel(0xFFFFFFFF, EXYNOS5_CLKGATE_IP_GSCL0);
@@ -153,7 +149,7 @@ static int exynos_pd_power(struct generic_pm_domain *domain, bool power_on)
 	int ret = 0;
 	void __iomem *regs;
 
-	unsigned int gscl0, gscl1;
+	unsigned int gscl0 = 0, gscl1 = 0;
 
 	pd = container_of(domain, struct exynos_pm_domain, pd);
 	base = pd->base;
@@ -770,11 +766,14 @@ static void __iomem *exynos5_pwr_reg_mfc[] = {
 	EXYNOS5_CMU_RESET_MFC_SYS_PWR_REG,
 };
 
+// Defined but not used
+#if 0
 static void __iomem *exynos5_pwr_reg_gscl[] = {
 	EXYNOS5_CMU_CLKSTOP_GSCL_SYS_PWR_REG,
 	EXYNOS5_CMU_SYSCLK_GSCL_SYS_PWR_REG,
 	EXYNOS5_CMU_RESET_GSCL_SYS_PWR_REG,
 };
+#endif
 
 static void __iomem *exynos5_pwr_reg_mau[] = {
 	EXYNOS5_CMU_CLKSTOP_MAU_SYS_PWR_REG,

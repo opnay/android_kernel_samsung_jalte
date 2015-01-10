@@ -49,7 +49,9 @@
 
 static struct s3c_adc_client *adc_client;
 
-static unsigned int sec_bat_recovery_mode;
+// Defined but not used
+
+//static unsigned int sec_bat_recovery_mode;
 
 bool is_wpc_cable_attached;
 

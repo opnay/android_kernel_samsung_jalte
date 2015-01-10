@@ -599,7 +599,8 @@ static inline void sec_debug_disable_watchdog(void)
 #ifdef CONFIG_SEC_DEBUG_FUPLOAD_DUMP_MORE
 static void dump_all_task_info(void);
 static void dump_cpu_stat(void);
-static void dump_state_and_upload(void);
+// Defined but not used
+//static void dump_state_and_upload(void);
 #endif
 
 static int sec_debug_panic_handler(struct notifier_block *nb,

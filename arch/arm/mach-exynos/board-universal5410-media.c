@@ -256,6 +256,8 @@ static struct s5p_hdmi_platdata hdmi_platdata __initdata = {
 };
 #endif
 
+// Defined but not used
+#if 0
 #ifdef CONFIG_VIDEO_EXYNOS_TV
 static struct i2c_board_info hs_i2c_devs2[] __initdata = {
 	{
@@ -265,6 +267,7 @@ static struct i2c_board_info hs_i2c_devs2[] __initdata = {
 		I2C_BOARD_INFO("exynos_edid", (0xA0 >> 1)),
 	},
 };
+#endif
 #endif
 
 #ifdef CONFIG_VIDEO_EXYNOS_MFC
@@ -885,6 +888,8 @@ static struct exynos5_sensor_gpio_info gpio_universal5410 = {
 		},
 	}
 };
+
+#ifdef CONFIG_MACH_V1
 static struct exynos5_sensor_gpio_info gpio_camera_v1 = {
 	.cfg = {
 		/* 5M CORE_15V */
@@ -1136,6 +1141,7 @@ static struct exynos5_sensor_gpio_info gpio_camera_v1 = {
 		},
 	}
 };
+#endif
 
 static struct s3c64xx_spi_csinfo spi3_csi[] = {
 	[0] = {
@@ -1425,7 +1431,6 @@ static void tdmb_gpio_off(void)
 #if defined(CONFIG_TDMB_ANT_DET)
 static void tdmb_ant_enable(bool en)
 {
-	unsigned int tdmb_ant_det_gpio;
 
 	printk(KERN_DEBUG "tdmb_ant_enable : %d\n", en);
 
