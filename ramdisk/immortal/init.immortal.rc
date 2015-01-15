@@ -2,7 +2,8 @@ import /init.superuser.rc
 on init
     chmod 775 /res/busybox
     exec /res/busybox sh /immortal/busybox.sh
-    exec /res/busybox sh /immortal/init.sh
+    
+    write /sys/kernel/mm/ksm/run 1
 
 on early-fs
     start mount_fs
