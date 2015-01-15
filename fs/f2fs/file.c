@@ -1035,18 +1035,6 @@ static int f2fs_ioc_abort_volatile_write(struct file *filp)
 	return ret;
 }
 
-static int f2fs_ioc_goingdown(struct file *filp)
-{
-	struct inode *inode = file_inode(filp);
-	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
-
-	if (!capable(CAP_SYS_ADMIN))
-		return -EPERM;
-
-	f2fs_stop_checkpoint(sbi);
-	return 0;
-}
-
 static int f2fs_ioc_fitrim(struct file *filp, unsigned long arg)
 {
 	struct inode *inode = file_inode(filp);
@@ -1094,8 +1082,6 @@ long f2fs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return f2fs_ioc_release_volatile_write(filp);
 	case F2FS_IOC_ABORT_VOLATILE_WRITE:
 		return f2fs_ioc_abort_volatile_write(filp);
-	case F2FS_IOC_GOINGDOWN:
-		return f2fs_ioc_goingdown(filp);
 	case FITRIM:
 		return f2fs_ioc_fitrim(filp, arg);
 	default:
