@@ -811,8 +811,9 @@ static void __init set_volt_table_CA7(void)
 				exynos5410_volt_table_CA7[i]);
 	}
 
+	exynos5410_freq_table_CA7[L0].frequency = CPUFREQ_ENTRY_INVALID;
+
 	if (samsung_rev() < EXYNOS5410_REV_2_0) {
-		exynos5410_freq_table_CA7[L0].frequency = CPUFREQ_ENTRY_INVALID;
 		exynos5410_freq_table_CA7[L1].frequency = CPUFREQ_ENTRY_INVALID;
 		exynos5410_freq_table_CA7[L2].frequency = CPUFREQ_ENTRY_INVALID;
 		exynos5410_freq_table_CA7[L3].frequency = CPUFREQ_ENTRY_INVALID;
@@ -822,7 +823,7 @@ static void __init set_volt_table_CA7(void)
 
 		max_support_idx_CA7 = L7;
 	} else {
-		max_support_idx_CA7 = L0;
+		max_support_idx_CA7 = L1;
 	}
 
 	min_support_idx_CA7 = L11;
