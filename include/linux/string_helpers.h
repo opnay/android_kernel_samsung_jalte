@@ -10,7 +10,7 @@ enum string_size_units {
 	STRING_UNITS_2,		/* use binary powers of 2^10 */
 };
 
-int string_get_size(u64 size, enum string_size_units units,
-		    char *buf, int len);
+void string_get_size(u64 size, enum string_size_units units,
+		     char *buf, int len);
 
 #endif
