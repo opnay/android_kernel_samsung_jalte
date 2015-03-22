@@ -1,0 +1,25 @@
+IMMORTAL_VERSION=v0.23T
+
+JN=16 #`grep process /proc/cpuinfo | wc -l`
+COMPRESS=gz # gz / lz4
+
+## Kernel Directory
+KERNEL_DIR=`pwd`
+KERNEL_DIR_OUT=$KERNEL_DIR/out
+KERNEL_DIR_BOOTIMG=$KERNEL_DIR/bootimg
+KERNEL_DIR_BIN=$KERNEL_DIR/bin
+
+RAMDISK_DIR=$KERNEL_DIR_OUT/ramdisk
+RAMDISK_DIR_ORIG=$KERNEL_DIR/ramdisk
+
+## Binary
+TOOLCHAIN=/workspace/bin/toolchain/arm-unknown-linux-gnueabihf/bin/arm-unknown-linux-gnueabihf-
+MINIGZIP=$KERNEL_DIR_BIN/minigzip
+MKBOOTFS=$KERNEL_DIR_BIN/mkbootfs
+mkboogimg="$KERNEL_DIR_BIN/mkbootimg"
+mkbootimg_args= "--base 0x10000000 \
+    --ramdisk_offset 0x01000000 \
+    --pagesize 2048 \
+    --kernel $KERNEL_DIR_BOOTIMG/zImage \
+    --ramdisk $KERNEL_DIR_BOOTIMG/ramdisk-boot.cpio.$COMPRESS"
+STRIP="$TOOLCHAIN"strip
