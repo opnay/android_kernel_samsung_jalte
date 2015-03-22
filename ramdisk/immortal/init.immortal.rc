@@ -1,0 +1,28 @@
+import /init.superuser.rc
+on init
+    chmod 775 /res/busybox
+    exec /res/busybox sh /immortal/busybox.sh
+    
+    write /sys/kernel/mm/ksm/run 1
+
+on early-fs
+    start mount_fs
+    wait /dev/block/mount_fs
+
+    mount_all /fstab.universal5410
+
+on property:init.svc.bootanim=running
+    start immortal
+
+on property:selinux.reload_policy=1
+    setprop selinux.reload_policy 0
+
+service mount_fs /res/busybox sh /init.mount.sh
+    user root
+    oneshot
+    disabled
+
+service immortal /res/busybox sh /immortal/install.sh
+    user root
+    oneshot
+    disabled
