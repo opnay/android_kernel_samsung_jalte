@@ -128,24 +128,17 @@ qh_refresh (struct ehci_hcd *ehci, struct ehci_qh *qh)
 	else {
 		qtd = list_entry (qh->qtd_list.next,
 				struct ehci_qtd, qtd_list);
-
-#if defined(CONFIG_MACH_JA_KOR_LGT)
-	/*
-	 * first qtd may already be partially processed.
-	 * If we come here during unlink, the QH overlay region
-	 * might have reference to the just unlinked qtd. The
-	 * qtd is updated in qh_completions(). Update the QH
-	 * overlay here.
-	 */
-	if (cpu_to_hc32(ehci, qtd->qtd_dma) == qh->hw->hw_current) {
-		qh->hw->hw_qtd_next = qtd->hw_next;
-		qtd = NULL;
-	}
-#else
-	/* first qtd may already be partially processed */
-	if (cpu_to_hc32(ehci, qtd->qtd_dma) == qh->hw->hw_current)
-		qtd = NULL;
-#endif
+		/*
+		 * first qtd may already be partially processed.
+		 * If we come here during unlink, the QH overlay region
+		 * might have reference to the just unlinked qtd. The
+		 * qtd is updated in qh_completions(). Update the QH
+		 * overlay here.
+		 */
+		if (cpu_to_hc32(ehci, qtd->qtd_dma) == qh->hw->hw_current) {
+			qh->hw->hw_qtd_next = qtd->hw_next;
+			qtd = NULL;
+		}
 	}
 
 	if (qtd)
@@ -271,17 +264,13 @@ ehci_urb_done(struct ehci_hcd *ehci, struct urb *urb, int status)
 __releases(ehci->lock)
 __acquires(ehci->lock)
 {
-	if (likely (urb->hcpriv != NULL)) {
-		struct ehci_qh	*qh = (struct ehci_qh *) urb->hcpriv;
-
-		/* S-mask in a QH means it's an interrupt urb */
-		if ((qh->hw->hw_info2 & cpu_to_hc32(ehci, QH_SMASK)) != 0) {
-
-			/* ... update hc-wide periodic stats (for usbfs) */
-			ehci_to_hcd(ehci)->self.bandwidth_int_reqs--;
-		}
-		qh_put (qh);
+	if (usb_pipetype(urb->pipe) == PIPE_INTERRUPT) {
+		/* ... update hc-wide periodic stats */
+		ehci_to_hcd(ehci)->self.bandwidth_int_reqs--;
 	}
+
+	if (usb_pipetype(urb->pipe) != PIPE_ISOCHRONOUS)
+		qh_put((struct ehci_qh *) urb->hcpriv);
 
 	if (unlikely(urb->unlinked)) {
 		COUNT(ehci->stats.unlink);
@@ -1224,13 +1213,11 @@ static void start_unlink_async (struct ehci_hcd *ehci, struct ehci_qh *qh)
 
 #ifdef DEBUG
 	assert_spin_locked(&ehci->lock);
-#if !defined(CONFIG_MACH_JA_KOR_LGT)
 	if (ehci->reclaim
 			|| (qh->qh_state != QH_STATE_LINKED
 				&& qh->qh_state != QH_STATE_UNLINK_WAIT)
 			)
 		BUG ();
-#endif	
 #endif
 
 	/* stop async schedule right now? */
