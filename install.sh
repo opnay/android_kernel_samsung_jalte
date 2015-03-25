@@ -8,24 +8,36 @@ adb_shell="$adb shell"
 adb_reboot="$adb reboot"
 
 # boot.img binary
-BOOTIMG=$1
 DEVPATH=/dev/block/mmcblk0p9
 
-if [ "$BOOTIMG" == "" ]; then
-	echo -e "Usage : build_install.sh <boot.img path>"
-	echo -e "ex)" "build_install.sh boot.img"
+function help() {
+	echo -e "install.sh [-s|--su] [-h|--help] <boot.img>\n"
+	echo -e "  -s, --su\tRun shell with su"
+	echo -e "  -h, --help\tShow this help message"
 	exit
+}
+
+if [[ "$@" == "" ]]; then
+	help
 fi
+
+for tmp in $@; do
+	case $tmp in
+		-s | --su) adb_shell="$adb_shell su -c";;
+		-h | --help) help;;
+		*) BOOTIMG=$tmp;;
+	esac
+done
 
 echo -e "ADB : $adb"
 if [ ! -e $adb ] || [ "$adb" == "" ]; then
-	echo -e "adb Not Found!!!"
+	echo -e "adb was not found"
 	exit
 fi
 
 echo -e "BOOTIMG : $BOOTIMG"
-if [ ! -e $BOOTIMG ]; then
-	echo -e "boot.img Not Found!!!"
+if [ ! -e $BOOTIMG ] || [ "$BOOTIMG" = "" ]; then
+	echo -e "boot.img was not found"
 	exit
 fi
 
@@ -37,6 +49,7 @@ $adb_push $BOOTIMG /sdcard/boot.img
 
 echo -e " * Install..."
 $adb_shell dd if=/sdcard/boot.img of=$DEVPATH
+
 echo -e " * Reboot!"
 $adb_reboot
 
