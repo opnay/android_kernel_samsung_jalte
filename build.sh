@@ -8,7 +8,7 @@ fi
 
 # Export
 export ARCH=arm
-export CROSS_COMPILE=$TOOLCHAIN
+export CROSS_COMPILE=$TOOLCHAIN_PREFIX
 
 DEVICE_CA=$1
 DEFCONFIG=jalte"$1"_immortal_defconfig
@@ -27,8 +27,8 @@ if [ $BOOTIMG == "recovery" ]; then
 	echo " * Recovery Build : true"
 fi
 echo " * Kernel Directory : $KERNEL_DIR"
-echo " * Output Directory : $KERNEL_DIR_OUT"
-echo " * boot.img Directory : $KERNEL_DIR_BOOTIMG"
+echo " * Output Directory : $KERNEL_OUT"
+echo " * boot.img Directory : $KERNEL_OUT_BOOT"
 echo " * Ramdisk Directory : $RAMDISK_DIR_ORIG"
 if [ ! -e $RAMDISK_DIR_ORIG ]; then
 	echo " ***** Ramdisk directory was not found *****"
@@ -50,20 +50,20 @@ fi
 
 ## Clean output Directory
 echo " ** Clean Directory"
-rm -rf $KERNEL_DIR_OUT
-mkdir -p $KERNEL_DIR_OUT
+rm -rf $KERNEL_OUT
+mkdir -p $KERNEL_OUT
 
 ## Config
 echo " ** Make Config"
-make $DEFCONFIG -j$JN O=$KERNEL_DIR_OUT
+make $DEFCONFIG -j$JN O=$KERNEL_OUT
 echo " ** Run menuconfig"
-make menuconfig -j$JN O=$KERNEL_DIR_OUT
+make menuconfig -j$JN O=$KERNEL_OUT
 
 ## Make Config
 echo " ** Make zImage"
-make -j$JN O=$KERNEL_DIR_OUT
+make -j$JN O=$KERNEL_OUT
 
-if [ ! -e $KERNEL_DIR_OUT/arch/arm/boot/zImage ]; then
+if [ ! -e $KERNEL_OUT/arch/arm/boot/zImage ]; then
 	echo " ***** Error occured *****"
 	exit
 fi
@@ -72,9 +72,9 @@ fi
 echo " ** Make bootimg"
 ./build_bootimg.sh $RAMDISK_DIR_ORIG $BOOTIMG
 
-if [ -e $KERNEL_DIR_BOOTIMG/$BOOTIMG.img ]; then
+if [ -e $KERNEL_OUT_BOOT/$BOOTIMG.img ]; then
 	echo "Build Complete!!"
-	echo "boot.img : $KERNEL_DIR_BOOTIMG/$BOOTIMG.img"
+	echo "boot.img : $KERNEL_OUT_BOOT/$BOOTIMG.img"
 else
 	echo "Couldn't make boot.img"
 fi
