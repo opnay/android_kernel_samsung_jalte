@@ -28,13 +28,12 @@ if [ $BOOTIMG == "recovery" ]; then
 fi
 echo " * Kernel Directory : $KERNEL_DIR"
 echo " * Output Directory : $KERNEL_OUT"
-echo " * boot.img Directory : $KERNEL_OUT_BOOT"
+echo " * boot.img Directory : $KERNEL_OUT_BOOTIMG"
 echo " * Ramdisk Directory : $RAMDISK_DIR_ORIG"
 if [ ! -e $RAMDISK_DIR_ORIG ]; then
 	echo " ***** Ramdisk directory was not found *****"
 	exit
 fi
-echo " * Compress : $COMPRESS"
 echo " * Toolchain : $CROSS_COMPILE"
 if [ ! -e "$CROSS_COMPILE"ld ]; then
 	echo " ***** Toolchain was not found *****"
@@ -70,11 +69,11 @@ fi
 
 ## Make boot.img
 echo " ** Make bootimg"
-./build_bootimg.sh $RAMDISK_DIR_ORIG $BOOTIMG
+./build_bootimg.sh -o $BOOTIMG $RAMDISK_DIR_ORIG
 
-if [ -e $KERNEL_OUT_BOOT/$BOOTIMG.img ]; then
+if [ -e $KERNEL_OUT_BOOTIMG/$BOOTIMG.img ]; then
 	echo "Build Complete!!"
-	echo "boot.img : $KERNEL_OUT_BOOT/$BOOTIMG.img"
+	echo "boot.img : $KERNEL_OUT_BOOTIMG/$BOOTIMG.img"
 else
 	echo "Couldn't make boot.img"
 fi
