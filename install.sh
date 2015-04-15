@@ -45,10 +45,10 @@ echo -e " * Wait for device"
 $adb_wait
 
 echo -e " * Push boot.img to device (in /sdcard)"
-$adb_push $BOOTIMG /sdcard/boot.img
+$adb_push $BOOTIMG /data/local/tmp/boot.img
 
 echo -e " * Install..."
-$adb_shell dd if=/sdcard/boot.img of=$DEVPATH
+$adb_shell dd if=/data/local/tmp/boot.img of=$DEVPATH
 
 echo -e " * Reboot!"
 $adb_reboot
