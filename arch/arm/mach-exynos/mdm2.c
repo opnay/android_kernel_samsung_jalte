@@ -160,7 +160,9 @@ static void mdm_power_down_common(struct mdm_modem_drv *mdm_drv)
 		*/
 		msleep(4000);
 	}
-	mdm_peripheral_disconnect(mdm_drv);
+	/* during AP power_down, skb was free somewhere.
+	 * and delete this disconnection logic temporarily. */
+	/* mdm_peripheral_disconnect(mdm_drv); */
 }
 
 static void mdm_do_first_power_on(struct mdm_modem_drv *mdm_drv)
