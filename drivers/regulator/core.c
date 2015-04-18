@@ -1357,14 +1357,19 @@ void regulator_put(struct regulator *regulator)
 	debugfs_remove_recursive(regulator->debugfs);
 
 	/* remove any sysfs entries */
-	if (regulator->dev)
+	if (regulator->dev) {
 		sysfs_remove_link(&rdev->dev.kobj, regulator->supply_name);
+		device_remove_file(regulator->dev, &regulator->dev_attr);
+		kfree(regulator->dev_attr.attr.name);
+	}
+	mutex_lock(&rdev->mutex);
 	kfree(regulator->supply_name);
 	list_del(&regulator->list);
 	kfree(regulator);
 
 	rdev->open_count--;
 	rdev->exclusive = 0;
+	mutex_unlock(&rdev->mutex);
 
 	module_put(rdev->owner);
 	mutex_unlock(&regulator_list_mutex);

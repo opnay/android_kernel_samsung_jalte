@@ -48,7 +48,7 @@ struct xhci_hcd *exynos_xhci_dbg;
 static const char hcd_name[] = "xhci_hcd";
 
 #ifdef CONFIG_PM
-static int exynos_xhci_suspend(struct device *dev)
+static int exynos_xhci_suspend(struct device *dev, bool do_wakeup)
 {
 	struct platform_device	*pdev = to_platform_device(dev);
 	struct exynos_xhci_hcd	*exynos_xhci;
@@ -79,7 +79,7 @@ static int exynos_xhci_suspend(struct device *dev)
 		return 0;
 	}
 #endif
-	retval = xhci_suspend(xhci);
+	retval = xhci_suspend(xhci, do_wakeup);
 	if (retval < 0)
 		dev_err(dev, "%s: cannot stop xHC\n", __func__);
 
@@ -147,7 +147,7 @@ static int exynos_xhci_resume(struct device *dev)
 #endif
 
 #ifdef CONFIG_USB_SUSPEND
-static int exynos_xhci_runtime_suspend(struct device *dev)
+static int exynos_xhci_runtime_suspend(struct device *dev, bool do_wakeup)
 {
 	struct platform_device	*pdev = to_platform_device(dev);
 	struct exynos_xhci_hcd	*exynos_xhci;
@@ -173,7 +173,7 @@ static int exynos_xhci_runtime_suspend(struct device *dev)
 		return -EAGAIN;
 	}
 
-	retval = xhci_suspend(xhci);
+	retval = xhci_suspend(xhci, do_wakeup);
 	if (retval < 0)
 		dev_err(dev, "%s: cannot stop xHC\n", __func__);
 
