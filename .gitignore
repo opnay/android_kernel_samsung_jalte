@@ -84,3 +84,7 @@ GTAGS
 *.orig
 *~
 \#*#
+
+# kernel output directory
+bootimg
+out
