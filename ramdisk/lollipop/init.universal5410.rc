@@ -476,11 +476,6 @@ on fs
     chown system radio /sys/class/audio/earjack/key_state
     chown system radio /sys/class/audio/earjack/state
 
-# Audio 2 MIC (Audience)
-    chown media audio /sys/class/2mic/es325/preset
-    chown media audio /sys/class/2mic/es325/sleep
-    chown media audio /sys/class/2mic/es325/veq
-
 #For Absolute Persistence Partition
     mkdir /persdata 0755 system system
     mkdir /persdata/absolute 0750 system system
@@ -501,7 +496,7 @@ service pvrsrvctl /system/vendor/bin/pvrsrvctl --start --no-module
     user root
     group root
     oneshot
-    
+
 # virtual sdcard daemon running as media_rw (1023)
 service sdcard /system/bin/sdcard -u 1023 -g 1023 -l -r /data/media /mnt/shell/emulated
     class late_start
@@ -574,13 +569,6 @@ service gpsd /system/bin/gpsd -c /system/etc/gps.xml
     group system inet net_raw
     ioprio be 0
 
-# SA, System SW, SAMSUNG
-service bugreport /system/bin/bugmailer.sh -v
-    class main
-    disabled
-    oneshot
-    keycodes 114 115 116
-
 # bootchecker
 service bootchecker /system/bin/bootchecker
     class late_start
@@ -605,12 +593,6 @@ service scranton_RD /system/bin/scranton_RD
 # start for TZPR provisioning version check app
 on property:sys.mobicoredaemon.enable=true
     start scranton_RD
-
-# deferred initcall
-service sec-sh /system/bin/sh /system/etc/init.sec.boot.sh
-    class main
-    user root
-    oneshot
 
 # on userdebug and eng builds, enable kgdb on the serial console
 on property:ro.debuggable=1
