@@ -628,12 +628,6 @@ service playlpm /system/bin/lpm
     class sec-charger
     critical
 
-# To reduce power consumption when setupwizard is running
-on property:persist.sys.setupwizard=START
-    write /sys/power/cpufreq_max_limit 1000000
-
-on property:persist.sys.setupwizard=FINISH
-    write /sys/power/cpufreq_max_limit 1600000
 # SecEDS
 service TvoutService_C /system/bin/bintvoutservice
      class main
