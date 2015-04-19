@@ -7,8 +7,6 @@
 /dev/video8               0660   media      media
 /dev/video9               0660   media      media
 
-
-
 # gscalers
 /dev/video23              0660   media      graphics
 /dev/video26              0660   media      graphics
@@ -41,16 +39,11 @@
 /dev/video48              0660   media      media
 /dev/media2               0660   media      media
 
-
-
 # mixer
 /dev/video16              0660   system     audio
 /dev/video17              0660   system     system
 /dev/video18              0660   system     system
 /dev/video19              0660   system     system
-
-# FIMG2D
-/dev/fimg2d               0666   system     graphics
 
 #JPEG
 /dev/video11              0660   media      media
@@ -65,22 +58,17 @@
 /sys/devices/virtual/input/input*	poll_delay	0660	system	radio
 /sys/devices/virtual/input/input*	enable		0660	system	radio
 
-# sensorhub
-/dev/ssp_sensorhub		  0660	 system     system
-
 /dev/ttySAC*	          0660	 root	 system
 /dev/umts*                0660   system     radio
 /dev/block/mmcblk0p13     0660   system     radio
 
-# USB Acessory
-/dev/ttyUSB*              0660   system     usb
+# USB
 /dev/usb/lp*              0660   system     usb
+/dev/android_ssusbcon     0660   system     system
+/dev/usb_mtp_gadget       0660   system     system
 
 #ALP Audio
 /dev/srp                  0660   system     audio
-
-# Secure MEM driver
-/dev/s5p-smem             0660   system     system
 
 /dev/mdm                  0660   system     radio
 /dev/hsic*                0660   system     radio
@@ -92,3 +80,25 @@
 /dev/block/mmcblk0p4      0660   system     radio
 /dev/block/mmcblk0p5      0660   system     radio
 /dev/block/mmcblk0p6      0660   system     radio
+
+# Bluetooth
+/dev/ttySAC0              0600   bluetooth  bluetooth
+/dev/btlock               0600   bluetooth  bluetooth
+
+# NFC
+/dev/pn547                0600   nfc        nfc
+/dev/bcm2079x             0600   nfc        nfc
+
+# tdmb
+/dev/tdmb                 0660   system     system
+
+# Core control
+/dev/b.L_operator         0660   radio      system
+/dev/bL_status            0660   radio      system
+
+/dev/dun                  0600   system     system
+/dev/ttyGS*               0600   system     system
+
+# Sensor
+/dev/akm8963              0600   system     radio
+

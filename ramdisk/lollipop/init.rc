@@ -334,10 +334,6 @@ on post-fs-data
     chown system system /dev/icdr
     chmod 0644 /dev/icdr
     chown system system /dev/tzic
-    
-    #SideSync
-    chown system system /dev/android_ssusbcon
-    chmod 0660 /dev/android_ssusbcon
 
     # For security reasons, /data/local/tmp should always be empty.
     # Do not place files or directories in /data/local/tmp
