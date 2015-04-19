@@ -721,7 +721,6 @@ on property:sys.sysctl.extra_free_kbytes=*
 on property:sys.sysctl.tcp_def_init_rwnd=*
     write /proc/sys/net/ipv4/tcp_default_init_rwnd ${sys.sysctl.tcp_def_init_rwnd}
 
-
 on property:init.svc.bootanim=stopped
     start auditd
 
@@ -894,7 +893,10 @@ service at_distributor /system/bin/at_distributor
     group radio misc log
 
 # MobiCore startup
-service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
+service mobicore /system/bin/mcDriverDaemon \
+	-r /system/app/FFFFFFFF000000000000000000000001.drbin \
+	-r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin \
+	-r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
     class core
     user system
     group system
@@ -1046,11 +1048,11 @@ service mdnsd /system/bin/mdnsd
     oneshot
 
 # Vibetonz 
-service immvibed /system/bin/immvibed 
-    class core 
-    user vibe 
-    group vibe 
-    oneshot 
+service immvibed /system/bin/immvibed
+    class core
+    user vibe
+    group vibe
+    oneshot
 
 service pre-recovery /system/bin/uncrypt
     class main
@@ -1078,7 +1080,7 @@ service charon /system/bin/charon
   group system 
   disabled
 
-on property:persist.security.tlc.ccm=1  
+on property:persist.security.tlc.ccm=1
   start ccm
   setprop persist.security.tlc.ccm 0
 
