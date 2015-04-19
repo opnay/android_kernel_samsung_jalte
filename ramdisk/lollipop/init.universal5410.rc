@@ -54,7 +54,7 @@ on init
     restorecon /dev/mbin0
     symlink /sys/devices/platform/s5p-ehci/ehci_power /dev/ehci_power
 
-	symlink /dev/block/mmcblk0p8 /dev/block/param
+    symlink /dev/block/mmcblk0p8 /dev/block/param
 
 on post-fs-data
     mkdir /data/media 0770 media_rw media_rw
