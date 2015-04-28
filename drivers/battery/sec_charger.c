@@ -12,6 +12,12 @@
 
 #include <linux/battery/sec_charger.h>
 
+static struct device_attribute sec_charger_attrs[] = {
+	SEC_CHARGER_ATTR(reg),
+	SEC_CHARGER_ATTR(data),
+	SEC_CHARGER_ATTR(regs),
+};
+
 static enum power_supply_property sec_charger_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_CHARGE_TYPE,
