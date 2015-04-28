@@ -49,10 +49,7 @@
 
 static struct s3c_adc_client *adc_client;
 
-static unsigned int sec_bat_recovery_mode;
-
 bool is_wpc_cable_attached;
-
 
 unsigned int lpcharge;
 EXPORT_SYMBOL(lpcharge);
@@ -731,27 +728,6 @@ static struct platform_device *universal5410_battery_devices[] __initdata = {
 	&sec_device_fg,
 	&sec_device_battery,
 };
-
-#if 0
-static int __init sec_bat_current_boot_mode(char *mode)
-{
-	/*
-	*	1 is recovery booting
-	*	0 is normal booting
-	*/
-
-	if (strncmp(mode, "1", 1) == 0)
-		sec_bat_recovery_mode = 1;
-	else
-		sec_bat_recovery_mode = 0;
-
-	pr_info("%s : %s", __func__, sec_bat_recovery_mode == 1 ?
-				"recovery" : "normal");
-
-	return 1;
-}
-__setup("androidboot.batt_check_recovery=", sec_bat_current_boot_mode);
-#endif
 
 void __init exynos5_universal5410_battery_init(void)
 {
