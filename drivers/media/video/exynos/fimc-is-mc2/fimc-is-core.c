@@ -607,9 +607,9 @@ int fimc_is_set_dvfs(struct fimc_is_core *core,
 		}
 #endif
 	} else {
-		if (((ischain->setfile && 0xffff) == \
+		if (((ischain->setfile & 0xffff) == \
 			ISS_SUB_SCENARIO_FRONT_VT1) || \
-			((ischain->setfile && 0xffff) == \
+			((ischain->setfile & 0xffff) == \
 			ISS_SUB_SCENARIO_FRONT_VT2)) {
 			if (core->clock.dvfs_mif_level != 400000) {
 				pm_qos_update_request(&exynos5_isp_qos_mem, \
@@ -624,13 +624,7 @@ int fimc_is_set_dvfs(struct fimc_is_core *core,
 		}
 #endif
 		/* update int level */
-		if (((ischain->setfile & 0xffff) == \
-			ISS_SUB_SCENARIO_FRONT_VT1) || \
-			((ischain->setfile& 0xffff)  == \
-			ISS_SUB_SCENARIO_FRONT_VT2))
-			pm_qos_update_request(&exynos5_isp_qos_dev, level);
-		else
-			pm_qos_update_request(&exynos5_isp_qos_dev, level);
+		pm_qos_update_request(&exynos5_isp_qos_dev, level);
 	}
 
 	/* i2c unlock */
