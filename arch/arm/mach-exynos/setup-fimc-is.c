@@ -495,44 +495,34 @@ int exynos5_fimc_is_gpio(struct platform_device *pdev, struct gpio_set *gpio, in
 
 int exynos5_fimc_is_regulator(struct platform_device *pdev, struct gpio_set *gpio, int flag_on)
 {
+	struct regulator *regulator = NULL;
 	int ret = 0;
 
 	if (soc_is_exynos5410()) {
-		struct regulator *regulator = NULL;
-
-		if (flag_on == 1) {
-			regulator = regulator_get(&(pdev->dev), gpio->name);
-			if (IS_ERR(regulator)) {
-				pr_err("%s : regulator_get(%s) fail\n",
+		pr_warn("%s : gpio_info: gpio->name:%s", __func__, gpio->name);
+		regulator = regulator_get(&(pdev->dev), gpio->name);
+		if (IS_ERR(regulator)) {
+			pr_err("%s : regulator_get(%s) fail\n",
+				__func__, gpio->name);
+			return PTR_ERR(regulator);
+		} else if (flag_on && !regulator_is_enabled(regulator)) {
+			ret = regulator_enable(regulator);
+			if (ret) {
+				pr_err("%s : regulator_enable(%s) fail\n",
 					__func__, gpio->name);
-				return PTR_ERR(regulator);
-			} else if (!regulator_is_enabled(regulator)) {
-				ret = regulator_enable(regulator);
-				if (ret) {
-					pr_err("%s : regulator_enable(%s) fail\n",
-						__func__, gpio->name);
-					regulator_put(regulator);
-					return ret;
-				}
+				regulator_put(regulator);
+				return ret;
 			}
-			regulator_put(regulator);
-		} else {
-			regulator = regulator_get(&(pdev->dev), gpio->name);
-			if (IS_ERR(regulator)) {
-				pr_err("%s : regulator_get(%s) fail\n",
+		} else if (!flag_on && regulator_is_enabled(regulator)) {
+			ret = regulator_disable(regulator);
+			if (ret) {
+				pr_err("%s : regulator_disable(%s) fail\n",
 					__func__, gpio->name);
-				return PTR_ERR(regulator);
-			} else if (regulator_is_enabled(regulator)) {
-				ret = regulator_disable(regulator);
-				if (ret) {
-					pr_err("%s : regulator_disable(%s) fail\n",
-						__func__, gpio->name);
-					regulator_put(regulator);
-					return ret;
-				}
+				regulator_put(regulator);
+				return ret;
 			}
-			regulator_put(regulator);
 		}
+		regulator_put(regulator);
 	}
 
 	return ret;
