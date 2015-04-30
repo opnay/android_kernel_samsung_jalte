@@ -93,7 +93,7 @@ inline void exec_ISB(void)
 	asm volatile("mcr p15, 0, r0, c7, c5, 4" : : );
 }
 
-inline void break_stat_save(void)
+static inline void break_stat_save(void)
 {
 	pr_debug("%s:\n", __func__);
 
@@ -150,7 +150,7 @@ inline void break_stat_save(void)
 	pr_debug("%s: done\n", __func__);
 }
 
-inline void break_stat_restore(void)
+static inline void break_stat_restore(void)
 {
 	int cpu, cluster;
 
@@ -270,7 +270,7 @@ inline void break_stat_restore(void)
 	pr_debug("%s: done\n", __func__);
 }
 
-inline void debug_register_save(int cpu, unsigned int cluster)
+static inline void debug_register_save(int cpu, unsigned int cluster)
 {
 	pr_debug("%s:\n", __func__);
 
@@ -307,7 +307,7 @@ inline void debug_register_save(int cpu, unsigned int cluster)
 	pr_debug("%s: %d done\n", __func__, cpu);
 }
 
-inline void debug_register_restore(int cpu, unsigned int cluster)
+static inline void debug_register_restore(int cpu, unsigned int cluster)
 {
 	pr_debug("%s:\n", __func__);
 
