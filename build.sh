@@ -46,6 +46,8 @@ if [ ! -e $KERNEL_DIR/arch/arm/configs/$DEFCONFIG ]; then
 	exit
 fi
 
+echo -e "\nPress [Enter] key to start build"
+read
 
 ## Clean output Directory
 echo " ** Clean Directory"
