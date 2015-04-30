@@ -27,7 +27,7 @@ for tmp in $@; do
 	esac
 done
 
-if [ ! -e $RAMDISK_DIR_ORIG ]; then
+if [ '$RAMDISK_DIR_ORIG' == '' ] || [ ! -e $RAMDISK_DIR_ORIG ]; then
 	echo -e "Directory was not found ($RAMDISK_DIR_ORIG)"
 	exit
 fi
@@ -54,6 +54,25 @@ for i in `find $KERNEL_OUT -name "*.ko"`; do
 done
 # Write Immortal Kernel Version.
 echo -e "\nimmortal.version=$IMMORTAL_VERSION" >> $RAMDISK_DIR/default.prop
+
+if [ $(find $RAMDISK_DIR -name "*.skt") ]; then
+for i in "$(cat out/.config | grep CONFIG_MACH_JA_)"; do
+	if [ "$(echo $i | grep _SKT)" ]; then
+		mv $RAMDISK_DIR/init.rilcarrier.skt.rc $RAMDISK_DIR/init.rilcarrier.rc
+		mv $RAMDISK_DIR/sepolicy_version.skt $RAMDISK_DIR/sepolicy_version
+		rm $(find $RAMDISK_DIR -name "*lg*") $(find $RAMDISK_DIR -name "*kt*")
+	elif [ "$(echo $i | grep _KT)" ]; then
+		mv $RAMDISK_DIR/init.rilcarrier.kt.rc $RAMDISK_DIR/init.rilcarrier.rc
+		mv $RAMDISK_DIR/sepolicy_version.kt $RAMDISK_DIR/sepolicy_version
+		rm $(find $RAMDISK_DIR -name "*skt*") $(find $RAMDISK_DIR -name "*lg*")
+	elif [ "$(echo $i | grep _LGT)" ]; then
+		mv $RAMDISK_DIR/init.rilcarrier.lg.rc $RAMDISK_DIR/init.rilcarrier.rc
+		mv $RAMDISK_DIR/sepolicy_version.lg $RAMDISK_DIR/sepolicy_version
+		rm $(find $RAMDISK_DIR -name "*skt*") $(find $RAMDISK_DIR -name "*kt*")
+	fi
+done
+fi
+
 
 if [ ! $(cat $KERNEL_OUT/.config | grep "CONFIG_RD_GZIP=y") = "" ]; then
 	type="gz"
