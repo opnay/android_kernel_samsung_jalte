@@ -3507,42 +3507,25 @@ static int fimc_is_itf_grp_shot(struct fimc_is_device_ischain *device,
 					DVFS_L0, I2C_L0);
 			} else if (atomic_read(&core->video_isp.refcount) >= 3) {
 				fimc_is_set_dvfs(core, device, group->id, \
-				DVFS_L1_1, I2C_L1_1);
+					DVFS_L1_1, I2C_L1_1);
 			} else if (device->module == SENSOR_NAME_IMX135 &&
 				!test_bit(FIMC_IS_ISCHAIN_REPROCESSING, \
 					&device->state)) {
 #ifdef CONFIG_TARGET_LOCALE_KOR	//for only KOR blackbox
 				if (device->sensor->width < 2000) {
  					fimc_is_set_dvfs(core, device, group->id, \
-					DVFS_L1_1, I2C_L1_1);
+						DVFS_L1_1, I2C_L1_1);
 				} else {
-					if ((device->setfile && 0xffff) == \
-						ISS_SUB_SCENARIO_VIDEO)
-						fimc_is_set_dvfs(core, device, group->id, \
-							DVFS_L1, I2C_L1);
-					else
-						fimc_is_set_dvfs(core, device, group->id, \
-							DVFS_L1, I2C_L1);
+					fimc_is_set_dvfs(core, device, group->id, \
+						DVFS_L1, I2C_L1);
 				}
 #else	// for Not KOR
-				if ((device->setfile && 0xffff) == \
-					ISS_SUB_SCENARIO_VIDEO)
-					fimc_is_set_dvfs(core, device, group->id, \
-						DVFS_L1, I2C_L1);
-				else
-					fimc_is_set_dvfs(core, device, group->id, \
-						DVFS_L1, I2C_L1);
+				fimc_is_set_dvfs(core, device, group->id, \
+					DVFS_L1, I2C_L1);
 #endif
 			} else if (device->module == SENSOR_NAME_S5K6B2) {
-				if (((device->setfile && 0xffff) \
-					== ISS_SUB_SCENARIO_FRONT_VT1) \
-					|| ((device->setfile & 0xffff) == \
-					ISS_SUB_SCENARIO_FRONT_VT2))
-					fimc_is_set_dvfs(core, device, group->id, \
-						DVFS_L1_3, I2C_L2);
-				else
-					fimc_is_set_dvfs(core, device, group->id, \
-						DVFS_L1_3, I2C_L2);
+				fimc_is_set_dvfs(core, device, group->id, \
+					DVFS_L1_3, I2C_L2);
 			} else {
 				pr_warn("%s: No DVFS senario for this case.\n", \
 					__func__);
