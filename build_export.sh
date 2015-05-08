@@ -12,7 +12,7 @@ RAMDISK_DIR=$KERNEL_OUT/ramdisk
 RAMDISK_DIR_ORIG=$KERNEL_DIR/ramdisk
 
 ## Binary
-TOOLCHAIN_PREFIX=/workspace/bin/toolchain/arm-eabi-5.1/bin/arm-eabi-
+TOOLCHAIN_PREFIX=/workspace/bin/toolchain/android-toolchain-eabi-5.1.0-x86/bin/arm-eabi-
 strip="$TOOLCHAIN_PREFIX"strip
 mkbootfs="$KERNEL_BIN/mkbootfs"
 mkbootimg="$KERNEL_BIN/mkbootimg"
