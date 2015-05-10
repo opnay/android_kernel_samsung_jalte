@@ -1,24 +1,35 @@
 source build_export.sh
 
-# Check Usage
-if [ $# -lt 1 -o "$1" == "" ]; then
-	echo -e "Usage : build.sh <skt/kt/lg> [recovery]"
-	exit
-fi
-
 # Export
 export ARCH=arm
 export CROSS_COMPILE=$TOOLCHAIN_PREFIX
 
-DEVICE_CA=$1
-DEFCONFIG=jalte"$1"_immortal_defconfig
-if [ "$2" == "recovery" ]; then
-	RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/recovery
-	BOOTIMG=recovery
-else
-	RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/immortal
-	BOOTIMG=boot
+function help() {
+	echo -e "Usage : build.sh <skt/kt/lg> <ramdisk>"
+	echo -e "  <ramdisk> :"
+	echo -e "\ttw-kitkat\tSamsung Touchwiz Kitkat"
+	echo -e "\ttw-lollipop\tSamsung Touchwiz Lollipop"
+	echo -e "\trecovery\tCWM Recovery"
+	exit
+}
+
+# Check Usage
+if [ $# != 2 ]; then
+	help
 fi
+
+case $1 in
+	skt | kt | lg) DEFCONFIG=jalte"$1"_immortal_defconfig;;
+	*) help;;
+esac
+
+case $2 in
+	tw-kitkat | tw-lollipop) BOOTIMG=boot;;
+	recovery) BOOTIMG=recovery;;
+	*) help;;
+esac
+
+RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/$2
 
 # Check Settings.
 echo "Check Script Settings"
