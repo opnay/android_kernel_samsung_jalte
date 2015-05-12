@@ -77,7 +77,7 @@ fi
 if [ ! $(cat $KERNEL_OUT/.config | grep "CONFIG_RD_GZIP=y") = "" ]; then
 	type="gz"
 	comp="gzip -n -9 -f"
-elif [ ! $(cat $KERNEL_OUT/.config | grep "CONFIG_RD_GZIP=y") = "" ]; then
+elif [ ! $(cat $KERNEL_OUT/.config | grep "CONFIG_RD_LZ4=y") = "" ]; then
 	type="lz4"
 	comp="lz4c -l -hc -f"
 fi
