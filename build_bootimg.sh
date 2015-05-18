@@ -63,16 +63,20 @@ for i in `find $RAMDISK_DIR -name "*.$CA"`; do
 done
 rm $(find $RAMDISK_DIR -name "*.skt" -o -name "*.kt" -o -name "*.lg")
 
-if [ ! $(cat $KERNEL_OUT/.config | grep "CONFIG_RD_GZIP=y") = "" ]; then
-	type="gz"
-	comp="gzip -n -9 -f"
-elif [ ! $(cat $KERNEL_OUT/.config | grep "CONFIG_RD_LZ4=y") = "" ]; then
-	type="lz4"
-	comp="lz4c -l -hc -f"
-fi
+type=`find $KERNEL_OUT/usr -name "initramfs_data.cpio*" | sed -n -e 's/^.\+\.cpio\.\(.\+\)$/\1/p'`
+
+case $type in
+	gz) compr="gzip -n -9 -f";;
+	bz2) compr="bzip2 -9 -f";;
+	lzma) compr="lzma -9 -f";;
+	xz) compr="xz --check=crc32 --lzma2=dict=1MiB";;
+	lzo) compr="lzop -9 -f";;
+	lz4) compr="lz4 -l -9 -f";;
+	*) compr="cat";;
+esac
 
 $mkbootfs $RAMDISK_DIR > $KERNEL_OUT_BOOTIMG/ramdisk-boot.cpio
-cat $KERNEL_OUT_BOOTIMG/ramdisk-boot.cpio | $comp > $KERNEL_OUT_BOOTIMG/ramdisk-boot.cpio.$type
+cat $KERNEL_OUT_BOOTIMG/ramdisk-boot.cpio | $compr > $KERNEL_OUT_BOOTIMG/ramdisk-boot.cpio.$type
 
 cp $KERNEL_OUT/arch/arm/boot/zImage $KERNEL_OUT_BOOTIMG/zImage
 
