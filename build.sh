@@ -19,7 +19,9 @@ if [ $# != 2 ]; then
 fi
 
 case $1 in
-	skt | kt | lg) DEFCONFIG=jalte"$1"_immortal_defconfig;;
+	skt) DEFCONFIG=jalteskt_immortal_defconfig;;
+	lg) DEFCONFIG=jaltelgt_immortal_defconfig;;
+	kt) DEFCONFIG=jaltektt_immortal_defconfig;;
 	*) help;;
 esac
 
