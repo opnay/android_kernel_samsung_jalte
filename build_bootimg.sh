@@ -55,24 +55,13 @@ done
 # Write Immortal Kernel Version.
 echo -e "\nimmortal.version=$IMMORTAL_VERSION" >> $RAMDISK_DIR/default.prop
 
-if [ $(find $RAMDISK_DIR -name "*.skt") ]; then
-for i in "$(cat out/.config | grep CONFIG_MACH_JA_)"; do
-	if [ "$(echo $i | grep _SKT)" ]; then
-		mv $RAMDISK_DIR/init.rilcarrier.skt.rc $RAMDISK_DIR/init.rilcarrier.rc
-		mv $RAMDISK_DIR/sepolicy_version.skt $RAMDISK_DIR/sepolicy_version
-		rm $(find $RAMDISK_DIR -name "*lg*") $(find $RAMDISK_DIR -name "*kt*")
-	elif [ "$(echo $i | grep _KT)" ]; then
-		mv $RAMDISK_DIR/init.rilcarrier.kt.rc $RAMDISK_DIR/init.rilcarrier.rc
-		mv $RAMDISK_DIR/sepolicy_version.kt $RAMDISK_DIR/sepolicy_version
-		rm $(find $RAMDISK_DIR -name "*skt*") $(find $RAMDISK_DIR -name "*lg*")
-	elif [ "$(echo $i | grep _LGT)" ]; then
-		mv $RAMDISK_DIR/init.rilcarrier.lg.rc $RAMDISK_DIR/init.rilcarrier.rc
-		mv $RAMDISK_DIR/sepolicy_version.lg $RAMDISK_DIR/sepolicy_version
-		rm $(find $RAMDISK_DIR -name "*skt*") $(find $RAMDISK_DIR -name "*kt*")
-	fi
+# get carrier
+CA=`grep "CONFIG_MACH_JA_" $KERNEL_OUT/.config | sed -n -e 's/^CONFIG_MACH_JA_KOR_\(.\+\)\=y$/\L\1/p'`
+# Rename .carrier files and remove unused file.
+for i in `find $RAMDISK_DIR -name "*.$CA"`; do
+	mv $i `echo $i | sed -e 's/\.'"$CA"'//'`
 done
-fi
-
+rm $(find $RAMDISK_DIR -name "*.skt" -o -name "*.kt" -o -name "*.lg")
 
 if [ ! $(cat $KERNEL_OUT/.config | grep "CONFIG_RD_GZIP=y") = "" ]; then
 	type="gz"
