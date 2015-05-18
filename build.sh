@@ -70,6 +70,7 @@ mkdir -p $KERNEL_OUT
 ## Config
 echo " ** Make Config"
 make $DEFCONFIG -j$JN O=$KERNEL_OUT
+sed -i 's/^CONFIG_LOCALVERSION=\"\"/CONFIG_LOCALVERSION=\"-'$IMMORTAL_VERSION'\"/g' $KERNEL_OUT/.config
 echo " ** Run menuconfig"
 make menuconfig -j$JN O=$KERNEL_OUT
 
