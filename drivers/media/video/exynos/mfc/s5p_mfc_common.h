@@ -885,7 +885,6 @@ static inline int clear_hw_bit(struct s5p_mfc_ctx *ctx)
 
 	return ret;
 }
-inline int s5p_mfc_get_new_ctx(struct s5p_mfc_dev *dev);
 
 #ifdef CONFIG_ION_EXYNOS
 extern struct ion_device *ion_exynos;
