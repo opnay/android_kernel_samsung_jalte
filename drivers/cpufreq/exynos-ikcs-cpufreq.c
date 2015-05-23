@@ -62,7 +62,7 @@ static unsigned int freq_max[CA_END] __read_mostly;	/* Maximum (Big/Little) cloc
  * It is used to revise cpu frequency when changing cluster
  */
 #define STEP_LEVEL_CA7_MAX	600000
-#define STEP_LEVEL_CA15_MIN	800000
+#define STEP_LEVEL_CA15_MIN	700000
 
 #define LIMIT_COLD_VOLTAGE	1250000
 #define COLD_VOLTAGE_OFFSET	75000
