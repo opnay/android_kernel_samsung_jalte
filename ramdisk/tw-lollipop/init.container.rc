@@ -1,5 +1,5 @@
 on early-init
-	
+
 on init
 
     # create Container (KNOX 1.0) mountpoints for KNOX Migration

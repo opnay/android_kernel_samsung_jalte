@@ -275,7 +275,7 @@ on post-fs-data
     chmod 0771 /data
     # We restorecon /data in case the userdata partition has been reset.
     restorecon /data
-    restorecon_recursive /data/media
+    restorecon_msc
 
     # Avoid predictable entropy pool. Carry over entropy from previous boot.
     copy /data/system/entropy.dat /dev/urandom
@@ -716,7 +716,6 @@ on property:sys.sysctl.extra_free_kbytes=*
 # "tcp_default_init_rwnd" Is too long!
 on property:sys.sysctl.tcp_def_init_rwnd=*
     write /proc/sys/net/ipv4/tcp_default_init_rwnd ${sys.sysctl.tcp_def_init_rwnd}
-
 
 on property:init.svc.bootanim=stopped
     start auditd

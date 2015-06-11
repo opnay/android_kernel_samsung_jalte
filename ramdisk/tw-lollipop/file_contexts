@@ -527,11 +527,6 @@
 #
 /data/data/.drm(/.*)?	u:object_r:drm_data_file:s0
 
-############################# 
-# ItsOn file
-#
-/system/vendor/itson(/.*)?  u:object_r:sprintitson_file:s0
-
 #line 1 "vendor/samsung/common/sepolicy/vmware/file_contexts"
 # VMware daemon
 /system/bin/mvpd	u:object_r:vmwared_exec:s0
@@ -563,11 +558,9 @@
 /dev/bus/usb(/.*)?      u:object_r:usb_bus_device:s0
 /dev/cdma_.*		u:object_r:radio_device:s0
 # conflict with Qcom BSP, /dev/diag	u:object_r:diag_device:s0
-/dev/esfp[0-9]          u:object_r:fp_sensor_device:s0
 /dev/i2c.*		u:object_r:i2c_device:s0
 /dev/icd                u:object_r:icd_device:s0
 /dev/icdr               u:object_r:icd_device:s0
-/dev/ionfd2phys         u:object_r:ion_device:s0
 # conflict with Qcom BSP, /dev/media[0-3]*	u:object_r:camera_device:s0
 /dev/mobicore	u:object_r:mobicore_device:s0
 /dev/mobicore-user	u:object_r:mobicore-user_device:s0
@@ -587,7 +580,6 @@
 /dev/socket/dir_enc_report	u:object_r:vold_socket:s0
 /dev/socket/drsd        u:object_r:drsd_socket:s0
 /dev/socket/epm     u:object_r:epm_socket:s0
-/dev/socket/frigate		u:object_r:frigate_socket:s0
 /dev/socket/ipsec_socket        u:object_r:ipsec_socket:s0
 /dev/socket/jack(/.*)?          u:object_r:jack_socket:s0
 /dev/socket/msockets(/.*)?	u:object_r:msockets_socket:s0
@@ -596,10 +588,8 @@
 /dev/socket/rild[0-9]*	u:object_r:rild_socket:s0
 /dev/socket/rild-debug[0-9]* u:object_r:rild_debug_socket:s0
 /dev/socket/ss_conn_daemon      u:object_r:ss_conn_daemon_socket:s0
-/dev/socket/tz                  u:object_r:tz_socket:s0
 /dev/socket/uibc(/.*)?          u:object_r:uibc_socket:s0
 /dev/socket/vpnclientd          u:object_r:vpnclientd_socket:s0
-/dev/sound_trigger_boost        u:object_r:audio_device:s0
 /dev/ssp_sensorhub	u:object_r:input_device:s0
 /dev/timerirq	u:object_r:timerirq_device:s0
 /dev/ttyGS[0-9]*	u:object_r:usb_serial_device:s0
@@ -723,8 +713,7 @@
 /dev/ecryptfs		u:object_r:ecryptfs_device:s0
 /dev/ehci_power         u:object_r:mif_device:s0
 /dev/fimg2d(/.*)?     	u:object_r:fimg2d_video_device:s0
-/dev/gps_geofence_wake			u:object_r:gps_device:s0
-/dev/invensense			u:object_r:sensors_device:s0
+/dev/gps_geofence_wake			u:object_r:gps_device:s0 
 /dev/keychord		u:object_r:keychord_device:s0
 /dev/kfc_freq_min	u:object_r:ap_device:s0
 /dev/link_pm		u:object_r:radio_device:s0
@@ -767,7 +756,6 @@
 /sys/class/sec(/.*)?                --               u:object_r:sysfs_sec:s0
 /sys/class/sensors(/.*)?            --               u:object_r:sysfs_sensor_writable:s0
 /sys/class/tcon(/.*)?	--                 u:object_r:sysfs_tcon_writable:s0
-/sys/devices/virtual/sec/sec_epen(/.*)?		--	u:object_r:sysfs_sec:s0
 # Remove because of restorecon_recursive_symlink /sys/devices/virtual/sec(/.*)?      --               u:object_r:sysfs_sec:s0
 /sys/qemu_trace(/.*)?	--	u:object_r:sysfs_writable:s0
 
@@ -820,11 +808,9 @@
 /system/bin/cellgeofenced	u:object_r:cellgeofenced_exec:s0
 /system/bin/charon	u:object_r:charon_exec:s0
 /system/bin/connfwexe	u:object_r:connfwexe_exec:s0
-/system/bin/corehelper.sh	u:object_r:corehelper_sh_file:s0
 /system/bin/createsystemfile	u:object_r:createsystemfile_exec:s0
 /system/bin/cs				u:object_r:cs_exec:s0
 /system/bin/ddexe	u:object_r:ddexe_exec:s0
-/system/bin/dmm_v2              u:object_r:DMM-daemon_exec:s0
 # conflict with Qcom BSP, /system/bin/diag_uart_log	u:object_r:diag_uart_log_exec:s0
 /system/bin/dttexe	u:object_r:dttexe_exec:s0
 /system/bin/dumpsys	u:object_r:dumpsys_exec:s0
@@ -870,10 +856,6 @@
 /system/bin/vpnclientd          u:object_r:vpnclientd_exec:s0
 # conflict with Qcom BSP, /system/bin/wcnss_service	u:object_r:wcnss_service_exec:s0
 /system/bin/wpa_supplicant_real u:object_r:wpa_exec:s0
-# for resopt
-/system/bin/resopt	u:object_r:resopt_exec:s0
-# for zip
-/system/bin/zip 	u:object_r:zip_exec:s0
 
 /system/etc/event-log-tags	u:object_r:event_log_tags_file:s0
 /system/etc/dhcpcd(/.*)? u:object_r:dhcp_system_file:s0
@@ -985,7 +967,6 @@
 /data/privatemode(/.*)?	u:object_r:personal_page_file:s0
 /data/sc(/.*)?		u:object_r:smartcard_data_file:s0
 /data/ss_kbservice_daemon               u:object_r:ss_kbservice_daemon_socket:s0
-/data/system/users(/.*)?                u:object_r:users_system_data_file:s0
 /data/system/users/service(/.*)?	u:object_r:reset_reason_service_file:s0
 /data/system/users(/.*)/wallpaper	u:object_r:wallpaper_file:s0
 /data/tee(/.*)?	                        u:object_r:tee_data_file:s0
@@ -998,7 +979,6 @@
 /data/clipboard1[0-9][0-9](/.*)?  u:object_r:knox_clipboard_file:s0
 /data/container(/.*)?	u:object_r:container_app_data_backend:s0
 /data/knox(/.*)?	u:object_r:container_app_data_backend:s0
-/mnt/shell/emulated/([1-9])?[0-9](/.*)?  u:object_r:media_rw_data_file:s0
 /mnt/shell/knox-emulated/1[0-8][0-9](/.*)?  u:object_r:container_app_data_backend:s0
 /mnt/shell/knox-emulated/19[0-4](/.*)?  u:object_r:container_app_data_backend:s0
 /data/knox/data/19[5-9](/.*)?	        u:object_r:bbccontainer_app_data_backend:s0
@@ -1017,11 +997,9 @@
 ############################# 
 # EFS file of sec_common
 #
-/cpefs(/.*)?                                     u:object_r:sec_efs_file:s0
 /efs/bluetooth(/.*)?	u:object_r:bluetooth_efs_file:s0
 /efs/carrier(/.*)?	u:object_r:carrier_efs_file:s0
 /efs/cpk(/.*)?	                                 u:object_r:cpk_efs_file:s0
-/efs/drx(/.*)?                                   u:object_r:sec_efs_file:s0
 /efs/FactoryApp(/.*)?	u:object_r:app_efs_file:s0
 /efs/imei(/.*)?	u:object_r:imei_efs_file:s0
 /efs/ims_setting(/.*)?                           u:object_r:sec_efs_file:s0
@@ -1038,8 +1016,6 @@
 /efs/sec_efs(/.*)?                               u:object_r:sec_efs_file:s0
 /efs/security(/.*)?                              u:object_r:prov_efs_file:s0
 /efs/sktdm_mem(/.*)?                             u:object_r:sec_efs_file:s0
-/efs/SMS(/.*)?                                   u:object_r:sec_efs_file:s0
-/efs/SlideCount                                  u:object_r:app_efs_file:s0
 /efs/TEE(/.*)?                                   u:object_r:prov_efs_file:s0
 /efs/wifi(/.*)?	u:object_r:wifi_efs_file:s0
 /efs_gsm(/.*)?            u:object_r:efs_gsm_file:s0
@@ -1099,7 +1075,7 @@
 ############################# 
 # ItsOn file
 #
-#/system/vendor/itson(/.*)?  u:object_r:sprintitson_file:s0
+/system/vendor/itson(/.*)?  u:object_r:sprintitson_file:s0
 #/vendor/app(/.*)?  u:object_r:sprintitson_file:s0
 /carrier/itson(/.*)?  u:object_r:sprintitson_file:s0
 /dev/socket/itson(/.*)?                    u:object_r:itson_socket:s0
