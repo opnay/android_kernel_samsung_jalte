@@ -2,6 +2,7 @@
 ## If you have sdk, set adb command line
 #ADB=/your/adb/path
 adb="$(which adb)"
+adb_start="$adb start-server"
 adb_wait="$adb wait-for-device"
 adb_push="$adb push"
 adb_shell="$adb shell"
@@ -41,16 +42,19 @@ if [ ! -e $BOOTIMG ] || [ "$BOOTIMG" = "" ]; then
 	exit
 fi
 
-echo -e " * Wait for device"
+echo -e "* Start adb server"
+$adb_start
+
+echo -e "* Wait for device"
 $adb_wait
 
-echo -e " * Push boot.img to device (in /sdcard)"
+echo -e "* Push boot.img to device (in /data/local/tmp)"
 $adb_push $BOOTIMG /data/local/tmp/boot.img
 
-echo -e " * Install..."
+echo -e "* Install..."
 $adb_shell dd if=/data/local/tmp/boot.img of=$DEVPATH
 
-echo -e " * Reboot!"
+echo -e "* Reboot!"
 $adb_reboot
 
-echo -e " * Finish Install"
+echo -e "* Finish Install"
