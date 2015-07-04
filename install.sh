@@ -37,6 +37,10 @@ if [ ! -e $adb ] || [ "$adb" == "" ]; then
 fi
 
 echo -e "BOOTIMG : $BOOTIMG"
+if [ -d $BOOTIMG ]; then
+	echo "$BOOTIMG is directory."
+	exit
+fi
 if [ ! -e $BOOTIMG ] || [ "$BOOTIMG" = "" ]; then
 	echo -e "boot.img was not found"
 	exit
