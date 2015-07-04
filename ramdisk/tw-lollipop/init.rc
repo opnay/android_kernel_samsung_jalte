@@ -275,7 +275,7 @@ on post-fs-data
     chmod 0771 /data
     # We restorecon /data in case the userdata partition has been reset.
     restorecon /data
-    restorecon_msc
+    restorecon_recursive /data/media
 
     # Avoid predictable entropy pool. Carry over entropy from previous boot.
     copy /data/system/entropy.dat /dev/urandom
