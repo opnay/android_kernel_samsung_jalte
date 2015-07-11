@@ -117,7 +117,7 @@ static struct v4l2_queryctrl controls[] = {
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.name = "The period of intra frame",
 		.minimum = 0,
-		.maximum = (1 << 16) - 1,
+		.maximum = (1 << 30) - 1,
 		.step = 1,
 		.default_value = 0,
 	},
@@ -896,6 +896,13 @@ static int check_ctrl_val(struct s5p_mfc_ctx *ctx, struct v4l2_control *ctrl)
 	c = get_ctrl(ctrl->id);
 	if (!c)
 		return -EINVAL;
+	if (ctrl->id == V4L2_CID_MPEG_VIDEO_GOP_SIZE
+	    && ctrl->value > c->maximum) {
+		mfc_info("GOP_SIZE is changed to max(%d -> %d)\n",
+                                ctrl->value, c->maximum);
+		ctrl->value = c->maximum;
+	}
+
 	if (ctrl->value < c->minimum || ctrl->value > c->maximum
 	    || (c->step != 0 && ctrl->value % c->step != 0)) {
 		v4l2_err(&dev->v4l2_dev, "Invalid control value\n");
@@ -1463,6 +1470,7 @@ static int enc_set_buf_ctrls_val(struct s5p_mfc_ctx *ctx, struct list_head *head
 {
 	struct s5p_mfc_buf_ctrl *buf_ctrl;
 	struct s5p_mfc_enc *enc = ctx->enc_priv;
+	struct s5p_mfc_dev *dev = ctx->dev;
 	unsigned int value = 0;
 
 	list_for_each_entry(buf_ctrl, head, list) {
@@ -1504,6 +1512,14 @@ static int enc_set_buf_ctrls_val(struct s5p_mfc_ctx *ctx, struct list_head *head
 
 		if (buf_ctrl->id == V4L2_CID_MPEG_MFC51_VIDEO_FRAME_TAG)
 			enc->stored_tag = buf_ctrl->val;
+		if ((buf_ctrl->id == V4L2_CID_MPEG_MFC51_VIDEO_I_PERIOD_CH) && FW_HAS_GOP2(dev)) {
+			value = 0;
+			value = s5p_mfc_read_reg(S5P_FIMV_E_GOP_CONFIG2);
+			buf_ctrl->old_val |= (value << 16) & 0x3FFF0000;
+			value &= ~(0x3FFF);
+			value |= (buf_ctrl->val >> 16) & 0x3FFF;
+			s5p_mfc_write_reg(value, S5P_FIMV_E_GOP_CONFIG2);
+		}
 
 		mfc_debug(8, "Set buffer control "\
 				"id: 0x%08x val: %d\n",
@@ -1546,6 +1562,7 @@ static int enc_recover_buf_ctrls_val(struct s5p_mfc_ctx *ctx,
 						struct list_head *head)
 {
 	struct s5p_mfc_buf_ctrl *buf_ctrl;
+	struct s5p_mfc_dev *dev = ctx->dev;
 	unsigned int value = 0;
 
 	list_for_each_entry(buf_ctrl, head, list) {
@@ -1582,6 +1599,13 @@ static int enc_recover_buf_ctrls_val(struct s5p_mfc_ctx *ctx,
 		mfc_debug(8, "Recover buffer control "\
 				"id: 0x%08x old val: %d\n",
 				buf_ctrl->id, buf_ctrl->old_val);
+		if (buf_ctrl->id == V4L2_CID_MPEG_MFC51_VIDEO_I_PERIOD_CH && FW_HAS_GOP2(dev)) {
+			value = 0;
+			value = s5p_mfc_read_reg(S5P_FIMV_E_GOP_CONFIG2);
+			value &= ~(0x3FFF);
+			value |= (buf_ctrl->old_val >> 16) & 0x3FFF;
+			s5p_mfc_write_reg(value, S5P_FIMV_E_GOP_CONFIG2);
+		}
 	}
 
 	return 0;
