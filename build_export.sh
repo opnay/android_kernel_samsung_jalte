@@ -6,6 +6,7 @@ JN=16 #`grep process /proc/cpuinfo | wc -l`
 KERNEL_DIR=`pwd`
 KERNEL_OUT=$KERNEL_DIR/out
 KERNEL_OUT_BOOTIMG=$KERNEL_DIR/bootimg
+KERNEL_OUT_FLASHZIP=$KERNEL_OUT/flashzip
 KERNEL_BIN=$KERNEL_DIR/bin
 
 RAMDISK_DIR=$KERNEL_OUT/ramdisk
