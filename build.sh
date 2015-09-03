@@ -10,6 +10,7 @@ function help() {
 	echo -e "\ttw-kitkat\tSamsung Touchwiz Kitkat"
 	echo -e "\ttw-lollipop\tSamsung Touchwiz Lollipop"
 	echo -e "\trecovery\tCWM Recovery"
+	echo -e "\trecovery-cm\tCyanogenMod Recovery"
 	exit
 }
 
@@ -27,7 +28,7 @@ esac
 
 case $2 in
 	tw-kitkat | tw-lollipop) BOOTIMG=boot;;
-	recovery) BOOTIMG=recovery;;
+	recovery | recovery-cm) BOOTIMG=recovery;;
 	*) help;;
 esac
 
