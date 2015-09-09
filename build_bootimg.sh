@@ -75,7 +75,8 @@ case $type in
 	*) compr="cat";;
 esac
 
-$mkbootfs $RAMDISK_DIR > $KERNEL_OUT_BOOTIMG/ramdisk-boot.cpio
+sh -c "cd "$RAMDISK_DIR" && "$KERNEL_DIR"/ramdisk_fix_permissions.sh && \
+    find . | fakeroot cpio -o -H newc" > $KERNEL_OUT_BOOTIMG/ramdisk-boot.cpio
 cat $KERNEL_OUT_BOOTIMG/ramdisk-boot.cpio | $compr > $KERNEL_OUT_BOOTIMG/ramdisk-boot.cpio.$type
 
 cp $KERNEL_OUT/arch/arm/boot/zImage $KERNEL_OUT_BOOTIMG/zImage
