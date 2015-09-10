@@ -8,5 +8,5 @@ chmod 644 fstab*
 
 chmod 644 default.prop
 
-chmod -R 750 sbin res
-chmod -R 755 dev proc sys system
+chmod -R 750 sbin
+chmod -R 755 dev proc sys
