@@ -14,6 +14,7 @@ DEVPATH=/dev/block/mmcblk0p9
 function help() {
 	echo -e "install.sh [-s|--su] [-h|--help] <boot.img>\n"
 	echo -e "  -s, --su\tRun shell with su"
+	echo -e "  -r\tInstall to Recovery partition(Default: /dev/block/platform/dw_mmc.0/by-name/RECOVERY)"
 	echo -e "  -h, --help\tShow this help message"
 	exit
 }
@@ -25,6 +26,7 @@ fi
 for tmp in $@; do
 	case $tmp in
 		-s | --su) adb_shell="$adb_shell su -c";;
+		-r) DEVPATH=/dev/block/platform/dw_mmc.0/by-name/RECOVERY && adb_reboot="$adb_reboot recovery";;
 		-h | --help) help;;
 		*) BOOTIMG=$tmp;;
 	esac
