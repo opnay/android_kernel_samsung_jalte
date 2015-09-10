@@ -3337,11 +3337,6 @@ CONFIG_DEBUG_USER=y
 # CONFIG_OC_ETM is not set
 
 #
-# Samsung Rooting Restriction Feature
-#
-# CONFIG_SEC_RESTRICT_ROOTING is not set
-
-#
 # Security options
 #
 CONFIG_KEYS=y
