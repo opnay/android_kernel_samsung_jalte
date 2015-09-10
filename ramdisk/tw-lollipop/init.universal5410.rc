@@ -160,6 +160,7 @@ on boot
     write /proc/sys/vm/swappiness 130
 
 on fs
+    start init_mount
     mount_all /fstab.universal5410
     setprop ro.crypto.fuse_sdcard true
 
@@ -574,3 +575,8 @@ service swapon /sbin/sswap -s
     group root
     seclabel u:r:sswap:s0
     oneshot
+
+service init_mount /init.mount.sh
+    user root
+    oneshot
+    disabled
