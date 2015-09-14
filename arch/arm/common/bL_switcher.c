@@ -34,6 +34,7 @@
 #include <linux/string.h>
 #include <linux/spinlock.h>
 
+#include <asm/cputype.h>
 #include <asm/suspend.h>
 #include <asm/hardware/gic.h>
 #include <asm/bL_switcher.h>
@@ -86,7 +87,7 @@ static int read_mpidr(void)
 {
 	unsigned int id;
 	asm volatile ("mrc\tp15, 0, %0, c0, c0, 5" : "=r" (id));
-	return id;
+	return id & MPIDR_HWID_BITMASK;
 }
 
 /*
@@ -107,8 +108,8 @@ static void bL_do_switch(void *_unused)
 	pr_debug("%s\n", __func__);
 
 	mpidr = read_mpidr();
-	cpuid = mpidr & 0xf;
-	clusterid = (mpidr >> 8) & 0xf;
+	cpuid = MPIDR_AFFINITY_LEVEL(mpidr, 0);
+	clusterid = MPIDR_AFFINITY_LEVEL(mpidr, 1);
 	ob_cluster = clusterid;
 	ib_cluster = clusterid ^ 1;
 
@@ -159,8 +160,8 @@ extern void call_with_stack(void (*fn)(void *), void *arg, void *sp);
 static int bL_switchpoint(unsigned long _unused)
 {
 	unsigned int mpidr = read_mpidr();
-	unsigned int cpuid = mpidr & 0xf;
-	unsigned int clusterid = (mpidr >> 8) & 0xf;
+	unsigned int cpuid = MPIDR_AFFINITY_LEVEL(mpidr, 0);
+	unsigned int clusterid = MPIDR_AFFINITY_LEVEL(mpidr, 1);
 	void *stack = stacks[cpuid][clusterid] + ARRAY_SIZE(stacks[0][0]);
 	call_with_stack(bL_do_switch, NULL, stack);
 	BUG();
@@ -190,8 +191,8 @@ static int bL_switch_to(unsigned int new_cluster_id)
 	int ret = 0;
 
 	mpidr = read_mpidr();
-	cpuid = mpidr & 0xf;
-	clusterid = (mpidr >> 8) & 0xf;
+	cpuid = MPIDR_AFFINITY_LEVEL(mpidr, 0);
+	clusterid = MPIDR_AFFINITY_LEVEL(mpidr, 1);
 	ob_cluster = clusterid;
 	ib_cluster = clusterid ^ 1;
 
@@ -248,8 +249,8 @@ static int bL_switch_to(unsigned int new_cluster_id)
 
 	/* We are executing on the inbound CPU at this point */
 	mpidr = read_mpidr();
-	cpuid = mpidr & 0xf;
-	clusterid = (mpidr >> 8) & 0xf;
+	cpuid = MPIDR_AFFINITY_LEVEL(mpidr, 0);
+	clusterid = MPIDR_AFFINITY_LEVEL(mpidr, 1);
 	pr_debug("after switch: CPU %d in cluster %d\n", cpuid, clusterid);
 	sec_debug_task_log_msg(cpuid, "switch-");
 	BUG_ON(clusterid != ib_cluster);
@@ -503,7 +504,7 @@ int bL_cluster_switch_request(unsigned int new_cluster)
 
 	bL_exit_migration();
 
-	ret = ((read_mpidr() >> 8) & 0xf) == new_cluster ? 0 : -EBUSY;
+	ret = MPIDR_AFFINITY_LEVEL(read_mpidr(), 1) == new_cluster ? 0 : -EBUSY;
 	return ret;
 }
 
@@ -661,8 +662,8 @@ static void __init switcher_thread_on_each_cpu(struct work_struct *work)
 {
 	unsigned int mpidr, cluster, cpuid;
 	mpidr = read_mpidr();
-	cluster = (mpidr >> 8) & 0xf;
-	cpuid = mpidr & 0xf;
+	cluster = MPIDR_AFFINITY_LEVEL(mpidr, 1);
+	cpuid = MPIDR_AFFINITY_LEVEL(mpidr, 0);
 
 	BUG_ON(cluster > 2 || cpuid > 4);
 	pr_debug("create switcher thread %d(%d)\n", cpuid, cluster);

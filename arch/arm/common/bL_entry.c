@@ -18,6 +18,7 @@
 #include <linux/device.h>
 #include <linux/cma.h>
 
+#include <asm/cputype.h>
 #include <asm/bL_entry.h>
 #include <asm/barrier.h>
 #include <asm/proc-fns.h>
@@ -241,7 +242,7 @@ int __init bL_cluster_sync_init(const struct bL_power_ops *ops)
 	 * Only one cluster is assumed to be active at this point.
 	 */
 	asm ("mrc\tp15, 0, %0, c0, c0, 5" : "=r" (mpidr));
-	this_cluster = (mpidr >> 8) & 0xf;
+	this_cluster = MPIDR_AFFINITY_LEVEL(mpidr, 1);
 	memset(bL_sync, 0, sizeof *bL_sync);
 	for_each_online_cpu(i)
 		bL_sync->clusters[this_cluster].cpus[i] = CPU_UP;
