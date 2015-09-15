@@ -541,55 +541,6 @@ int bL_cluster_switch_request(unsigned int new_cluster)
 
 EXPORT_SYMBOL_GPL(bL_cluster_switch_request);
 
-#ifdef CONFIG_BL_SWITCHER_DUMMY_IF
-
-/*
- * Dummy interface to user space (to be replaced by cpufreq based interface).
- */
-
-#include <linux/fs.h>
-#include <linux/miscdevice.h>
-#include <asm/uaccess.h>
-
-static ssize_t bL_switcher_write(struct file *file, const char __user *buf,
-			size_t len, loff_t *pos)
-{
-	unsigned char val[3];
-	unsigned int cpu, cluster;
-
-	pr_debug("%s\n", __func__);
-
-	if (len < 3)
-		return -EINVAL;
-
-	if (copy_from_user(val, buf, 3))
-		return -EFAULT;
-
-	/* format: <cpu#>,<cluster#> */
-	if (val[0] < '0' || val[0] > '4' ||
-	    val[1] != ',' ||
-	    val[2] < '0' || val[2] > '1')
-		return -EINVAL;
-
-	cpu = val[0] - '0';
-	cluster = val[2] - '0';
-
-	if (cpu_online(cpu))
-		bL_switch_request(cpu, cluster);
-	return len;
-}
-
-static const struct file_operations bL_switcher_fops = {
-	.write		= bL_switcher_write,
-	.owner	= THIS_MODULE,
-};
-
-static struct miscdevice bL_switcher_device = {
-	BL_SWITCHER_MINOR,
-	"b.L_switcher",
-	&bL_switcher_fops
-};
-
 static ssize_t bL_operator_write(struct file *file, const char __user *buf,
 				 size_t len, loff_t *pos)
 {
@@ -686,8 +637,6 @@ static struct miscdevice bL_operator_device = {
 	&bL_operator_fops
 };
 
-#endif
-
 #ifdef CONFIG_ARM_EXYNOS_IKS_CPUFREQ
 static void __init switcher_thread_on_each_cpu(struct work_struct *work)
 {
@@ -714,13 +663,6 @@ int __init bL_switcher_init(const struct bL_power_ops *ops)
 		return ret;
 
 	bL_platform_ops = ops;
-#ifdef CONFIG_BL_SWITCHER_DUMMY_IF
-	err = misc_register(&bL_switcher_device);
-	if (err) {
-		pr_err("Switcher device is not registered "
-			"so user can not execute the manual switch");
-		return err;
-	}
 
 	err = misc_register(&bL_operator_device);
 	if (err) {
@@ -728,7 +670,7 @@ int __init bL_switcher_init(const struct bL_power_ops *ops)
 		       "so bL_operation is not accessed\n");
 		return err;
 	}
-#endif
+
 #ifdef CONFIG_ARM_EXYNOS_IKS_CPUFREQ
 	schedule_on_each_cpu(switcher_thread_on_each_cpu);
 #endif

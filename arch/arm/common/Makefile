@@ -17,6 +17,7 @@ obj-$(CONFIG_PCI_HOST_ITE8152)  += it8152.o
 obj-$(CONFIG_ARM_TIMER_SP804)	+= timer-sp.o
 obj-$(CONFIG_BL_SWITCHER)	+= bL_head.o bL_entry.o
 obj-$(CONFIG_BL_SWITCHER)	+= bL_switcher.o
+obj-$(CONFIG_BL_SWITCHER_DUMMY_IF)	+= bL_switcher_dummy_if.o
 obj-$(CONFIG_BL_SWITCHER)	+= bL_vlock.o
 obj-$(CONFIG_FIQ_GLUE)		+= fiq_glue.o fiq_glue_setup.o
 obj-$(CONFIG_FIQ_DEBUGGER)	+= fiq_debugger.o
