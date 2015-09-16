@@ -32,12 +32,15 @@
 #include <linux/mm.h>
 #include <linux/string.h>
 #include <linux/spinlock.h>
+#include <linux/fs.h>
+#include <linux/miscdevice.h>
 
 #include <asm/cputype.h>
 #include <asm/suspend.h>
 #include <asm/hardware/gic.h>
 #include <asm/bL_switcher.h>
 #include <asm/bL_entry.h>
+#include <asm/uaccess.h>
 #include <mach/sec_debug.h>
 
 /*
