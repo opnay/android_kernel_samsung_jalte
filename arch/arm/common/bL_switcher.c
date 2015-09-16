@@ -287,7 +287,6 @@ out:
 	return ret;
 }
 
-#if !defined(CONFIG_ARM_EXYNOS_IKS_CPUFREQ)
 struct bL_thread {
 	struct task_struct *task;
 	wait_queue_head_t wq;
@@ -296,55 +295,12 @@ struct bL_thread {
 
 static struct bL_thread bL_threads[NR_CPUS];
 
-static int bL_switcher_thread(void *arg)
-{
-	struct bL_thread *t = arg;
-	struct sched_param param = { .sched_priority = 1 };
-	int cluster;
-
-	sched_setscheduler_nocheck(current, SCHED_FIFO, &param);
-
-	do {
-		if (signal_pending(current))
-			flush_signals(current);
-		wait_event_interruptible(t->wq,
-				t->wanted_cluster != -1 ||
-				kthread_should_stop());
-		cluster = xchg(&t->wanted_cluster, -1);
-		if (cluster != -1)
-			bL_switch_to(cluster);
-	} while (!kthread_should_stop());
-
-	return 0;
-}
-
-static struct task_struct * __init bL_switcher_thread_create(int cpu, void *arg)
-{
-	struct task_struct *task;
-
-	task = kthread_create_on_node(bL_switcher_thread, arg,
-				      cpu_to_node(cpu), "kswitcher_%d", cpu);
-	if (!IS_ERR(task)) {
-		kthread_bind(task, cpu);
-		wake_up_process(task);
-	} else
-		pr_err("%s failed for CPU %d\n", __func__, cpu);
-	return task;
-}
-#endif
-
 #ifdef CONFIG_ARM_EXYNOS_IKS_CPUFREQ
-struct bL_thread {
-	struct task_struct *task;
-	wait_queue_head_t wq;
-	int wanted_cluster;
-};
-
-static struct bL_thread bL_threads[BL_CPUS_PER_CLUSTER];
-
 static int switch_ready = -1;
 static DEFINE_SPINLOCK(switch_ready_lock);
 #define BL_TIMEOUT_NS 50000000
+#endif
+
 static int bL_switcher_thread(void *arg)
 {
 	struct bL_thread *t = arg;
@@ -353,6 +309,7 @@ static int bL_switcher_thread(void *arg)
 
 	sched_setscheduler_nocheck(current, SCHED_FIFO, &param);
 
+#ifdef CONFIG_ARM_EXYNOS_IKS_CPUFREQ
 	do {
 		ret = wait_event_interruptible(t->wq, t->wanted_cluster != -1);
 		if (!ret) {
@@ -413,25 +370,35 @@ static int bL_switcher_thread(void *arg)
 	} while (!kthread_should_stop());
 
 	return ret;
-}
-
-static int __init bL_switcher_thread_create(unsigned int cpu, struct bL_thread *t)
-{
-	t->task = kthread_create_on_node(bL_switcher_thread, t,
-					 cpu_to_node(cpu),
-					 "kswitcher_%d", cpu);
-	if (IS_ERR(t->task)) {
-		pr_err("%s failed for CPU %d\n", __func__, cpu);
-		return PTR_ERR(t->task);
-	}
-	kthread_bind(t->task, cpu);
-	init_waitqueue_head(&t->wq);
-	t->wanted_cluster = -1;
-	wake_up_process(t->task);
-
+#else
+	do {
+		if (signal_pending(current))
+			flush_signals(current);
+		wait_event_interruptible(t->wq,
+				t->wanted_cluster != -1 ||
+				kthread_should_stop());
+		cluster = xchg(&t->wanted_cluster, -1);
+		if (cluster != -1)
+			bL_switch_to(cluster);
+	} while (!kthread_should_stop());
+	
 	return 0;
-}
 #endif
+}
+
+static struct task_struct * __init bL_switcher_thread_create(int cpu, void *arg)
+{
+	struct task_struct *task;
+
+	task = kthread_create_on_node(bL_switcher_thread, arg,
+				      cpu_to_node(cpu), "kswitcher_%d", cpu);
+	if (!IS_ERR(task)) {
+		kthread_bind(task, cpu);
+		wake_up_process(task);
+	} else
+		pr_err("%s failed for CPU %d\n", __func__, cpu);
+	return task;
+}
 
 static unsigned int switch_operation = 0x11;
 
@@ -640,24 +607,9 @@ static struct miscdevice bL_operator_device = {
 	&bL_operator_fops
 };
 
-#ifdef CONFIG_ARM_EXYNOS_IKS_CPUFREQ
-static void __init switcher_thread_on_each_cpu(struct work_struct *work)
-{
-	unsigned int mpidr, cluster, cpuid;
-	mpidr = read_mpidr();
-	cluster = MPIDR_AFFINITY_LEVEL(mpidr, 1);
-	cpuid = MPIDR_AFFINITY_LEVEL(mpidr, 0);
-
-	BUG_ON(cluster > 2 || cpuid > 4);
-	pr_debug("create switcher thread %d(%d)\n", cpuid, cluster);
-
-	bL_switcher_thread_create(cpuid, &bL_threads[cpuid]);
-}
-#endif
-
 int __init bL_switcher_init(const struct bL_power_ops *ops)
 {
-	int ret, err;
+	int cpu, ret, err;
 
 	pr_info("big.LITTLE switcher initializing\n");
 
@@ -674,18 +626,13 @@ int __init bL_switcher_init(const struct bL_power_ops *ops)
 		return err;
 	}
 
-#ifdef CONFIG_ARM_EXYNOS_IKS_CPUFREQ
-	schedule_on_each_cpu(switcher_thread_on_each_cpu);
-#endif
-
-#if !(CONFIG_ARM_EXYNOS_IKS_CPUFREQ)
 	for_each_online_cpu(cpu) {
 		struct bL_thread *t = &bL_threads[cpu];
 		init_waitqueue_head(&t->wq);
 		t->wanted_cluster = -1;
 		t->task = bL_switcher_thread_create(cpu, t);
 	}
-#endif
+
 	pr_info("big.LITTLE switcher initialized\n");
 	return 0;
 }
