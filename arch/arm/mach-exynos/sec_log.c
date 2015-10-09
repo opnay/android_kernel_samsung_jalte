@@ -41,12 +41,14 @@ static inline void sec_log_save_old(void)
 static unsigned *sec_avc_log_ptr;
 static char *sec_avc_log_buf;
 static unsigned sec_avc_log_size;
+#if 0
 static struct map_desc avc_log_buf_iodesc[] __initdata = {
 	{
 		.virtual = (unsigned long)S3C_VA_AUXLOG_BUF,
 		.type = MT_DEVICE
 	}
 };
+#endif
 #endif
 
 #ifdef CONFIG_SEC_LOG_NONCACHED

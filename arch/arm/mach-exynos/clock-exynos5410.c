@@ -443,6 +443,7 @@ static int exynos5_ipll_ctrl(struct clk *clk, int enable)
 	return s5p_gatectrl(EXYNOS5_IPLL_CON1, clk, !enable);
 }
 
+#if 0
 static int exynos5_epll_ctrl(struct clk *clk, int enable)
 {
 	return s5p_gatectrl(EXYNOS5_EPLL_CON2, clk, !enable);
@@ -468,6 +469,7 @@ static int exynos5_vpll_ctrl(struct clk *clk, int enable)
 	}
 	return ret;
 }
+#endif
 
 /*
  * PLL output clock
@@ -2507,6 +2509,7 @@ static struct clksrc_sources exynos5_clkset_sclk_disp10 = {
 	.nr_sources	= ARRAY_SIZE(clkset_sclk_disp10_list),
 };
 
+#ifndef CONFIG_FB_S5P_MDNIE
 static struct clksrc_clk exynos5_clk_dout_mdnie = {
 	.clk		= {
 		.name		= "dout_mdnie",
@@ -2525,6 +2528,7 @@ static struct clksrc_clk exynos5_clk_sclk_mdnie = {
 	},
 	.reg_div = { .reg = EXYNOS5_CLKDIV_DISP1_0, .shift = 4, .size = 4 },
 };
+#endif
 
 static struct clksrc_clk exynos5_clk_dout_mdnie_pwm = {
 	.clk		= {
@@ -2705,6 +2709,7 @@ static struct clksrc_clk exynos5_clk_sclk_fimd = {
 	.reg_div = { .reg = EXYNOS5_CLKDIV_DISP0_0, .shift = 0, .size = 4 },
 };
 
+#ifndef CONFIG_FB_S5P_MDNIE
 static struct clksrc_clk exynos5_clk_sclk_mdnie1 = {
 	.clk	= {
 		.name		= "sclk_mdnie1",
@@ -2715,7 +2720,9 @@ static struct clksrc_clk exynos5_clk_sclk_mdnie1 = {
 	.reg_src = { .reg = EXYNOS5_CLKSRC_DISP1_0, .shift = 4, .size = 4 },
 	.reg_div = { .reg = EXYNOS5_CLKDIV_DISP1_0, .shift = 4, .size = 4 },
 };
+#endif
 
+#if 0 //unused
 static struct clksrc_clk exynos5_clk_sclk_mdnie_pwm1 = {
 	.clk	= {
 		.name		= "sclk_mdnie_pwm1",
@@ -2736,6 +2743,7 @@ static struct clksrc_clk exynos5_clk_dout_mdnie_pwm1 = {
 	},
 	.reg_div = { .reg = EXYNOS5_CLKDIV_DISP1_0, .shift = 12, .size = 4 },
 };
+#endif
 
 static struct clksrc_clk exynos5_clk_sclk_ext_mst_vid = {
 	.clk	= {

@@ -104,6 +104,7 @@ static struct platform_device persistent_trace_device = {
 	.id	= -1,
 };
 
+#ifdef CONFIG_EXYNOS_PERSISTENT_CLOCK
 static struct resource persistent_clock_resource[] = {
 	[0] = DEFINE_RES_MEM(S3C_PA_RTC, SZ_256),
 };
@@ -114,6 +115,7 @@ static struct platform_device persistent_clock = {
 	.num_resources	= ARRAY_SIZE(persistent_clock_resource),
 	.resource	= persistent_clock_resource,
 };
+#endif
 
 /*rfkill device registeration*/
 #ifdef CONFIG_BT_BCM4335
@@ -484,6 +486,7 @@ unsigned int universal5410_rev(void)
 	return board_rev;
 }
 
+#if 0 // unused
 static struct gpio __initdata universal5410_hw_rev[] = {
 	{ EXYNOS5410_GPH0(0), GPIOF_DIR_IN, "hw_rev0" },
 	{ EXYNOS5410_GPH0(1), GPIOF_DIR_IN, "hw_rev1" },
@@ -491,7 +494,6 @@ static struct gpio __initdata universal5410_hw_rev[] = {
 	{ EXYNOS5410_GPH0(3), GPIOF_DIR_IN, "hw_rev3" },
 };
 
-#if 0 // unused
 static void __init universal5410_get_board_revision(void)
 {
 	int err;
