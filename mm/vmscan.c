@@ -54,10 +54,6 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/vmscan.h>
 
-#ifdef CONFIG_INCREASE_MAXIMUM_SWAPPINESS
-int max_swappiness = 200;
-#endif
-
 /*
  * reclaim_mode determines how the inactive list is shrunk
  * RECLAIM_MODE_SINGLE: Reclaim only order-0 pages
@@ -2015,11 +2011,7 @@ static void get_scan_count(struct mem_cgroup_zone *mz, struct scan_control *sc,
 	 * This scanning priority is essentially the inverse of IO cost.
 	 */
 	anon_prio = vmscan_swappiness(mz, sc);
-#ifdef CONFIG_INCREASE_MAXIMUM_SWAPPINESS
-	file_prio = max_swappiness - vmscan_swappiness(mz, sc);
-#else
 	file_prio = 200 - vmscan_swappiness(mz, sc);
-#endif
 
 	/*
 	 * OK, so we have swap space and a fair amount of page cache
@@ -2520,11 +2512,7 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 #else
 		.may_swap = 1,
 #endif /* CONFIG_ZRAM_FOR_ANDROID || CONFIG_DIRECT_RECLAIM_FILE_PAGES_ONLY */
-#ifdef CONFIG_ZSWAP
-		.swappiness = vm_swappiness / 2,
-#else
 		.swappiness = vm_swappiness,
-#endif
 		.order = order,
 		.target_mem_cgroup = NULL,
 		.nodemask = nodemask,
@@ -2693,12 +2681,8 @@ static bool pgdat_balanced(pg_data_t *pgdat, unsigned long balanced_pages,
 	for (i = 0; i <= classzone_idx; i++)
 		present_pages += pgdat->node_zones[i].present_pages;
 
-#ifdef CONFIG_TIGHT_PGDAT_BALANCE
-	return balanced_pages >= (present_pages >> 1);
-#else
 	/* A special case here: if zone has no page, we think it's balanced */
 	return balanced_pages >= (present_pages >> 2);
-#endif
 }
 
 /* is kswapd sleeping prematurely? */
