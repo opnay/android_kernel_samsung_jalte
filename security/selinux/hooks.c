@@ -433,10 +433,6 @@ static int sb_finish_set_opts(struct super_block *sb)
 	if (!strcmp(sb->s_type->name, "f2fs"))
 		sbsec->flags |= SE_SBLABELSUPP;
 
-	/* Special handling for sdcardfs */
-	if (!strcmp(sb->s_type->name, "sdcardfs"))
-		sbsec->flags |= SE_SBLABELSUPP;
-
 	/* Initialize the root inode. */
 	rc = inode_doinit_with_dentry(root_inode, root);
 
