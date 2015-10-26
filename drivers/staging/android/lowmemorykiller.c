@@ -248,7 +248,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 						global_page_state(NR_SHMEM);
 	struct zone *zone;
 
-#if defined(CONFIG_ZRAM_FOR_ANDROID)
+#if defined(CONFIG_ZRAM_FOR_ANDROID) || defined(CONFIG_ZSWAP)
 	other_file -= total_swapcache_pages;
 #endif
 
