@@ -161,6 +161,7 @@ on boot
 
 on fs
     start init_mount
+    wait /dev/.mounted
     mount_all /fstab.universal5410
     setprop ro.crypto.fuse_sdcard true
 
