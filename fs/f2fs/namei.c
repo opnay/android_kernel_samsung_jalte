@@ -53,7 +53,7 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
 	if (err) {
 		err = -EINVAL;
 		nid_free = true;
-		goto out;
+		goto fail;
 	}
 
 	/* If the directory encrypted, then we should encrypt the inode. */
@@ -75,9 +75,6 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
 	mark_inode_dirty(inode);
 	return inode;
 
-out:
-	clear_nlink(inode);
-	unlock_new_inode(inode);
 fail:
 	trace_f2fs_new_inode(inode, err);
 	make_bad_inode(inode);
@@ -681,8 +678,13 @@ static void *f2fs_encrypted_follow_link(struct dentry *dentry,
 
 	/* Symlink is encrypted */
 	sd = (struct f2fs_encrypted_symlink_data *)caddr;
-	cstr.name = sd->encrypted_path;
 	cstr.len = le16_to_cpu(sd->len);
+	cstr.name = kmalloc(cstr.len, GFP_NOFS);
+	if (!cstr.name) {
+		res = -ENOMEM;
+		goto errout;
+	}
+	memcpy(cstr.name, sd->encrypted_path, cstr.len);
 
 	/* this is broken symlink case */
 	if (cstr.name[0] == 0 && cstr.len == 0) {
@@ -704,6 +706,8 @@ static void *f2fs_encrypted_follow_link(struct dentry *dentry,
 	if (res < 0)
 		goto errout;
 
+	kfree(cstr.name);
+
 	paddr = pstr.name;
 
 	/* Null-terminate the name */
@@ -714,6 +718,7 @@ static void *f2fs_encrypted_follow_link(struct dentry *dentry,
 	page_cache_release(cpage);
 	return NULL;
 errout:
+	kfree(cstr.name);
 	f2fs_fname_crypto_free_buffer(&pstr);
 	kunmap(cpage);
 	page_cache_release(cpage);
