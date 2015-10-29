@@ -56,7 +56,7 @@ done
 echo -e "\nimmortal.version=$IMMORTAL_VERSION" >> $RAMDISK_DIR/default.prop
 
 # get carrier
-CA=`grep "CONFIG_MACH_JA_" $KERNEL_OUT/.config | sed -n -e 's/^CONFIG_MACH_JA_KOR_\(.\+\)\=y$/\L\1/p'`
+CA=`sed -n -e 's/^CONFIG_MACH_JA_KOR_\(.\+\)\=y$/\L\1/p' $KERNEL_OUT/.config`
 # Rename .carrier files and remove unused file.
 for i in `find $RAMDISK_DIR -name "*.$CA"`; do
 	mv $i `echo $i | sed -e 's/\.'"$CA"'//'`
