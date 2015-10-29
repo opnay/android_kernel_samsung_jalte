@@ -1148,7 +1148,7 @@ static struct exynos_tmu_platform_data const exynos5_default_tmu_data = {
 		.temp_level = 85,
 	},
 	.freq_tab[4] = {
-		.freq_clip_max = 400 * 1000,
+		.freq_clip_max = 200 * 1000, // CA7 400Mhz
 		.temp_level = 100,
 	},
 	.size[THERMAL_TRIP_ACTIVE] = 1,
