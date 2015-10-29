@@ -20,8 +20,9 @@ fi
 
 mkdir -p $KERNEL_OUT_FLASHZIP
 cp -r flashzip/* $KERNEL_OUT_FLASHZIP
-sed -i 's/vX.XX/'$IMMORTAL_VERSION'/g' $(find $KERNEL_OUT_FLASHZIP -name "updater-script")
-sed -i 's/for XX/for '$carrier'/g' $(find $KERNEL_OUT_FLASHZIP -name "updater-script")
+sed -i -e 's/vX.XX/'$IMMORTAL_VERSION'/g' \
+	-e 's/for XX/for '$carrier'/g' \
+	$(find $KERNEL_OUT_FLASHZIP -name "updater-script")
 
 
 cp $bootimg $KERNEL_OUT_FLASHZIP/boot.img
