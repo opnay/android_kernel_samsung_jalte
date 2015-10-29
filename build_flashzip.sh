@@ -11,7 +11,7 @@ _zipalign=$(which zipalign)
 
 output=$1
 bootimg=$2
-carrier=SKT
+carrier=`grep "CONFIG_MACH_JA_" $KERNEL_OUT/.config | sed -n -e 's/^CONFIG_MACH_JA_KOR_\(.\+\)\=y$/\L\1/p'`
 
 if ! [ -e $bootimg ]; then
 	echo -e "Error: No such file or directory \"$bootimg\""
