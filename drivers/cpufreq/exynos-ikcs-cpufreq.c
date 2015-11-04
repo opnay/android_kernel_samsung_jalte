@@ -92,6 +92,7 @@ static unsigned int exynos5410_bb_con0;
 
 static DEFINE_MUTEX(cpufreq_lock);
 static DEFINE_MUTEX(cpufreq_scale_lock);
+static bool is_suspended;
 
 static bool exynos_cpufreq_init_done;
 
@@ -496,7 +497,7 @@ static int exynos_target(struct cpufreq_policy *policy,
 	cur = get_cur_cluster(policy->cpu);
 	old_cur = cur;
 
-	if (exynos_info[cur]->blocked)
+	if (is_suspended)
 		goto out;
 
 	/* get current frequency */
@@ -633,8 +634,7 @@ static int exynos_cpufreq_pm_notifier(struct notifier_block *notifier,
 			pm_qos_add_request(&max_cpu_qos_blank, PM_QOS_CPU_FREQ_MAX, 600000);
 
 		mutex_lock(&cpufreq_lock);
-		exynos_info[CA7]->blocked = true;
-		exynos_info[CA15]->blocked = true;
+		is_suspended = true;
 		mutex_unlock(&cpufreq_lock);
 
 		bootfreqCA7 = VIRT_FREQ(get_boot_freq(CA7), CA7);
@@ -663,8 +663,7 @@ static int exynos_cpufreq_pm_notifier(struct notifier_block *notifier,
 		pr_debug("PM_POST_SUSPEND for CPUFREQ\n");
 
 		mutex_lock(&cpufreq_lock);
-		exynos_info[CA7]->blocked = false;
-		exynos_info[CA15]->blocked = false;
+		is_suspended = false;
 		mutex_unlock(&cpufreq_lock);
 
 		break;
@@ -974,8 +973,7 @@ static int exynos_cpufreq_reboot_notifier_call(struct notifier_block *this,
 	int volt;
 
 	mutex_lock(&cpufreq_lock);
-	exynos_info[CA7]->blocked = true;
-	exynos_info[CA15]->blocked = true;
+	is_suspended = true;
 	mutex_unlock(&cpufreq_lock);
 
 	bootfreqCA7 = VIRT_FREQ(get_boot_freq(CA7), CA7);
