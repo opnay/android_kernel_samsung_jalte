@@ -1319,7 +1319,7 @@ static int __devinit exynos_tmu_probe(struct platform_device *pdev)
 		data->irq[i] = platform_get_irq(pdev, i);
 		if (data->irq[i] < 0) {
 			dev_err(&pdev->dev, "Failed to get platform irq\n");
-			return data->irq;
+			return data->irq[i];
 		}
 
 		data->mem[i] = platform_get_resource(pdev, IORESOURCE_MEM, i);
@@ -1328,7 +1328,7 @@ static int __devinit exynos_tmu_probe(struct platform_device *pdev)
 			return -ENOENT;
 		}
 
-		data->base[i] = devm_ioremap_resource(&pdev->dev, data->mem);
+		data->base[i] = devm_ioremap_resource(&pdev->dev, data->mem[i]);
 		if (IS_ERR(data->base))
 			return PTR_ERR(data->base);
 
