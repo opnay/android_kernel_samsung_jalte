@@ -687,6 +687,7 @@ MACHINE_START(UNIVERSAL5410, "UNIVERSAL5410")
 	.atag_offset	= 0x100,
 	.init_early	= universal5410_init_early,
 	.init_irq	= exynos5_init_irq,
+	.smp		= smp_ops(exynos_smp_ops),
 	.map_io		= universal5410_map_io,
 	.handle_irq	= gic_handle_irq,
 	.init_machine	= universal5410_machine_init,
