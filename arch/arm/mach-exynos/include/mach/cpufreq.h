@@ -132,11 +132,9 @@ extern void __do_hotplug(void);
 #endif
 
 #if defined(CONFIG_ARM_EXYNOS_IKS_CPUFREQ) || defined(CONFIG_ARM_EXYNOS_CPUFREQ)
-extern void exynos_lowpower_for_cluster(cluster_type cluster, bool on);
 extern void reset_lpj_for_cluster(cluster_type cluster);
 extern struct pm_qos_request max_cpu_qos_blank;
 #else
 static inline void reset_lpj_for_cluster(cluster_type cluster) {}
-static inline void exynos_lowpower_for_cluster(cluster_type cluster, bool on) {}
 #endif
 #endif

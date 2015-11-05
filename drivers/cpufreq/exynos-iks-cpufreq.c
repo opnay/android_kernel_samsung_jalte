@@ -640,37 +640,6 @@ static int exynos_cpufreq_resume(struct cpufreq_policy *policy)
 }
 #endif
 
-void exynos_lowpower_for_cluster(cluster_type cluster, bool on)
-{
-	int volt;
-
-	mutex_lock(&cpufreq_lock);
-	if (cluster == CA15) {
-		if (on) {
-			volt_powerdown[CA15] = regulator_get_voltage(arm_regulator);
-			volt = get_match_volt(ID_ARM, ACTUAL_FREQ(freq_min[CA15], CA15));
-			volt = get_limit_voltage(volt);
-			regulator_set_voltage(arm_regulator, volt, volt);
-		} else {
-			volt = volt_powerdown[CA15];
-			volt = get_limit_voltage(volt);
-			regulator_set_voltage(arm_regulator, volt, volt);
-		}
-	} else {
-		if (on) {
-			volt_powerdown[CA7] = regulator_get_voltage(kfc_regulator);
-			volt = get_match_volt(ID_KFC, ACTUAL_FREQ(freq_min[CA7], CA7));
-			volt = get_limit_voltage(volt);
-			regulator_set_voltage(kfc_regulator, volt, volt);
-		} else {
-			volt = volt_powerdown[CA7];
-			volt = get_limit_voltage(volt);
-			regulator_set_voltage(kfc_regulator, volt, volt);
-		}
-	}
-	mutex_unlock(&cpufreq_lock);
-}
-
 /*
  * exynos_cpufreq_pm_notifier - block CPUFREQ's activities in suspend-resume
  *			context
