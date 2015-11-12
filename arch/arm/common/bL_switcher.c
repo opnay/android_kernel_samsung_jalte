@@ -400,22 +400,6 @@ static struct task_struct * __init bL_switcher_thread_create(int cpu, void *arg)
 	return task;
 }
 
-static unsigned int switch_operation = 0x11;
-
-/*
- * bL_check_auto_switcher_enable - check whether enable or disable switch
- * automatically
- */
-bool bL_check_auto_switcher_enable(void)
-{
-	bool result = true;
-
-	if (switch_operation != 0x11)
-		result = false;
-
-	return result;
-}
-
 /*
  * bL_switch_request - Switch to a specific cluster for the given CPU
  *
@@ -429,14 +413,7 @@ bool bL_check_auto_switcher_enable(void)
 int bL_switch_request(unsigned int cpu, unsigned int new_cluster_id)
 {
 	struct bL_thread *t;
-	
-	if (switch_operation == 0x00) {
-#if !defined(CONFIG_ARM_EXYNOS_IKS_CPUFREQ)
-		put_cpu();
-#endif
-		return 0;
-	}
-	
+
 	if (cpu >= ARRAY_SIZE(bL_threads)) {
 		pr_err("%s: cpu %d out of bounds\n", __func__, cpu);
 		return -EINVAL;
@@ -462,9 +439,6 @@ int bL_cluster_switch_request(unsigned int new_cluster)
 	int ret;
 
 	BUG_ON(new_cluster >= 2);
-
-	if (unlikely(switch_operation == 0x00))
-		return -EINVAL;
 
 	get_online_cpus();
 
@@ -511,102 +485,6 @@ int bL_cluster_switch_request(unsigned int new_cluster)
 
 EXPORT_SYMBOL_GPL(bL_cluster_switch_request);
 
-static ssize_t bL_operator_write(struct file *file, const char __user *buf,
-				 size_t len, loff_t *pos)
-{
-	char val[2];
-	unsigned int loop;
-
-	if (copy_from_user(val, buf, 2))
-		return -EINVAL;
-
-	if (val[0] < '0' || val[0] > '1')
-		goto cmd_err;
-	else if (val[1] < '0' || val[1] > '1')
-		goto cmd_err;
-
-	if (!strncmp(val, "00", 2)) {
-		pr_info("Disable switcher\n");
-		switch_operation = 0x00;
-		goto end;
-	}
-
-	if (!strncmp(val, "01", 2)) {
-		pr_info("LITTLE only\n");
-		switch_operation = 0x01;
-		for (loop = 0; loop < BL_CPUS_PER_CLUSTER; loop++) {
-			if (bL_running_cluster_num_cpus(loop) == 0)
-				bL_switch_request(loop, 1);
-		}
-		goto end;
-	}
-
-	if (!strncmp(val, "10", 2)) {
-		pr_info("big only\n");
-		switch_operation = 0x10;
-		for (loop = 0; loop < BL_CPUS_PER_CLUSTER; loop++) {
-			if (bL_running_cluster_num_cpus(loop) == 1)
-				bL_switch_request(loop, 0);
-		}
-		goto end;
-	}
-
-	if (!strncmp(val, "11", 2)) {
-		pr_info("big.LITTLE(switcher enable)\n");
-		switch_operation = 0x11;
-		goto end;
-	}
-
-cmd_err:
-	pr_info("Usage: command > /dev/bL_operator\n"
-		"command : 00 - switch disable\n"
-		"	   01 - LITTLE only\n"
-		"	   10 - big only\n"
-		"	   11 - big.LITTLE\n"
-		"echo 10 > /dev/bL_operator\n");
-end:
-	return len;
-}
-
-static ssize_t bL_operator_read(struct file *file, char __user *buf,
-				size_t len, loff_t *pos)
-{
-	char buff[20];
-	size_t count = 0;
-
-	switch (switch_operation) {
-	case 0x00:
-		count += sprintf(buff, "Disable switcher\n");
-		break;
-	case 0x01:
-		count += sprintf(buff, "LITTLE only\n");
-		break;
-	case 0x10:
-		count += sprintf(buff, "big only\n");
-		break;
-	case 0x11:
-		count += sprintf(buff, "big.LITTLE\n");
-		break;
-	default:
-		count += sprintf(buff, "Not support operation mode\n");
-		break;
-	}
-
-	return simple_read_from_buffer(buf, len, pos, buff, count);
-}
-
-static const struct file_operations bL_operator_fops = {
-	.write		= bL_operator_write,
-	.read		= bL_operator_read,
-	.owner		= THIS_MODULE,
-};
-
-static struct miscdevice bL_operator_device = {
-	BL_OPERATOR_MINOR,
-	"b.L_operator",
-	&bL_operator_fops
-};
-
 int __init bL_switcher_init(const struct bL_power_ops *ops)
 {
 	int cpu, ret, err;
@@ -618,13 +496,6 @@ int __init bL_switcher_init(const struct bL_power_ops *ops)
 		return ret;
 
 	bL_platform_ops = ops;
-
-	err = misc_register(&bL_operator_device);
-	if (err) {
-		pr_err("Switcher operation device is not registerd "
-		       "so bL_operation is not accessed\n");
-		return err;
-	}
 
 	for_each_online_cpu(cpu) {
 		struct bL_thread *t = &bL_threads[cpu];
