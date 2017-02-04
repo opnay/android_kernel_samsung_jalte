@@ -67,3 +67,6 @@ obj-$(CONFIG_BCM4335)	+= bcmdhd/
 
 obj-$(CONFIG_BRCMFMAC)	+= brcm80211/
 obj-$(CONFIG_BRCMSMAC)	+= brcm80211/
+
+obj-$(CONFIG_LGUIWLAN)	+= mwlan_aarp/
+obj-$(CONFIG_LGUIWLAN)	+= ipsecdrvtl/

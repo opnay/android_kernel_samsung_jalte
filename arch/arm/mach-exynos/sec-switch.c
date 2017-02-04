@@ -42,6 +42,9 @@
 #include <linux/jack.h>
 #endif
 
+#ifdef CONFIG_MACH_SLP_NAPLES
+#include <mach/naples-tsp.h>
+#endif
 #include <mach/usb3-drd.h>
 
 #ifdef CONFIG_SWITCH
@@ -49,7 +52,6 @@ static struct switch_dev switch_dock = {
 	.name = "dock",
 };
 #endif
-
 #ifdef CONFIG_MACH_JA
 #include <linux/i2c/touchkey_i2c.h>
 #endif
@@ -132,6 +134,51 @@ static ssize_t switch_store_vbus(struct device *dev,
 DEVICE_ATTR(disable_vbus, 0664, switch_show_vbus,
 	    switch_store_vbus);
 
+#ifdef CONFIG_TARGET_LOCALE_KOR
+static void max77803_set_vbus_state(int state);
+struct device *usb_lock;
+int is_usb_locked;
+EXPORT_SYMBOL(is_usb_locked);
+static ssize_t switch_show_usb_lock(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	if (is_usb_locked)
+		return snprintf(buf, PAGE_SIZE, "USB_LOCK");
+	else
+		return snprintf(buf, PAGE_SIZE, "USB_UNLOCK");
+}
+
+static ssize_t switch_store_usb_lock(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	int lock;
+
+	if (!strncmp(buf, "0", 1))
+		lock = 0;
+	else if (!strncmp(buf, "1", 1))
+		lock = 1;
+	else {
+		pr_warn("%s: Wrong command\n", __func__);
+		return count;
+	}
+
+	pr_info("%s: lock=%d\n", __func__, lock);
+
+	if (lock != is_usb_locked) {
+		is_usb_locked = lock;
+
+		if (lock) {
+			max77803_set_vbus_state(USB_CABLE_DETACHED);
+		}
+	}
+
+	return count;
+}
+
+static DEVICE_ATTR(enable, 0664,
+		   switch_show_usb_lock, switch_store_usb_lock);
+#endif
 
 static int __init sec_switch_init(void)
 {
@@ -149,6 +196,17 @@ static int __init sec_switch_init(void)
 		pr_err("%s:%s= Failed to create device file(disable_vbus)!\n",
 				__FILE__, __func__);
 
+#ifdef CONFIG_TARGET_LOCALE_KOR
+	usb_lock = device_create(sec_class, switch_dev,
+				MKDEV(0, 0), NULL, ".usb_lock");
+
+	if (IS_ERR(usb_lock))
+		pr_err("Failed to create device (usb_lock)!\n");
+
+	if (device_create_file(usb_lock, &dev_attr_enable) < 0)
+		pr_err("Failed to create device file(.usblock/enable)!\n");
+#endif
+
 	return ret;
 };
 
@@ -157,10 +215,11 @@ int current_cable_type = POWER_SUPPLY_TYPE_BATTERY;
 int max77803_muic_charger_cb(enum cable_type_muic cable_type)
 {
 	struct power_supply *psy = power_supply_get_by_name("battery");
+	struct power_supply *psy_p = power_supply_get_by_name("ps");
 	union power_supply_propval value;
 	static enum cable_type_muic previous_cable_type = CABLE_TYPE_NONE_MUIC;
 
-	pr_info("[BATT] CB enabled %d\n", cable_type);
+	pr_info("[BATT] CB enabled(%d), prev_cable(%d)\n", cable_type, previous_cable_type);
 
 	/* others setting */
 	switch (cable_type) {
@@ -168,6 +227,7 @@ int max77803_muic_charger_cb(enum cable_type_muic cable_type)
 	case CABLE_TYPE_OTG_MUIC:
 	case CABLE_TYPE_JIG_UART_OFF_MUIC:
 	case CABLE_TYPE_MHL_MUIC:
+	case CABLE_TYPE_PS_CABLE_MUIC:
 		is_cable_attached = false;
 		break;
 	case CABLE_TYPE_USB_MUIC:
@@ -194,6 +254,10 @@ int max77803_muic_charger_cb(enum cable_type_muic cable_type)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_MACH_SLP_NAPLES) || defined(CONFIG_MACH_MIDAS) \
+		|| defined(CONFIG_MACH_GC1) || defined(CONFIG_MACH_T0)
+	tsp_charger_infom(is_cable_attached);
+#endif
 #if defined(CONFIG_MACH_JA)
 	touchkey_charger_infom(is_cable_attached);
 #endif
@@ -201,9 +265,8 @@ int max77803_muic_charger_cb(enum cable_type_muic cable_type)
 	/*  charger setting */
 	if (previous_cable_type == cable_type) {
 		pr_info("%s: SKIP cable setting\n", __func__);
-		goto skip;
+		goto skip_cable_setting;
 	}
-	previous_cable_type = cable_type;
 
 	switch (cable_type) {
 	case CABLE_TYPE_NONE_MUIC:
@@ -247,20 +310,36 @@ int max77803_muic_charger_cb(enum cable_type_muic cable_type)
 	case CABLE_TYPE_CDP_MUIC:
 		current_cable_type = POWER_SUPPLY_TYPE_USB_CDP;
 		break;
+	case CABLE_TYPE_PS_CABLE_MUIC:
+		current_cable_type = POWER_SUPPLY_TYPE_POWER_SHARING;
+		break;
 	default:
 		pr_err("%s: invalid type for charger:%d\n",
 			__func__, cable_type);
 		goto skip;
 	}
 
-	if (!psy || !psy->set_property)
-		pr_err("%s: fail to get battery psy\n", __func__);
-	else {
-		value.intval = current_cable_type<<ONLINE_TYPE_MAIN_SHIFT;
-		psy->set_property(psy, POWER_SUPPLY_PROP_ONLINE, &value);
+	if (!psy || !psy->set_property || !psy_p || !psy_p->set_property) {
+		pr_err("%s: fail to get battery/ps psy\n", __func__);
+	} else {
+		if (current_cable_type == POWER_SUPPLY_TYPE_POWER_SHARING) {
+			value.intval = current_cable_type;
+			psy_p->set_property(psy_p, POWER_SUPPLY_PROP_ONLINE, &value);
+		} else {
+			if (previous_cable_type == CABLE_TYPE_PS_CABLE_MUIC) {
+				value.intval = current_cable_type;
+				psy_p->set_property(psy_p, POWER_SUPPLY_PROP_ONLINE, &value);
+			}
+			value.intval = current_cable_type<<ONLINE_TYPE_MAIN_SHIFT;
+			psy->set_property(psy, POWER_SUPPLY_PROP_ONLINE, &value);
+		}
 	}
-
+#ifdef CONFIG_TOUCHSCREEN_MELFAS_M2
+	tsp_charger_infom(is_cable_attached);
+#endif
 skip:
+	previous_cable_type = cable_type;
+skip_cable_setting:
 #ifdef CONFIG_JACK_MON
 	jack_event_handler("charger", is_cable_attached);
 #endif
@@ -307,6 +386,13 @@ void max77803_muic_usb_cb(u8 usb_mode)
 	    host_notifier_device.dev.platform_data;
 #endif
 
+#ifdef CONFIG_TARGET_LOCALE_KOR
+	if (is_usb_locked) {
+		pr_info("%s: usb locked by mdm\n", __func__);
+		return;
+	}
+#endif
+
 	if (usb_mode == USB_CABLE_ATTACHED) {
 #ifdef CONFIG_MFD_MAX77803
 		g_usbvbus = USB_CABLE_ATTACHED;
@@ -325,6 +411,11 @@ void max77803_muic_usb_cb(u8 usb_mode)
 		host_noti_pdata->ndev.mode = NOTIFY_HOST_MODE;
 		if (host_noti_pdata->usbhostd_start)
 			host_noti_pdata->usbhostd_start();
+#endif
+
+#if defined(CONFIG_MACH_J_CHN_CTC)
+		/* defense code for otg mis-detecing issue */
+		msleep(40);
 #endif
 
 		max77803_check_id_state(0);
@@ -408,6 +499,10 @@ void max77803_muic_jig_uart_cb(int path)
 		break;
 	case UART_PATH_CP:
 		break;
+#ifdef CONFIG_LTE_VIA_SWITCH
+	case UART_PATH_LTE:
+		break;
+#endif
 	default:
 		pr_info("func %s: invalid value!!\n", __func__);
 	}

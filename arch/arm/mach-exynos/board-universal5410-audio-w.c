@@ -38,6 +38,160 @@
 
 #define WM5102_BUS_NUM 2
 
+
+#ifdef CONFIG_SND_SOC_WM8994
+static struct regulator_consumer_supply wm8994_fixed_voltage0_supplies[] = {
+	REGULATOR_SUPPLY("AVDD2", "4-001a"),
+	REGULATOR_SUPPLY("CPVDD", "4-001a"),
+};
+
+static struct regulator_consumer_supply wm8994_fixed_voltage1_supplies[] = {
+	REGULATOR_SUPPLY("SPKVDD1", "4-001a"),
+	REGULATOR_SUPPLY("SPKVDD2", "4-001a"),
+};
+
+static struct regulator_consumer_supply wm8994_fixed_voltage2_supplies =
+	REGULATOR_SUPPLY("DBVDD", "4-001a");
+
+static struct regulator_init_data wm8994_fixed_voltage0_init_data = {
+	.constraints = {
+		.always_on = 1,
+	},
+	.num_consumer_supplies	= ARRAY_SIZE(wm8994_fixed_voltage0_supplies),
+	.consumer_supplies	= wm8994_fixed_voltage0_supplies,
+};
+
+static struct regulator_init_data wm8994_fixed_voltage1_init_data = {
+	.constraints = {
+		.always_on = 1,
+	},
+	.num_consumer_supplies	= ARRAY_SIZE(wm8994_fixed_voltage1_supplies),
+	.consumer_supplies	= wm8994_fixed_voltage1_supplies,
+};
+
+static struct regulator_init_data wm8994_fixed_voltage2_init_data = {
+	.constraints = {
+		.always_on = 1,
+	},
+	.num_consumer_supplies	= 1,
+	.consumer_supplies	= &wm8994_fixed_voltage2_supplies,
+};
+
+static struct fixed_voltage_config wm8994_fixed_voltage0_config = {
+	.supply_name	= "VDD_1.8V",
+	.microvolts	= 1800000,
+	.gpio		= -EINVAL,
+	.init_data	= &wm8994_fixed_voltage0_init_data,
+};
+
+static struct fixed_voltage_config wm8994_fixed_voltage1_config = {
+	.supply_name	= "DC_5V",
+	.microvolts	= 5000000,
+	.gpio		= -EINVAL,
+	.init_data	= &wm8994_fixed_voltage1_init_data,
+};
+
+static struct fixed_voltage_config wm8994_fixed_voltage2_config = {
+	.supply_name	= "VDD_3.3V",
+	.microvolts	= 3300000,
+	.gpio		= -EINVAL,
+	.init_data	= &wm8994_fixed_voltage2_init_data,
+};
+
+static struct platform_device wm8994_fixed_voltage0 = {
+	.name		= "reg-fixed-voltage",
+	.id		= 0,
+	.dev		= {
+		.platform_data	= &wm8994_fixed_voltage0_config,
+	},
+};
+
+static struct platform_device wm8994_fixed_voltage1 = {
+	.name		= "reg-fixed-voltage",
+	.id		= 1,
+	.dev		= {
+		.platform_data	= &wm8994_fixed_voltage1_config,
+	},
+};
+
+static struct platform_device wm8994_fixed_voltage2 = {
+	.name		= "reg-fixed-voltage",
+	.id		= 2,
+	.dev		= {
+		.platform_data	= &wm8994_fixed_voltage2_config,
+	},
+};
+
+static struct regulator_consumer_supply wm8994_avdd1_supply =
+	REGULATOR_SUPPLY("AVDD1", "4-001a");
+
+static struct regulator_consumer_supply wm8994_dcvdd_supply =
+	REGULATOR_SUPPLY("DCVDD", "4-001a");
+
+static struct regulator_init_data wm8994_ldo1_data = {
+	.constraints	= {
+		.name		= "AVDD1",
+		.valid_ops_mask	= REGULATOR_CHANGE_STATUS,
+	},
+	.num_consumer_supplies	= 1,
+	.consumer_supplies	= &wm8994_avdd1_supply,
+};
+
+static struct regulator_init_data wm8994_ldo2_data = {
+	.constraints	= {
+		.name		= "DCVDD",
+		.always_on	= true,
+	},
+	.num_consumer_supplies	= 1,
+	.consumer_supplies	= &wm8994_dcvdd_supply,
+};
+
+static struct wm8994_pdata wm8994_platform_data = {
+	/* configure gpio1 function: 0x0001(Logic level input/output) */
+	.gpio_defaults[0] = 0x0001,
+	/* If the i2s0 and i2s2 is enabled simultaneously */
+	.gpio_defaults[7] = 0x8100, /* GPIO8  DACDAT3 in */
+	.gpio_defaults[8] = 0x0100, /* GPIO9  ADCDAT3 out */
+	.gpio_defaults[9] = 0x0100, /* GPIO10 LRCLK3  out */
+	.gpio_defaults[10] = 0x0100,/* GPIO11 BCLK3   out */
+	.ldo[0] = { 0, &wm8994_ldo1_data }, /* LDO1,LDO2 Enable */
+	.ldo[1] = { 0, &wm8994_ldo2_data },
+	.irq_base = IRQ_BOARD_AUDIO_START
+};
+
+static struct i2c_board_info i2c_devs_audio[] __initdata = {
+	{
+		I2C_BOARD_INFO("wm1811", 0x1a),
+		.platform_data	= &wm8994_platform_data,
+		.irq = IRQ_EINT(21),
+	},
+};
+
+static struct platform_device wm1811_snd_card_device = {
+	.name	= "wm1811-card",
+	.id	= -1,
+};
+
+static struct platform_device *universal5410_audio_devices[] __initdata = {
+	&exynos5_device_hs_i2c0,
+
+	&wm8994_fixed_voltage0,
+	&wm8994_fixed_voltage1,
+	&wm8994_fixed_voltage2,
+
+	&wm1811_snd_card_device,
+};
+
+struct exynos5_platform_i2c hs_i2c_data_audio __initdata = {
+	.bus_number = 4,
+	.operation_mode = 0,
+	.speed_mode = HSI2C_FAST_SPD,
+	.fast_speed = 400000,
+	.high_speed = 0,
+	.cfg_gpio = NULL,
+};
+#endif
+
 #ifdef CONFIG_SND_SOC_WM5102
 #include <linux/mfd/arizona/registers.h>
 
@@ -184,7 +338,19 @@ static struct platform_device *universal5410_audio_devices[] __initdata = {
 
 static void universal5410_audio_gpio_init(void)
 {
-	int err;
+        int err;
+
+#ifdef CONFIG_SND_SOC_WM1811
+	err = gpio_request(EXYNOS5410_GPJ3(7), "CODEC LDO enable");
+	if (err < 0)
+		pr_err("%s: Failed to get enable GPIO: %d\n", __func__, err);
+
+	err = gpio_direction_output(EXYNOS5410_GPJ3(7), 1);
+	if (err < 0)
+		pr_err("%s: Failed to set GPIO direction: %d\n", __func__, err);
+
+	gpio_set_value(EXYNOS5410_GPJ3(7), 1);
+#endif
 
 #ifdef CONFIG_SND_SOC_WM5102
 	err = gpio_request(EXYNOS5410_GPJ2(1), "CODEC RESET enable");
@@ -206,6 +372,11 @@ void __init exynos5_universal5410_audio_init(void)
 
 	exynos5_audio_init();
 	universal5410_audio_gpio_init();
+
+#ifdef CONFIG_SND_SOC_WM1811
+	exynos5_hs_i2c0_set_platdata(&hs_i2c_data_audio);
+	ret = i2c_register_board_info(4, i2c_devs_audio, ARRAY_SIZE(i2c_devs_audio));
+#endif
 
 #ifdef CONFIG_SND_SOC_WM5102
 	s3c_gpio_cfgpin(EXYNOS5410_GPJ1(4), S3C_GPIO_SFN(0xf));

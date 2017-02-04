@@ -58,6 +58,17 @@ scu_save:
 	 */
 
 ENTRY(s3c_cpu_resume)
+#ifdef CONFIG_ARCH_EXYNOS4
+	/* SCU enable */
+	ldr     r1, =0x10500000
+	adr     r0, scu_save
+
+	ldr     r5, [r0]
+	ldr     r6, [r0, #4]
+
+	str     r5, [r1, #0x30]
+	str     r6, [r1]
+#endif
 #ifdef CONFIG_CACHE_L2X0
 	adr	r0, l2x0_regs_phys
 	ldr	r0, [r0]

@@ -126,6 +126,13 @@ config S3C_ADC
 	  for drivers such as the touchscreen and hwmon to use to share
 	  this resource.
 
+# Busfreq driver
+
+config EXYNOS_BUSFREQ_OPP
+	bool "Support DVFS for BUS & Device"
+	depends on ARCH_EXYNOS4 && REGULATOR
+	default n
+
 # device definitions to compile in
 
 config S3C_DEV_HSMMC
@@ -354,6 +361,15 @@ config S5P_DEV_CSIS2
 	help
 	  Compile in platform device definitions for MIPI-CSIS channel 2
 
+config S5P_DEV_FLITE0
+	bool
+	help
+	  Compile in platform device definitions for FIMC-LITE channel 0
+
+config S5P_DEV_FLITE1
+	bool
+	help
+	  Compile in platform device definitions for FIMC-LITE channel 1
 # DMA
 
 config S3C_DMA
@@ -431,4 +447,8 @@ config DEBUG_S3C_UART
 	default "1" if DEBUG_S3C_UART1
 	default "2" if DEBUG_S3C_UART2
 
+config SAMSUNG_BW_MONITOR
+	bool
+	help
+	  Compile support for monitoring system traffic.
 endif

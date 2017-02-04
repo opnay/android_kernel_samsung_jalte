@@ -149,6 +149,9 @@ struct ehci_hcd {			/* one per controller */
 	unsigned		use_dummy_qh:1;	/* AMD Frame List table quirk*/
 	unsigned		has_synopsys_hc_bug:1; /* Synopsys HC */
 	unsigned		frame_index_bug:1; /* MosChip (AKA NetMos) */
+#ifdef CONFIG_MDM_HSIC_PM
+	unsigned		susp_sof_bug; /*Chip Idea HC*/
+#endif
 
 	/* required for usb32 quirk */
 	#define OHCI_CTRL_HCFS          (3 << 6)
@@ -376,7 +379,7 @@ struct ehci_qh {
 
 	u8			xacterrs;	/* XactErr retry counter */
 
-#if defined(CONFIG_LINK_DEVICE_HSIC)
+#if defined(CONFIG_LINK_DEVICE_HSIC) || defined(CONFIG_MDM_HSIC_PM)
 #define	QH_XACTERR_MAX		4		/* XactErr retry limit */
 #else
 #define	QH_XACTERR_MAX		32		/* XactErr retry limit */

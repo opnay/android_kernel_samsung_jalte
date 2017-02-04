@@ -466,6 +466,9 @@ static struct resource s5p_fimd1_resource[] = {
 	[2] = DEFINE_RES_IRQ(IRQ_FIMD1_FIFO),
 	[3] = DEFINE_RES_IRQ(IRQ_FIMD1_SYSTEM),
 	[4] = DEFINE_RES_MEM(0, SZ_1), /* to be populated later */
+#ifdef CONFIG_FB_I80_COMMAND_MODE
+	[5] = DEFINE_RES_IRQ(IRQ_EINT(24)),
+#endif
 };
 
 struct platform_device s5p_device_fimd1 = {
@@ -485,19 +488,6 @@ void __init s5p_fimd1_set_platdata(struct s3c_fb_platdata *pd)
 			 &s5p_device_fimd1);
 }
 #endif /* CONFIG_S5P_DEV_FIMD1 */
-
-#ifdef CONFIG_FB_S5P_EXTDSP
-struct platform_device s5p_device_extdsp = {
-	.name		= "s3cfb_extdsp",
-	.id		= 0,
-};
-
-void __init s3cfb_extdsp_set_platdata(struct s3c_fb_pd_win *pd)
-{
-	s3c_set_platdata(pd, sizeof(struct s3c_fb_pd_win),
-			 &s5p_device_extdsp);
-}
-#endif
 
 /* HWMON */
 

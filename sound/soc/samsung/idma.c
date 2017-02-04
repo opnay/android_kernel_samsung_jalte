@@ -223,6 +223,11 @@ static int idma_hw_params(struct snd_pcm_substream *substream,
 #endif
 	idma_setcallbk(substream, idma_done);
 
+	pr_info("I:%s:DmaAddr=@%x Total=%d PrdSz=%d #Prds=%d dma_area=0x%x rate=%ld\n",
+		(substream->stream == SNDRV_PCM_STREAM_PLAYBACK) ? "P" : "C",
+			prtd->start, runtime->dma_bytes,  prtd->periodsz,
+			prtd->period, (unsigned int)runtime->dma_area, rate);
+
 	return 0;
 }
 
@@ -343,6 +348,7 @@ static irqreturn_t iis_irq(int irqno, void *dev_id)
 		iisahb |= val;
 		writel(iisahb, idma.regs + I2SAHB);
 
+		if (prtd->state & ST_RUNNING) {
 		addr = readl(idma.regs + I2SLVL0ADDR) - idma.lp_tx_addr;
 		addr += prtd->periodsz;
 		addr %= (prtd->end - prtd->start);
@@ -352,6 +358,7 @@ static irqreturn_t iis_irq(int irqno, void *dev_id)
 
 		if (prtd->cb)
 			prtd->cb(prtd->token, prtd->period);
+	}
 	}
 
 	return IRQ_HANDLED;

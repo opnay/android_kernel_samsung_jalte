@@ -38,6 +38,7 @@
 #include <asm/hardware/gic.h>
 #include <asm/bL_switcher.h>
 #include <asm/bL_entry.h>
+#include <mach/sec_debug.h>
 
 /*
  * Notifier list for kernel code which want to called at switch.
@@ -201,6 +202,7 @@ static int bL_switch_to(unsigned int new_cluster_id)
 		return -ENOSYS;
 
 	pr_debug("before switch: CPU %d in cluster %d\n", cpuid, clusterid);
+	sec_debug_task_log_msg(cpuid, "switch+");
 
 	/* Close the gate for our entry vectors */
 	bL_set_entry_vector(cpuid, ob_cluster, NULL);
@@ -231,7 +233,7 @@ static int bL_switch_to(unsigned int new_cluster_id)
 	 * Raise a SGI on the inbound CPU to make sure it doesn't stall
 	 * in a possible WFI, such as the one in bL_do_switch().
 	 */
-	gic_raise_softirq(cpumask_of(smp_processor_id()), 0);
+	arm_send_ping_ipi(smp_processor_id());
 
 	spin_unlock(&switch_gic_lock);
 
@@ -249,6 +251,7 @@ static int bL_switch_to(unsigned int new_cluster_id)
 	cpuid = mpidr & 0xf;
 	clusterid = (mpidr >> 8) & 0xf;
 	pr_debug("after switch: CPU %d in cluster %d\n", cpuid, clusterid);
+	sec_debug_task_log_msg(cpuid, "switch-");
 	BUG_ON(clusterid != ib_cluster);
 
 	bL_platform_ops->inbound_setup(cpuid, !clusterid);
@@ -506,6 +509,153 @@ int bL_cluster_switch_request(unsigned int new_cluster)
 
 EXPORT_SYMBOL_GPL(bL_cluster_switch_request);
 
+#ifdef CONFIG_BL_SWITCHER_DUMMY_IF
+
+/*
+ * Dummy interface to user space (to be replaced by cpufreq based interface).
+ */
+
+#include <linux/fs.h>
+#include <linux/miscdevice.h>
+#include <asm/uaccess.h>
+
+static ssize_t bL_switcher_write(struct file *file, const char __user *buf,
+			size_t len, loff_t *pos)
+{
+	unsigned char val[3];
+	unsigned int cpu, cluster;
+
+	pr_debug("%s\n", __func__);
+
+	if (len < 3)
+		return -EINVAL;
+
+	if (copy_from_user(val, buf, 3))
+		return -EFAULT;
+
+	/* format: <cpu#>,<cluster#> */
+	if (val[0] < '0' || val[0] > '4' ||
+	    val[1] != ',' ||
+	    val[2] < '0' || val[2] > '1')
+		return -EINVAL;
+
+	cpu = val[0] - '0';
+	cluster = val[2] - '0';
+
+	if (cpu_online(cpu))
+		bL_switch_request(cpu, cluster);
+	return len;
+}
+
+static const struct file_operations bL_switcher_fops = {
+	.write		= bL_switcher_write,
+	.owner	= THIS_MODULE,
+};
+
+static struct miscdevice bL_switcher_device = {
+	BL_SWITCHER_MINOR,
+	"b.L_switcher",
+	&bL_switcher_fops
+};
+
+static ssize_t bL_operator_write(struct file *file, const char __user *buf,
+				 size_t len, loff_t *pos)
+{
+	char val[2];
+	unsigned int loop;
+
+	if (copy_from_user(val, buf, 2))
+		return -EINVAL;
+
+	if (val[0] < '0' || val[0] > '1')
+		goto cmd_err;
+	else if (val[1] < '0' || val[1] > '1')
+		goto cmd_err;
+
+	if (!strncmp(val, "00", 2)) {
+		pr_info("Disable switcher\n");
+		switch_operation = 0x00;
+		goto end;
+	}
+
+	if (!strncmp(val, "01", 2)) {
+		pr_info("LITTLE only\n");
+		switch_operation = 0x01;
+		for (loop = 0; loop < BL_CPUS_PER_CLUSTER; loop++) {
+			if (bL_running_cluster_num_cpus(loop) == 0)
+				bL_switch_request(loop, 1);
+		}
+		goto end;
+	}
+
+	if (!strncmp(val, "10", 2)) {
+		pr_info("big only\n");
+		switch_operation = 0x10;
+		for (loop = 0; loop < BL_CPUS_PER_CLUSTER; loop++) {
+			if (bL_running_cluster_num_cpus(loop) == 1)
+				bL_switch_request(loop, 0);
+		}
+		goto end;
+	}
+
+	if (!strncmp(val, "11", 2)) {
+		pr_info("big.LITTLE(switcher enable)\n");
+		switch_operation = 0x11;
+		goto end;
+	}
+
+cmd_err:
+	pr_info("Usage: command > /dev/bL_operator\n"
+		"command : 00 - switch disable\n"
+		"	   01 - LITTLE only\n"
+		"	   10 - big only\n"
+		"	   11 - big.LITTLE\n"
+		"echo 10 > /dev/bL_operator\n");
+end:
+	return len;
+}
+
+static ssize_t bL_operator_read(struct file *file, char __user *buf,
+				size_t len, loff_t *pos)
+{
+	char buff[20];
+	size_t count = 0;
+
+	switch (switch_operation) {
+	case 0x00:
+		count += sprintf(buff, "Disable switcher\n");
+		break;
+	case 0x01:
+		count += sprintf(buff, "LITTLE only\n");
+		break;
+	case 0x10:
+		count += sprintf(buff, "big only\n");
+		break;
+	case 0x11:
+		count += sprintf(buff, "big.LITTLE\n");
+		break;
+	default:
+		count += sprintf(buff, "Not support operation mode\n");
+		break;
+	}
+
+	return simple_read_from_buffer(buf, len, pos, buff, count);
+}
+
+static const struct file_operations bL_operator_fops = {
+	.write		= bL_operator_write,
+	.read		= bL_operator_read,
+	.owner		= THIS_MODULE,
+};
+
+static struct miscdevice bL_operator_device = {
+	BL_OPERATOR_MINOR,
+	"b.L_operator",
+	&bL_operator_fops
+};
+
+#endif
+
 #ifdef CONFIG_ARM_EXYNOS_IKS_CPUFREQ
 static void __init switcher_thread_on_each_cpu(struct work_struct *work)
 {
@@ -532,6 +682,21 @@ int __init bL_switcher_init(const struct bL_power_ops *ops)
 		return ret;
 
 	bL_platform_ops = ops;
+#ifdef CONFIG_BL_SWITCHER_DUMMY_IF
+	err = misc_register(&bL_switcher_device);
+	if (err) {
+		pr_err("Switcher device is not registered "
+			"so user can not execute the manual switch");
+		return err;
+	}
+
+	err = misc_register(&bL_operator_device);
+	if (err) {
+		pr_err("Switcher operation device is not registerd "
+		       "so bL_operation is not accessed\n");
+		return err;
+	}
+#endif
 #ifdef CONFIG_ARM_EXYNOS_IKS_CPUFREQ
 	schedule_on_each_cpu(switcher_thread_on_each_cpu);
 #endif

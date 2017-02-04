@@ -74,7 +74,15 @@ endchoice
 choice
 	prompt "Inkernel Switcher operation mode"
 	depends on ARM_EXYNOS_IKS_CPUFREQ
-	default ARM_EXYNOS_IKS_CLUSTER
+	default ARM_EXYNOS_IKS_CORE
+
+config ARM_EXYNOS_IKS_CORE
+	bool "Inkernel Switcher for Core Switching"
+	help
+	  This adds the CPUFreq driver common part for Samsung
+	  EXYNOS SoCs.
+
+	  If in doubt, say N.
 
 config ARM_EXYNOS_IKS_CLUSTER
 	bool "Inkernel Switcher for Cluster Switching"
@@ -84,13 +92,6 @@ config ARM_EXYNOS_IKS_CLUSTER
 
 	  If in doubt, say N.
 endchoice
-
-config EXYNOS5_DYNAMIC_CPU_HOTPLUG
-	bool "Dynamic CPU Hotplug support"
-	depends on SOC_EXYNOS5410
-	default y
-	help
-	  Enable Dynamic CPU Hotplug
 
 config ARM_EXYNOS4210_CPUFREQ
 	def_bool CPU_EXYNOS4210

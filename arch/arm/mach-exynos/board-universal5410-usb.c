@@ -21,11 +21,19 @@
 #include <linux/usb/android_composite.h>
 #endif
 
+#if defined(CONFIG_MFD_MAX77802)
+#include "board-universal5410.h"
+#endif
+
 #if defined(CONFIG_MFD_MAX77803)
 #include <linux/mfd/max77803-private.h>
 #endif
+#if defined(CONFIG_MFD_MAX77693)
+#include <linux/mfd/max77693-private.h>
+#endif
 
-#if defined(CONFIG_USB_HOST_NOTIFY)
+
+#if defined(CONFIG_USB_HOST_NOTIFY) && !defined(CONFIG_30PIN_CONN)
 #include <linux/host_notify.h>
 #endif
 
@@ -34,6 +42,10 @@ static bool exynos5_usb_vbus_init(struct platform_device *pdev)
 #if defined(CONFIG_MFD_MAX77803)
 	printk(KERN_DEBUG"%s vbus value is (%d) \n",__func__,max77803_muic_read_vbus());
 	if(max77803_muic_read_vbus())return 1;
+	else return 0;
+#elif defined(CONFIG_MFD_MAX77802)
+	printk(KERN_DEBUG"%s current_cable_type (%d) \n",__func__,current_cable_type);
+	if(current_cable_type == POWER_SUPPLY_TYPE_USB)return 1;
 	else return 0;
 #else
 	return 1;
@@ -55,6 +67,17 @@ static int exynos5_usb_get_id_state(struct platform_device *pdev)
 #endif
 }
 
+#if defined(CONFIG_MFD_MAX77802)
+extern void exynos5_usb_set_vbus_state(int state)
+{
+	pr_info("%s: vbus state = %d\n", __func__, state);
+#if defined(CONFIG_USB_EXYNOS5_USB3_DRD_CH0)
+	exynos_drd_switch_vbus_event(&exynos5_device_usb3_drd0, state);
+#else
+	exynos_drd_switch_vbus_event(&exynos5_device_usb3_drd1, state);
+#endif
+}
+#endif
 #ifdef CONFIG_USB_GADGET
 
 /* standard android USB platform data */
@@ -87,7 +110,7 @@ static struct dwc3_exynos_data universal5410_drd_pdata __initdata = {
 	.vbus_irq = -1,
 };
 
-#if defined(CONFIG_USB_HOST_NOTIFY)
+#if defined(CONFIG_USB_HOST_NOTIFY) && !defined(CONFIG_30PIN_CONN)
 void otg_accessory_power(int enable)
 {
 	u8 on = (u8)!!enable;
@@ -250,7 +273,7 @@ static struct platform_device *universal5410_usb_devices[] __initdata = {
 	&s5p_device_ehci,
 	&exynos5_device_usb3_drd0,
 	&exynos5_device_usb3_drd1,
-#if defined(CONFIG_USB_HOST_NOTIFY)
+#if defined(CONFIG_USB_HOST_NOTIFY) && !defined(CONFIG_30PIN_CONN)
 	&host_notifier_device,
 #endif
 #ifdef CONFIG_USB_GADGET

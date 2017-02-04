@@ -16,14 +16,20 @@
 #include <plat/devs.h>
 #include <mach/gpio-exynos.h>
 
+#if defined(CONFIG_MACH_V1)
+extern void vienna_motor_init(void);
+#else
 #include <linux/mfd/max77803.h>
 #include <linux/mfd/max77803-private.h>
+#endif
 
 #define GPD0_0_TOUT		(0x2 << 0)
 
 void __init exynos5_universal5410_vibrator_init(void)
 {
-#if defined(CONFIG_VIBETONZ)
+#if defined(CONFIG_MACH_V1)
+	vienna_motor_init();
+#elif defined(CONFIG_VIBETONZ)
 	int ret;
 	ret = gpio_request(GPIO_VIBTONE_PWM, "GPB");
 	if (ret) {

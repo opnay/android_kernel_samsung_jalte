@@ -101,6 +101,7 @@ void __init exynos5_universal5410_fpga_init(void)
 {
 	printk(KERN_ERR "[%s] initialization start!\n", __func__);
 
+#if !defined(CONFIG_MACH_JA_KOR_LGT)
 	if (system_rev > 5) {
 		printk(KERN_ERR "[%s] SYSTEM REVISION is bigger than 5\n", __func__);
 		printk(KERN_ERR "[%s] Change the Barcode I2C line\n", __func__);
@@ -109,7 +110,23 @@ void __init exynos5_universal5410_fpga_init(void)
 		gpio_i2c_data22.scl_pin = EXYNOS5410_GPH1(4);
 		gpio_i2c_data22.sda_pin = EXYNOS5410_GPH1(5);
 	}
-	
+#else
+	if ((system_rev != 7) && (system_rev > 5)) {
+		printk(KERN_ERR "[%s] SYSTEM REVISION is bigger than 5\n", __func__);
+		printk(KERN_ERR "[%s] Change the Barcode I2C line\n", __func__);
+		if(system_rev == 8){
+			fpga_gpio_table[1][0]	= EXYNOS5410_GPH1(5);
+			fpga_gpio_table[2][0]	= EXYNOS5410_GPH1(6);
+			gpio_i2c_data22.scl_pin = EXYNOS5410_GPH1(5);
+			gpio_i2c_data22.sda_pin = EXYNOS5410_GPH1(6);
+		}else{
+			fpga_gpio_table[1][0]	= EXYNOS5410_GPH1(4);
+			fpga_gpio_table[2][0]	= EXYNOS5410_GPH1(5);
+			gpio_i2c_data22.scl_pin = EXYNOS5410_GPH1(4);
+			gpio_i2c_data22.sda_pin = EXYNOS5410_GPH1(5);
+		}
+	}
+#endif
 	printk(KERN_ERR "[%s] SYSTEM REVISION : %d\n", __func__, system_rev);
 	printk(KERN_ERR "[%s] BARCODE SCL : %d\n", __func__, gpio_i2c_data22.scl_pin);
 	printk(KERN_ERR "[%s] BARCODE SDA : %d\n", __func__, gpio_i2c_data22.sda_pin);

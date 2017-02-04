@@ -37,6 +37,7 @@
 #include <mach/regs-pmu.h>
 #include <mach/smc.h>
 #include <mach/pmu.h>
+#include <mach/debug.h>
 #include <mach/cpufreq.h>
 
 bool cluster_power_down_en = true;
@@ -134,6 +135,10 @@ static int exynos_cluster_power_control(unsigned int cluster, int enable)
 	int ret = 0;
 	unsigned long timeout = jiffies + msecs_to_jiffies(10);
 
+#ifdef CONFIG_EXYNOS5410_DEBUG
+	if (FLAG_T32_EN)
+		return 0;
+#endif
 	if (!cluster_power_down_en)
 		return 0;
 
@@ -719,6 +724,10 @@ static int exynos_cluster_power_control(unsigned int cluster, int enable)
 	int ret = 0;
 	unsigned long timeout = jiffies + msecs_to_jiffies(10);
 
+#ifdef CONFIG_EXYNOS5410_DEBUG
+	if (FLAG_T32_EN)
+		return 0;
+#endif
 	if (!cluster_power_down_en)
 		return 0;
 
@@ -1100,11 +1109,13 @@ static int __cpuinit bL_hotplug_cpu_callback(struct notifier_block *nfb,
 
 	switch (action) {
 	case CPU_ONLINE:
+	case CPU_ONLINE_FROZEN:
 		arch_spin_lock(&exynos_lock);
 		add_core_count(cluster);
 		arch_spin_unlock(&exynos_lock);
 		break;
 	case CPU_DEAD:
+	case CPU_DEAD_FROZEN:
 		arch_spin_lock(&exynos_lock);
 		dec_core_count(cluster);
 		arch_spin_unlock(&exynos_lock);

@@ -497,6 +497,9 @@ static int exynos_target(struct cpufreq_policy *policy,
 	target_freq = max((unsigned int)pm_qos_request(PM_QOS_CPU_FREQ_MIN), target_freq);
 	target_freq = min((unsigned int)pm_qos_request(PM_QOS_CPU_FREQ_MAX), target_freq);
 
+	count = num_online_cpus();
+	target_freq = min(target_freq, exynos_info[cur]->max_op_freqs[count]);
+
 #ifdef CONFIG_ASV_MARGIN_TEST
 	if (set_cpu_freq > 0) {
 		target_freq = set_cpu_freq;
@@ -858,7 +861,7 @@ static struct attribute *iks_attributes[] = {
 
 static struct attribute_group iks_attr_group = {
 	.attrs = iks_attributes,
-	.name = "ikcs-cpufreq",
+	.name = "iks-cpufreq",
 };
 
 /************************** sysfs end ************************/
@@ -1151,7 +1154,7 @@ static int __init exynos_cpufreq_init(void)
 	}
 
 	pm_qos_add_request(&boot_cpu_qos, PM_QOS_CPU_FREQ_MIN, 0);
-	pm_qos_update_request_timeout(&boot_cpu_qos, 1200000, 40000 * 1000);
+	pm_qos_update_request_timeout(&boot_cpu_qos, 800000, 40000 * 1000);
 
 	exynos_cpufreq_init_done = true;
 

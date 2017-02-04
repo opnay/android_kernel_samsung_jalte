@@ -1351,7 +1351,7 @@ crc_retry:
 	memcpy(finfo->shading_ver, &buf[16352], 11);
 	finfo->shading_ver[11] = '\0';
 
-
+#ifndef CONFIG_MACH_V1
 	/*select AF actuator*/
 	if(finfo->header_ver[0] == 'S'){
 		pr_info("AF actuator is WV560\n");
@@ -1360,6 +1360,7 @@ crc_retry:
 		pr_info("AF actuator is AK7345\n");
 		ext->actuator_con.product_name = ACTUATOR_NAME_AK7345;		
 	}
+#endif
 
 	/* debug info dump */
 #if defined(FROM_DEBUG)
@@ -2094,6 +2095,7 @@ int fimc_is_ischain_power(struct fimc_is_device_ischain *this, int on)
 		printk(KERN_INFO "%s(%d) - fimc_is runtime resume complete\n", __func__, on);
 #endif
 
+#ifndef CONFIG_MACH_V1
 		if(!is_caldata_read && 
 				(cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_FRONT)) {
 			is_dumped_fw_loading_needed = false;
@@ -2405,6 +2407,78 @@ fw_dump_exit2:
 				}
 			}
 		}
+#else		
+		if(!is_caldata_read &&
+				(cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_FRONT)) {
+			is_dumped_fw_loading_needed = false;
+			sensor = &core->sensor[0];
+
+			if(cam_id == CAMERA_DUAL_FRONT) {
+				if((ret = f_rom_ldo_enable(dev, "cam_io_1.8v", true)) < 0) {
+					err("f_rom_ldo_enable(true) failed!\n");
+					goto err_f_rom;
+				}
+
+				if((ret = f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_SCLK", true)) < 0) {
+					err("f_rom_gpio_enable(GPIO_CAM_SPI0_SCLK, true) failed!\n");
+					is_ldo_enabled = true;
+					goto err_f_rom;
+				}
+
+				if((ret = f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_SSN", true)) < 0) {
+					err("f_rom_gpio_enable(GPIO_CAM_SPI0_SSN, true) failed!\n");
+					is_ldo_enabled = true;
+					goto err_f_rom;
+				}
+
+				if((ret = f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_MISP", true)) < 0) {
+					err("f_rom_gpio_enable(GPIO_CAM_SPI0_MISP, true) failed!\n");
+					is_ldo_enabled = true;
+					goto err_f_rom;
+				}
+
+				if((ret = f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_MOSI", true)) < 0) {
+					err("f_rom_gpio_enable(GPIO_CAM_SPI0_MOSI, true) failed!\n");
+					is_ldo_enabled = true;
+					goto err_f_rom;
+				}
+
+				is_ldo_enabled = true;
+			}
+			
+			/* reset spi */
+			memset(spi_buf, 0x0, 0x50);
+			ret = fimc_is_spi_reset(spi_buf, 0x0, FIMC_IS_MAX_CAL_SIZE);
+			if (ret < 0) {
+				err("failed to fimc_is_spi_read (%d)\n", ret);
+				ret = -EINVAL;
+				goto err_spi_rst;
+			}
+
+		    pr_info("read cal data from FROM\n");
+		    if((fimc_is_ischain_readcaldata(this, &sensor->enum_sensor[SENSOR_NAME_S5K4E5].ext)!= -EIO) &&
+					CRC32_HEADER_CHECK)
+		        is_caldata_read = true;
+
+			if(!CRC32_HEADER_CHECK){
+				pr_info("Camera : CRC32 error for all section.\n");
+				ret = -EIO;
+				goto err_read_cal;
+			}
+			
+			sysfs_finfo = &this->finfo;
+			sysfs_pinfo = &this->pinfo;
+		}
+
+		if(cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_REAR){
+			snprintf(fw_name, sizeof(fw_name), "%s", FIMC_IS_PL_FW);
+			snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_4E5_SETF);
+		}
+		else if(cam_id == CAMERA_SINGLE_FRONT || cam_id == CAMERA_DUAL_FRONT){
+			snprintf(fw_name, sizeof(fw_name), "%s", FIMC_IS_PL_FW);
+			snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_6B2_SETF);
+		}
+#endif		
 
 		/* 3. Load IS firmware */
 		ret = fimc_is_ischain_loadfirm(this);
@@ -2494,7 +2568,11 @@ fw_dump_exit2:
 	}
 
 	if(is_ldo_enabled) {
+#ifndef CONFIG_MACH_V1
 		f_rom_ldo_enable(dev, "cam_isp_sensor_io_1.8v", false);
+#else
+		f_rom_ldo_enable(dev, "cam_io_1.8v", false);
+#endif
 		f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_SCLK", false);
 		f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_SSN", false);
 		f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_MISP", false);
@@ -2511,7 +2589,12 @@ err_read_cal:
 err_spi_rst:
 err_f_rom:
 	if(is_ldo_enabled) {
+#ifndef CONFIG_MACH_V1
 		f_rom_ldo_enable(dev, "cam_isp_sensor_io_1.8v", false);
+#else
+		f_rom_ldo_enable(dev, "cam_io_1.8v", false);
+#endif
+
 		f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_SCLK", false);
 		f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_SSN", false);
 		f_rom_gpio_enable(this->pdata, "GPIO_CAM_SPI0_MISP", false);
@@ -3369,10 +3452,31 @@ static int fimc_is_itf_grp_shot(struct fimc_is_device_ischain *device,
 
 #ifdef ENABLE_DVFS
 	mutex_lock(&core->clock.lock);
-	if (30 < device->sensor->framerate) {
+#ifdef CONFIG_MACH_V1
+	if (device->sensor->framerate == 120) {
 		core->clock.dvfs_skipcnt = DVFS_SKIP_FRAME_NUM;
 		fimc_is_set_dvfs(core, device, group->id, DVFS_L0, I2C_L0);
-	} else if (atomic_read(&core->video_isp.refcount) >= 3) {
+	} else if (device->sensor->framerate == 30) {
+		if (core->clock.dvfs_skipcnt > 0)
+			core->clock.dvfs_skipcnt--;
+	}
+
+	/* update dvfs */
+	if (!core->clock.dvfs_skipcnt) {
+		if (!pm_qos_request_active(&device->user_qos)) {
+			if ((2560 < device->chain0_width) ||
+			     device->sensor->framerate == 120 ||
+			     test_bit(FIMC_IS_ISDEV_DSTART, &device->dis.state))
+				fimc_is_set_dvfs(core, device, group->id, DVFS_L0, I2C_L0);
+			else
+				fimc_is_set_dvfs(core, device, group->id, DVFS_L1, I2C_L1);
+		}
+	}
+#else
+        if (30 < device->sensor->framerate) {
+                core->clock.dvfs_skipcnt = DVFS_SKIP_FRAME_NUM;
+                fimc_is_set_dvfs(core, device, group->id, DVFS_L0, I2C_L0);
+        } else if (atomic_read(&core->video_isp.refcount) >= 3) {
 		if (device->sensor_width > 2560) {
 			core->clock.dvfs_skipcnt = 1000;
 			fimc_is_set_dvfs(core, device, group->id, \
@@ -3380,15 +3484,15 @@ static int fimc_is_itf_grp_shot(struct fimc_is_device_ischain *device,
 		} else if (core->clock.dvfs_skipcnt > 0) {
 			core->clock.dvfs_skipcnt--;
 		}
-	} else if (device->module == SENSOR_NAME_IMX135 &&
+        } else if (device->module == SENSOR_NAME_IMX135 &&
 		test_bit(FIMC_IS_ISCHAIN_REPROCESSING, \
 		&device->state)) {
-			core->clock.dvfs_skipcnt = DVFS_SKIP_FRAME_NUM;
-			fimc_is_set_dvfs(core, device, group->id, DVFS_L0, I2C_L0);
-    } else {
-		if (core->clock.dvfs_skipcnt > 0)
-			core->clock.dvfs_skipcnt--;
-    }
+                core->clock.dvfs_skipcnt = DVFS_SKIP_FRAME_NUM;
+                fimc_is_set_dvfs(core, device, group->id, DVFS_L0, I2C_L0);
+        } else {
+                if (core->clock.dvfs_skipcnt > 0)
+                        core->clock.dvfs_skipcnt--;
+        }
 
         /* update dvfs */
 	if (!core->clock.dvfs_skipcnt) {
@@ -3447,6 +3551,7 @@ static int fimc_is_itf_grp_shot(struct fimc_is_device_ischain *device,
 			}
 		}
 	}
+#endif
 	mutex_unlock(&core->clock.lock);
 #endif
 
@@ -3694,6 +3799,16 @@ int fimc_is_ischain_open(struct fimc_is_device_ischain *device,
 	else if(buf[0] == '3')
 		cam_id = CAMERA_DUAL_FRONT;
 
+#ifdef CONFIG_MACH_V1
+	if(cam_id == CAMERA_SINGLE_REAR || cam_id == CAMERA_DUAL_REAR){
+		snprintf(fw_name, sizeof(fw_name), "%s", FIMC_IS_PL_FW);
+		snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_4E5_SETF);
+	}
+	else if(cam_id == CAMERA_SINGLE_FRONT || cam_id == CAMERA_DUAL_FRONT){
+		snprintf(fw_name, sizeof(fw_name), "%s", FIMC_IS_PL_FW);
+		snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_6B2_SETF);
+	}
+#else
 	if(cam_id == CAMERA_SINGLE_FRONT){
 		snprintf(fw_name, sizeof(fw_name), "%s", FIMC_IS_GUMI_FW);
 		snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_6B2_SETF);
@@ -3731,6 +3846,7 @@ int fimc_is_ischain_open(struct fimc_is_device_ischain *device,
 				snprintf(setf_name, sizeof(setf_name), "%s", FIMC_IS_IMX135_GUMI_SETF);
 		}
 	}
+#endif
 
 	/* for mediaserver force close */
 	core = (struct fimc_is_core *)device->interface->core;

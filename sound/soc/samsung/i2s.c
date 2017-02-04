@@ -745,6 +745,10 @@ static void audss_reg_save(struct i2s_dai *i2s)
 		i2s->suspend_audss_clkdiv = 0xf13;
 	}
 #endif
+	pr_info("CLKDIV : 0x%08x, CLKGATE : 0x%08x, CLKSRC : 0x%08x\n",
+			readl(i2s->audss_base + EXYNOS_CLKDIV_AUDSS_OFFSET),
+			readl(i2s->audss_base + EXYNOS_CLKGATE_AUDSS_OFFSET),
+			readl(i2s->audss_base + EXYNOS_CLKSRC_AUDSS_OFFSET));
 
 	pr_info("Registers of Audio Subsystem are saved\n");
 
@@ -772,6 +776,12 @@ static void audss_reg_restore(struct i2s_dai *i2s)
 		writel(0x01, i2s->audss_base + EXYNOS_CLKSRC_AUDSS_OFFSET);
 	}
 #endif
+	pr_info("CLKDIV : 0x%08x, CLKGATE : 0x%08x, CLKSRC : 0x%08x\n",
+			readl(i2s->audss_base + EXYNOS_CLKDIV_AUDSS_OFFSET),
+			readl(i2s->audss_base + EXYNOS_CLKGATE_AUDSS_OFFSET),
+			readl(i2s->audss_base + EXYNOS_CLKSRC_AUDSS_OFFSET));
+
+	pr_info("Registers of Audio Subsystem are restore\n");
 	return;
 }
 

@@ -43,14 +43,21 @@
 #include <plat/clock.h>
 
 #include <mach/map.h>
+#ifdef CONFIG_FB_MIPI_DSIM_DBG
+#include <mach/regs-clock.h>
+#include <mach/regs-pmu.h>
+#endif
 
 #include "s5p_mipi_dsi_lowlevel.h"
 #include "s5p_mipi_dsi.h"
 
-
 static DEFINE_MUTEX(dsim_rd_wr_mutex);
 static DECLARE_COMPLETION(dsim_wr_comp);
 static DECLARE_COMPLETION(dsim_rd_comp);
+#ifdef CONFIG_FB_MIPI_DSIM_DBG
+extern void print_reg_pm_disp_5410(void);
+static void s5p_mipi_dsi_d_phy_onoff(struct mipi_dsim_device *dsim, unsigned int enable);
+#endif
 
 #define MIPI_WR_TIMEOUT msecs_to_jiffies(35)
 #define MIPI_RD_TIMEOUT msecs_to_jiffies(35)
@@ -73,10 +80,47 @@ static int s5p_mipi_clk_state(struct clk *clk)
 	return clk->usage;
 }
 
+#ifdef CONFIG_FB_MIPI_DSIM_DBG
+static int s5p_mipi_d_phy_state(struct mipi_dsim_device *dsim)
+{
+	unsigned int reg;
+#ifdef CONFIG_S5P_DEV_MIPI_DSIM0
+	reg = readl(S5P_MIPI_DPHY_CONTROL(0));
+#else
+	reg = readl(S5P_MIPI_DPHY_CONTROL(1));
+#endif
+	reg &= 0x5 << 0;
+
+	if (reg != 0x5) {
+		dev_info(dsim->dev, "MIPI D_DPY value = 0x%x\n", reg);
+		return false;
+	}
+	return true;
+}
+
+static int s5p_mipi_dsi_debuging_info(struct mipi_dsim_device *dsim)
+{
+
+	if (++dsim->timeout_cnt < 5) return 0;
+
+	dev_err(dsim->dev, "__DUMP MIPI-DSIM SFR (Start)\n");
+	print_hex_dump(KERN_ERR, "", DUMP_PREFIX_ADDRESS, 32, 4,
+			dsim->reg_base, 0x0070, false);
+	dev_err(dsim->dev, "__DUMP MIPI-DSIM SFR (End)\n");
+	print_reg_pm_disp_5410();
+
+	dsim->timeout_cnt = 0;
+	return 0;
+}
+#endif
+
 static int s5p_mipi_en_state(struct mipi_dsim_device *dsim)
 {
 	int ret = (!pm_runtime_suspended(dsim->dev) && s5p_mipi_clk_state(dsim->clock));
 
+#ifdef CONFIG_FB_MIPI_DSIM_DBG
+	ret = ret && s5p_mipi_d_phy_state(dsim);
+#endif
 	return ret;
 }
 
@@ -86,6 +130,9 @@ static int s5p_mipi_force_enable(struct mipi_dsim_device *dsim)
 		pm_runtime_get_sync(dsim->dev);
 	if (!s5p_mipi_clk_state(dsim->clock))
 		clk_enable(dsim->clock);
+#ifdef CONFIG_FB_MIPI_DSIM_DBG
+	s5p_mipi_dsi_d_phy_onoff(dsim, 1);
+#endif
 	return 0;
 }
 
@@ -121,6 +168,7 @@ int s5p_mipi_dsi_wr_data(struct mipi_dsim_device *dsim,
 	unsigned char tempbuf[2] = {0, };
 	int remind, temp;
 	unsigned int payload;
+    int ret = len;
 
 	if (dsim->enabled == false) {
 		dev_dbg(dsim->dev, "MIPI DSIM is disabled.\n");
@@ -221,9 +269,16 @@ int s5p_mipi_dsi_wr_data(struct mipi_dsim_device *dsim,
 		if (!wait_for_completion_interruptible_timeout(&dsim_wr_comp,
 			MIPI_WR_TIMEOUT)) {
 				dev_err(dsim->dev, "MIPI DSIM write Timeout!\n");
+				#ifdef CONFIG_FB_MIPI_DSIM_DBG
+				s5p_mipi_dsi_debuging_info(dsim);
+				#endif
 				mutex_unlock(&dsim_rd_wr_mutex);
-				return -ETIMEDOUT;
+				ret = -ETIMEDOUT;
+                goto exit;
 		}
+		#ifdef CONFIG_FB_MIPI_DSIM_DBG
+		dsim->timeout_cnt = 0;
+		#endif
 		break;
 	}
 
@@ -237,12 +292,19 @@ int s5p_mipi_dsi_wr_data(struct mipi_dsim_device *dsim,
 		dev_warn(dsim->dev,
 			"data id %x is not supported current DSI spec.\n", cmd);
 
-		mutex_unlock(&dsim_rd_wr_mutex);
-		return -EINVAL;
+		ret -EINVAL;
+        goto exit;
 	}
-
+exit:
+    if (dsim->enabled && (ret == -ETIMEDOUT)) {
+        dev_info(dsim->dev, "0x%08X, 0x%08X, 0x%08X\n",
+                readl(dsim->reg_base + S5P_DSIM_STATUS),
+                readl(dsim->reg_base + S5P_DSIM_INTSRC),
+                readl(dsim->reg_base + S5P_DSIM_FIFOCTRL));
+        s5p_mipi_dsi_init_fifo_pointer(dsim, DSIM_INIT_SFR);
+    }
 	mutex_unlock(&dsim_rd_wr_mutex);
-	return len;
+	return ret;
 }
 
 static void s5p_mipi_dsi_rx_err_handler(struct mipi_dsim_device *dsim,

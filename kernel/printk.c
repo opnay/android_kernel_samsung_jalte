@@ -224,7 +224,6 @@ void __init setup_log_buf(int early)
 			new_log_buf_len);
 		return;
 	}
-
 	raw_spin_lock_irqsave(&logbuf_lock, flags);
 	log_buf_len = new_log_buf_len;
 	log_buf = new_log_buf;
@@ -968,6 +967,7 @@ asmlinkage int vprintk(const char *fmt, va_list args)
 	}
 
 	lockdep_off();
+
 	raw_spin_lock(&logbuf_lock);
 	printk_cpu = this_cpu;
 
@@ -1089,7 +1089,7 @@ asmlinkage int vprintk(const char *fmt, va_list args)
 	 * Try to acquire and then immediately release the
 	 * console semaphore. The release will do all the
 	 * actual magic (print out buffers, wake up klogd,
-	 * etc). 
+	 * etc).
 	 *
 	 * The console_trylock_for_printk() function
 	 * will release 'logbuf_lock' regardless of whether it

@@ -59,6 +59,7 @@ struct gic_chip_data {
 	u32 saved_spi_target[DIV_ROUND_UP(1020, 4)];
 	u32 __percpu *saved_ppi_enable;
 	u32 __percpu *saved_ppi_conf;
+	u32 __percpu *saved_sgi_pending;
 #endif
 	struct irq_domain *domain;
 	unsigned int gic_irqs;
@@ -74,8 +75,7 @@ static DEFINE_RAW_SPINLOCK(irq_controller_lock);
  * the logical CPU numbering.  Let's use a mapping as returned
  * by the GIC itself.
  */
-#define NR_GIC_CPU_IF 8
-static u8 gic_cpu_map[NR_GIC_CPU_IF] __read_mostly;
+static u8 gic_cpu_map[8] __read_mostly;
 
 /*
  * Supported arch specific GIC irq extension.
@@ -92,6 +92,10 @@ struct irq_chip gic_arch_extn = {
 
 #ifndef MAX_GIC_NR
 #define MAX_GIC_NR	1
+#endif
+
+#if defined(CONFIG_BL_SWITCHER)
+DEFINE_PER_CPU(bool, is_switching);
 #endif
 
 static struct gic_chip_data gic_data[MAX_GIC_NR] __read_mostly;
@@ -246,7 +250,7 @@ static int gic_set_affinity(struct irq_data *d, const struct cpumask *mask_val,
 	unsigned int cpu = cpumask_any_and(mask_val, cpu_online_mask);
 	u32 val, mask, bit;
 
-	if (cpu >= NR_GIC_CPU_IF || cpu >= nr_cpu_ids)
+	if (cpu >= 8 || cpu >= nr_cpu_ids)
 		return -EINVAL;
 
 	raw_spin_lock(&irq_controller_lock);
@@ -398,7 +402,7 @@ static void __cpuinit gic_cpu_init(struct gic_chip_data *gic)
 	/*
 	 * Get what the GIC says our CPU mask is.
 	 */
-	BUG_ON(cpu >= NR_GIC_CPU_IF);
+	BUG_ON(cpu >= 8);
 	cpu_mask = readl_relaxed(dist_base + GIC_DIST_TARGET + 0);
 	gic_cpu_map[cpu] = cpu_mask;
 
@@ -406,7 +410,7 @@ static void __cpuinit gic_cpu_init(struct gic_chip_data *gic)
 	 * Clear our mask from the other map entries in case they're
 	 * still undefined.
 	 */
-	for (i = 0; i < NR_GIC_CPU_IF; i++)
+	for (i = 0; i < 8; i++)
 		if (i != cpu)
 			gic_cpu_map[i] &= ~cpu_mask;
 
@@ -425,6 +429,10 @@ static void __cpuinit gic_cpu_init(struct gic_chip_data *gic)
 
 	writel_relaxed(0xf0, base + GIC_CPU_PRIMASK);
 	writel_relaxed(1, base + GIC_CPU_CTRL);
+#if defined(CONFIG_BL_SWITCHER)
+	per_cpu(is_switching, cpu) = false;
+#endif
+
 }
 
 #ifdef CONFIG_CPU_PM
@@ -522,13 +530,24 @@ static void gic_cpu_save(unsigned int gic_nr)
 		return;
 
 	ptr = __this_cpu_ptr(gic_data[gic_nr].saved_ppi_enable);
-	for (i = 0; i < DIV_ROUND_UP(32, 32); i++)
+	for (i = 0; i < DIV_ROUND_UP(32, 32); i++) {
 		ptr[i] = readl_relaxed(dist_base + GIC_DIST_ENABLE_SET + i * 4);
+		writel_relaxed(ptr[i], dist_base + GIC_DIST_ENABLE_CLEAR + i * 4);
+	}
 
 	ptr = __this_cpu_ptr(gic_data[gic_nr].saved_ppi_conf);
 	for (i = 0; i < DIV_ROUND_UP(32, 16); i++)
 		ptr[i] = readl_relaxed(dist_base + GIC_DIST_CONFIG + i * 4);
 
+#if defined(CONFIG_BL_SWITCHER)
+	if (per_cpu(is_switching, smp_processor_id()) == true) {
+		ptr = __this_cpu_ptr(gic_data[gic_nr].saved_sgi_pending);
+		for (i = 0; i < DIV_ROUND_UP(16, 4); i++) {
+			ptr[i] = readl_relaxed(dist_base + GIC_DIST_SGI_PENDING_SET + i * 4);
+			writel_relaxed(ptr[i], dist_base + GIC_DIST_SGI_PENDING_CLEAR + i * 4);
+		}
+	}
+#endif
 }
 
 static void gic_cpu_restore(unsigned int gic_nr)
@@ -558,6 +577,14 @@ static void gic_cpu_restore(unsigned int gic_nr)
 	for (i = 0; i < DIV_ROUND_UP(32, 4); i++)
 		writel_relaxed(0xa0a0a0a0, dist_base + GIC_DIST_PRI + i * 4);
 
+#if defined(CONFIG_BL_SWITCHER)
+	if (per_cpu(is_switching, smp_processor_id()) == true) {
+		ptr = __this_cpu_ptr(gic_data[gic_nr].saved_sgi_pending);
+		for (i = 0; i < DIV_ROUND_UP(16, 4); i++)
+			writel_relaxed(ptr[i], dist_base + GIC_DIST_SGI_PENDING_SET + i * 4);
+		per_cpu(is_switching, smp_processor_id()) = false;
+	}
+#endif
 	writel_relaxed(0xf0, cpu_base + GIC_CPU_PRIMASK);
 	writel_relaxed(1, cpu_base + GIC_CPU_CTRL);
 }
@@ -606,6 +633,10 @@ static void __init gic_pm_init(struct gic_chip_data *gic)
 	gic->saved_ppi_conf = __alloc_percpu(DIV_ROUND_UP(32, 16) * 4,
 		sizeof(u32));
 	BUG_ON(!gic->saved_ppi_conf);
+
+	gic->saved_sgi_pending = __alloc_percpu(DIV_ROUND_UP(16, 4) * 4,
+		sizeof(u32));
+	BUG_ON(!gic->saved_sgi_pending);
 
 	if (gic == &gic_data[0])
 		cpu_pm_register_notifier(&gic_notifier_block);
@@ -705,7 +736,7 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	 * Initialize the CPU interface map to all CPUs.
 	 * It will be refined as each CPU probes its ID.
 	 */
-	for (i = 0; i < NR_GIC_CPU_IF; i++)
+	for (i = 0; i < 8; i++)
 		gic_cpu_map[i] = 0xff;
 
 	/*
@@ -759,7 +790,7 @@ void __cpuinit gic_secondary_init(unsigned int gic_nr)
 void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 {
 	int cpu;
-	unsigned long flags, map = 0;
+	unsigned long map = 0, flags;
 
 	raw_spin_lock_irqsave(&irq_controller_lock, flags);
 
@@ -812,6 +843,8 @@ void gic_migrate_target(unsigned int new_cpu_id)
 
 	raw_spin_lock(&irq_controller_lock);
 
+	per_cpu(is_switching, cpu) = true;
+
 	gic_cpu_map[cpu] = 1 << new_cpu_id;
 
 	for (i = 8; i < DIV_ROUND_UP(gic_irqs, 4); i++) {
@@ -825,30 +858,6 @@ void gic_migrate_target(unsigned int new_cpu_id)
 	}
 
 	raw_spin_unlock(&irq_controller_lock);
-
-	/*
-	 * Now let's migrate and clear any potential SGIs that might be
-	 * pending for us (old_cpu_id).  Since GIC_DIST_SGI_PENDING_SET
-	 * is a banked register, we can only forward the SGI using
-	 * GIC_DIST_SOFTINT.  The original SGI source is lost but Linux
-	 * doesn't use that information anyway.
-	 *
-	 * For the same reason we do not adjust SGI source information
-	 * for previously sent SGIs by us to other CPUs either.
-	 */
-	for (i = 0; i < 16; i += 4) {
-		int j;
-		val = readl_relaxed(dist_base + GIC_DIST_SGI_PENDING_SET + i);
-		if (!val)
-			continue;
-		writel_relaxed(val, dist_base + GIC_DIST_SGI_PENDING_CLEAR + i);
-		for (j = i; j < i + 4; j++) {
-			if (val & 0xff)
-				writel_relaxed((1 << (new_cpu_id + 16)) | j,
-						dist_base + GIC_DIST_SOFTINT);
-			val >>= 8;
-		}
-	}
 }
 #endif
 

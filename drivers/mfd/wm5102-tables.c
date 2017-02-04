@@ -87,11 +87,9 @@ int wm5102_patch(struct arizona *arizona)
 	case 0:
 		wm5102_patch = wm5102_reva_patch;
 		patch_size = ARRAY_SIZE(wm5102_reva_patch);
-		break;
 	default:
 		wm5102_patch = wm5102_revb_patch;
 		patch_size = ARRAY_SIZE(wm5102_revb_patch);
-		break;
 	}
 
 	regcache_cache_bypass(arizona->regmap, true);
@@ -391,7 +389,7 @@ static const struct reg_default wm5102_reg_default[] = {
 	{ 0x00000400, 0x0000 },   /* R1024  - Output Enables 1 */ 
 	{ 0x00000408, 0x0000 },   /* R1032  - Output Rate 1 */ 
 	{ 0x00000409, 0x0022 },   /* R1033  - Output Volume Ramp */ 
-	{ 0x00000410, 0x6080 },   /* R1040  - Output Path Config 1L */
+	{ 0x00000410, 0x4080 },   /* R1040  - Output Path Config 1L */
 	{ 0x00000411, 0x0180 },   /* R1041  - DAC Digital Volume 1L */ 
 	{ 0x00000412, 0x0081 },   /* R1042  - DAC Volume Limit 1L */
 	{ 0x00000413, 0x0001 },   /* R1043  - Noise Gate Select 1L */ 
@@ -399,7 +397,7 @@ static const struct reg_default wm5102_reg_default[] = {
 	{ 0x00000415, 0x0180 },   /* R1045  - DAC Digital Volume 1R */ 
 	{ 0x00000416, 0x0081 },   /* R1046  - DAC Volume Limit 1R */
 	{ 0x00000417, 0x0002 },   /* R1047  - Noise Gate Select 1R */ 
-	{ 0x00000418, 0xA080 },   /* R1048  - Output Path Config 2L */
+	{ 0x00000418, 0x4080 },   /* R1048  - Output Path Config 2L */
 	{ 0x00000419, 0x0180 },   /* R1049  - DAC Digital Volume 2L */ 
 	{ 0x0000041A, 0x0081 },   /* R1050  - DAC Volume Limit 2L */
 	{ 0x0000041B, 0x0004 },   /* R1051  - Noise Gate Select 2L */ 
@@ -407,11 +405,11 @@ static const struct reg_default wm5102_reg_default[] = {
 	{ 0x0000041D, 0x0180 },   /* R1053  - DAC Digital Volume 2R */ 
 	{ 0x0000041E, 0x0081 },   /* R1054  - DAC Volume Limit 2R */
 	{ 0x0000041F, 0x0008 },   /* R1055  - Noise Gate Select 2R */ 
-	{ 0x00000420, 0xA080 },   /* R1056  - Output Path Config 3L */
+	{ 0x00000420, 0x4080 },   /* R1056  - Output Path Config 3L */
 	{ 0x00000421, 0x0180 },   /* R1057  - DAC Digital Volume 3L */ 
 	{ 0x00000422, 0x0081 },   /* R1058  - DAC Volume Limit 3L */
 	{ 0x00000423, 0x0010 },   /* R1059  - Noise Gate Select 3L */ 
-	{ 0x00000428, 0xE000 },   /* R1064  - Output Path Config 4L */
+	{ 0x00000428, 0xC000 },   /* R1064  - Output Path Config 4L */
 	{ 0x00000429, 0x0180 },   /* R1065  - DAC Digital Volume 4L */ 
 	{ 0x0000042A, 0x0081 },   /* R1066  - Out Volume 4L */
 	{ 0x0000042B, 0x0040 },   /* R1067  - Noise Gate Select 4L */ 
@@ -429,7 +427,7 @@ static const struct reg_default wm5102_reg_default[] = {
 	{ 0x00000442, 0x3F0A },   /* R1090  - DRE Control 2 */
 	{ 0x00000443, 0xDC1F },   /* R1090  - DRE Control 3 */
 	{ 0x00000450, 0x0000 },   /* R1104  - DAC AEC Control 1 */ 
-	{ 0x00000458, 0x000B },   /* R1112  - Noise Gate Control */ 
+	{ 0x00000458, 0x0001 },   /* R1112  - Noise Gate Control */ 
 	{ 0x00000490, 0x0069 },   /* R1168  - PDM SPK1 CTRL 1 */ 
 	{ 0x00000491, 0x0000 },   /* R1169  - PDM SPK1 CTRL 2 */ 
 	{ 0x00000500, 0x000C },   /* R1280  - AIF1 BCLK Ctrl */ 
@@ -1858,6 +1856,7 @@ static bool wm5102_readable_register(struct device *dev, unsigned int reg)
 	case ARIZONA_DSP1_SCRATCH_3:
 		return true;
 	default:
+		return false;
 		if ((reg >= 0x100000 && reg < 0x106000) ||
 		    (reg >= 0x180000 && reg < 0x180800) ||
 		    (reg >= 0x190000 && reg < 0x194800) ||

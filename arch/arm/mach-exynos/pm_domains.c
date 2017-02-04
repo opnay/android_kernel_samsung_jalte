@@ -124,7 +124,7 @@ static unsigned int exynos_pd_gscl_clock_control(bool on)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"  /* gscl0, gscl1 */
-static void exynos_gscl_ctrl_save(unsigned int *gscl0, unsigned int *gscl1, bool on)
+static noinline void exynos_gscl_ctrl_save(unsigned int *gscl0, unsigned int *gscl1, bool on)
 {
 	unsigned int tmp;
 
@@ -166,12 +166,14 @@ static int exynos_pd_power(struct generic_pm_domain *domain, bool power_on)
 	}
 
 	/* Enable all the clocks of IPs in power domain */
-	/* pr_info("%s is %s\n", domain->name, power_on ? "on" : "off"); */
+	pr_debug("%s is %s\n", domain->name, power_on ? "on" : "off");
 	list_for_each_entry(pclk, &pd->list, node) {
 		if (clk_enable(pclk->clk)) {
-			pr_info("failed to enable clk %s\n", pclk->clk->name);
+			pr_err("failed to enable clk %s\n", pclk->clk->name);
 			ret = -EINVAL;
 			goto unwind;
+		} else {
+			pr_debug("%s is enabled\n", pclk->clk->name);
 		}
 	}
 
@@ -179,9 +181,11 @@ static int exynos_pd_power(struct generic_pm_domain *domain, bool power_on)
 		spd = container_of(link->slave, struct exynos_pm_domain, pd);
 		list_for_each_entry(spclk, &spd->list, node) {
 			if (clk_enable(spclk->clk)) {
-				pr_info("failed to enable clk %s\n", spclk->clk->name);
+				pr_err("failed to enable clk %s\n", spclk->clk->name);
 				ret = -EINVAL;
 				goto s_unwind;
+			} else {
+				pr_debug("%s is enabled\n", spclk->clk->name);
 			}
 		}
 	}

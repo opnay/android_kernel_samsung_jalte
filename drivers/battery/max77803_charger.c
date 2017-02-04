@@ -427,6 +427,7 @@ static void max77803_recovery_work(struct work_struct *work)
 		(chgin_dtls == 0x3) && (chg_dtls != 0x8) && (byp_dtls == 0x0))) {
 		pr_info("%s: try to recovery, cnt(%d)\n", __func__,
 				(charger->soft_reg_recovery_cnt + 1));
+
 		if (charger->siop_level < 100 &&
 			charger->cable_type == POWER_SUPPLY_TYPE_MAINS) {
 			pr_info("%s : LCD on status and revocer current\n", __func__);
@@ -436,7 +437,6 @@ static void max77803_recovery_work(struct work_struct *work)
 			max77803_set_input_current(charger,
 				charger->charging_current_max);
 		}
-
 	} else {
 		pr_info("%s: fail to recovery, cnt(%d)\n", __func__,
 				(charger->soft_reg_recovery_cnt + 1));
@@ -800,6 +800,7 @@ static int sec_chg_set_property(struct power_supply *psy,
 		POWER_SUPPLY_TYPE_USB].fast_charging_current;
 	const int wpc_charging_current = charger->pdata->charging_current[
 		POWER_SUPPLY_TYPE_WPC].input_current_limit;
+	u8 chg_cnfg_00;
 
 	/* check and unlock */
 	check_charger_unlock_state(charger);
@@ -810,6 +811,25 @@ static int sec_chg_set_property(struct power_supply *psy,
 		break;
 	/* val->intval : type */
 	case POWER_SUPPLY_PROP_ONLINE:
+		if (val->intval == POWER_SUPPLY_TYPE_POWER_SHARING) {
+			psy_do_property("ps", get,
+				POWER_SUPPLY_PROP_STATUS, value);
+			chg_cnfg_00 = CHG_CNFG_00_OTG_MASK
+				| CHG_CNFG_00_BOOST_MASK
+				| CHG_CNFG_00_DIS_MUIC_CTRL_MASK;
+
+			if (value.intval) {
+				max77803_update_reg(charger->max77803->i2c, MAX77803_CHG_REG_CHG_CNFG_00,
+					chg_cnfg_00, chg_cnfg_00);
+				pr_info("%s: ps enable\n", __func__);
+			} else {
+				max77803_update_reg(charger->max77803->i2c, MAX77803_CHG_REG_CHG_CNFG_00,
+					0, chg_cnfg_00);
+				pr_info("%s: ps disable\n", __func__);
+			}
+			break;
+		}
+
 		charger->cable_type = val->intval;
 		psy_do_property("battery", get,
 				POWER_SUPPLY_PROP_HEALTH, value);
@@ -850,6 +870,21 @@ static int sec_chg_set_property(struct power_supply *psy,
 				set_charging_current_max = SIOP_INPUT_LIMIT_CURRENT;
 				if (set_charging_current > SIOP_CHARGING_LIMIT_CURRENT)
 					set_charging_current = SIOP_CHARGING_LIMIT_CURRENT;
+			}
+
+			if (charger->cable_type ==
+				POWER_SUPPLY_TYPE_UARTOFF) {
+				u8 reg_data;
+
+				max77803_read_reg(charger->max77803->muic,
+					MAX77803_MUIC_REG_CDETCTRL2,
+					&reg_data);
+				reg_data |= (0x01 << 0);
+				max77803_write_reg(charger->max77803->muic,
+					MAX77803_MUIC_REG_CDETCTRL2,
+					reg_data);
+
+				pr_info("ForceCharging for UARTOFF_VB\n");
 			}
 		}
 		max77803_set_charger_state(charger, charger->is_charging);
@@ -910,6 +945,7 @@ static int sec_chg_set_property(struct power_supply *psy,
 			}
 
 			max77803_set_charge_current(charger, current_now);
+
 		}
 		break;
 	case POWER_SUPPLY_PROP_POWER_NOW:
@@ -1295,7 +1331,6 @@ static void max77803_chgin_init_work(struct work_struct *work)
 	}
 }
 
-
 static __devinit int max77803_charger_probe(struct platform_device *pdev)
 {
 	struct max77803_dev *iodev = dev_get_drvdata(pdev->dev.parent);
@@ -1415,6 +1450,7 @@ static __devinit int max77803_charger_probe(struct platform_device *pdev)
 	if (ret < 0)
 		pr_err("%s: fail to request bypass IRQ: %d: %d\n",
 				__func__, charger->irq_bypass, ret);
+
 	return 0;
 err_wc_irq:
 	free_irq(charger->pdata->chg_irq, NULL);

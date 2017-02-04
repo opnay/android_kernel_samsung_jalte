@@ -5,7 +5,7 @@
  *
  *  proc base directory handling functions
  *
- *  1999, Al Viro. Rewritten. Now it covers the whole per-process part.
+ *  1999, Al Viro. Rewritten. Now it coversoom_adjust_permission the whole per-process part.
  *  Instead of using magical inumbers to determine the kind of object
  *  we allocate and fill in-core inodes upon lookup. They don't even
  *  go into icache. We cache the reference to task_struct upon lookup too.

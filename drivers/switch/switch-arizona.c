@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
+#define DEBUG
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/i2c.h>
@@ -68,7 +68,6 @@ struct arizona_extcon_info {
 	bool micd_clamp;
 	unsigned int spk_clamp;
 
-	struct delayed_work probe_work;
 	struct delayed_work hpdet_work;
 	struct delayed_work micd_detect_work;
 	struct delayed_work micd_timeout_work;
@@ -119,7 +118,6 @@ enum headset_state {
 	BIT_HEADSET_NO_MIC = (1 << 1),
 };
 
-static void arizona_probe_work(struct work_struct *work);
 static void arizona_start_hpdet_acc_id(struct arizona_extcon_info *info);
 
 static void arizona_extcon_do_magic(struct arizona_extcon_info *info,
@@ -1029,32 +1027,38 @@ static void arizona_micd_set_level(struct arizona *arizona, int index,
 	regmap_update_bits(arizona->regmap, reg, mask, level);
 }
 
+/* To support PBA function test */
+#include "../../sound/soc/samsung/jack_wm5102.c"
+
 static int arizona_extcon_probe(struct platform_device *pdev)
 {
 	struct arizona *arizona = dev_get_drvdata(pdev->dev.parent);
 	struct arizona_pdata *pdata;
 	struct arizona_extcon_info *info;
+	unsigned int val;
+	int jack_irq_fall, jack_irq_rise;
+	int ret, mode, i, j;
 
 	pdata = dev_get_platdata(arizona->dev);
 
 	info = devm_kzalloc(&pdev->dev, sizeof(*info), GFP_KERNEL);
 	if (!info) {
 		dev_err(&pdev->dev, "Failed to allocate memory\n");
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto err;
 	}
 
 	info->micvdd = devm_regulator_get(arizona->dev, "MICVDD");
 	if (IS_ERR(info->micvdd)) {
-		dev_err(arizona->dev, "Failed to get MICVDD: %ld\n",
-			PTR_ERR(info->micvdd));
-		return PTR_ERR(info->micvdd);
+		ret = PTR_ERR(info->micvdd);
+		dev_err(arizona->dev, "Failed to get MICVDD: %d\n", ret);
+		goto err;
 	}
 
 	mutex_init(&info->lock);
 	info->arizona = arizona;
 	info->dev = &pdev->dev;
 	info->last_jackdet = ~(ARIZONA_MICD_CLAMP_STS | ARIZONA_JD1_STS);
-	INIT_DELAYED_WORK(&info->probe_work, arizona_probe_work);
 	INIT_DELAYED_WORK(&info->hpdet_work, arizona_hpdet_work);
 	INIT_DELAYED_WORK(&info->micd_detect_work, arizona_micd_detect);
 	INIT_DELAYED_WORK(&info->micd_timeout_work, arizona_micd_timeout_work);
@@ -1076,36 +1080,12 @@ static int arizona_extcon_probe(struct platform_device *pdev)
 		break;
 	}
 
-	schedule_delayed_work(&info->probe_work, 0);
-
-	return 0;
-}
-
-static void arizona_probe_work(struct work_struct *work)
-{
-	struct arizona_extcon_info *info = container_of(work,
-							struct arizona_extcon_info,
-							probe_work.work);
-	struct arizona *arizona = info->arizona;
-	struct arizona_pdata *pdata = dev_get_platdata(arizona->dev);
-	unsigned int val;
-	int jack_irq_fall, jack_irq_rise;
-	int ret, mode, i, j;
-
-	/* Defer until the audio has come up */
-	if (!info->arizona->dapm) {
-		dev_info(info->dev, "Waiting for DAPM to initialise...\n");
-		schedule_delayed_work(&info->probe_work,
-				      msecs_to_jiffies(500));
-		return;
-	}
-
 	info->sdev.name = "h2w";
 	ret = switch_dev_register(&info->sdev);
 	if (ret < 0) {
 		dev_err(arizona->dev, "extcon_dev_register() failed: %d\n",
 			ret);
-		return;
+		goto err;
 	}
 
 	if (pdata->num_micd_configs) {
@@ -1150,7 +1130,7 @@ static void arizona_probe_work(struct work_struct *work)
 
 	info->input->name = "Headset";
 	info->input->phys = "arizona/extcon";
-	info->input->dev.parent = info->dev;
+	info->input->dev.parent = &pdev->dev;
 
 	if (arizona->pdata.micd_bias_start_time)
 		regmap_update_bits(arizona->regmap, ARIZONA_MIC_DETECT_1,
@@ -1279,9 +1259,9 @@ static void arizona_probe_work(struct work_struct *work)
 
 	arizona_extcon_set_mode(info, 0);
 
-	pm_runtime_enable(info->dev);
-	pm_runtime_idle(info->dev);
-	pm_runtime_get_sync(info->dev);
+	pm_runtime_enable(&pdev->dev);
+	pm_runtime_idle(&pdev->dev);
+	pm_runtime_get_sync(&pdev->dev);
 
 	if (arizona->pdata.jd_gpio5) {
 		jack_irq_rise = ARIZONA_IRQ_MICD_CLAMP_RISE;
@@ -1294,14 +1274,14 @@ static void arizona_probe_work(struct work_struct *work)
 	ret = arizona_request_irq(arizona, jack_irq_rise,
 				  "JACKDET rise", arizona_jackdet, info);
 	if (ret != 0) {
-		dev_err(info->dev, "Failed to get JACKDET rise IRQ: %d\n",
+		dev_err(&pdev->dev, "Failed to get JACKDET rise IRQ: %d\n",
 			ret);
 		goto err_input;
 	}
 
 	ret = arizona_set_irq_wake(arizona, jack_irq_rise, 1);
 	if (ret != 0) {
-		dev_err(info->dev, "Failed to set JD rise IRQ wake: %d\n",
+		dev_err(&pdev->dev, "Failed to set JD rise IRQ wake: %d\n",
 			ret);
 		goto err_rise;
 	}
@@ -1309,13 +1289,13 @@ static void arizona_probe_work(struct work_struct *work)
 	ret = arizona_request_irq(arizona, jack_irq_fall,
 				  "JACKDET fall", arizona_jackdet, info);
 	if (ret != 0) {
-		dev_err(info->dev, "Failed to get JD fall IRQ: %d\n", ret);
+		dev_err(&pdev->dev, "Failed to get JD fall IRQ: %d\n", ret);
 		goto err_rise_wake;
 	}
 
 	ret = arizona_set_irq_wake(arizona, jack_irq_fall, 1);
 	if (ret != 0) {
-		dev_err(info->dev, "Failed to set JD fall IRQ wake: %d\n",
+		dev_err(&pdev->dev, "Failed to set JD fall IRQ wake: %d\n",
 			ret);
 		goto err_fall;
 	}
@@ -1323,14 +1303,14 @@ static void arizona_probe_work(struct work_struct *work)
 	ret = arizona_request_irq(arizona, ARIZONA_IRQ_MICDET,
 				  "MICDET", arizona_micdet, info);
 	if (ret != 0) {
-		dev_err(info->dev, "Failed to get MICDET IRQ: %d\n", ret);
+		dev_err(&pdev->dev, "Failed to get MICDET IRQ: %d\n", ret);
 		goto err_fall_wake;
 	}
 
 	ret = arizona_request_irq(arizona, ARIZONA_IRQ_HPDET,
 				  "HPDET", arizona_hpdet_irq, info);
 	if (ret != 0) {
-		dev_err(info->dev, "Failed to get HPDET IRQ: %d\n", ret);
+		dev_err(&pdev->dev, "Failed to get HPDET IRQ: %d\n", ret);
 		goto err_micdet;
 	}
 
@@ -1340,15 +1320,18 @@ static void arizona_probe_work(struct work_struct *work)
 	regmap_update_bits(arizona->regmap, ARIZONA_JACK_DETECT_ANALOGUE,
 			   ARIZONA_JD1_ENA, ARIZONA_JD1_ENA);
 
-	pm_runtime_put(info->dev);
+	pm_runtime_put(&pdev->dev);
 
 	ret = input_register_device(info->input);
 	if (ret) {
-		dev_err(info->dev, "Can't register input device: %d\n", ret);
+		dev_err(&pdev->dev, "Can't register input device: %d\n", ret);
 		goto err_hpdet;
 	}
 
-	return;
+	/* To support PBA function test */
+	create_jack_devices(info);
+
+	return 0;
 
 err_hpdet:
 	arizona_free_irq(arizona, ARIZONA_IRQ_HPDET, info);
@@ -1364,8 +1347,10 @@ err_rise:
 	arizona_free_irq(arizona, jack_irq_rise, info);
 err_input:
 err_register:
-	pm_runtime_disable(info->dev);
+	pm_runtime_disable(&pdev->dev);
 	switch_dev_unregister(&info->sdev);
+err:
+	return ret;
 }
 
 static int arizona_extcon_remove(struct platform_device *pdev)

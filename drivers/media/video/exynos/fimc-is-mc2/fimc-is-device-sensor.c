@@ -32,6 +32,7 @@
 #include <linux/v4l2-mediabus.h>
 #include <linux/bug.h>
 
+#include <mach/exynos-mipiphy.h>
 #include <mach/map.h>
 #include <mach/regs-clock.h>
 
@@ -417,56 +418,16 @@ static void s5pcsis_set_params(unsigned long mipi_reg_base,
 	writel(val | S5PCSIS_CTRL_UPDATE_SHADOW, mipi_reg_base + S5PCSIS_CTRL);
 }
 
-int enable_mipi(void)
+int enable_mipi(bool enable)
 {
 	void __iomem *addr;
 	u32 cfg;
 
-	addr = S5P_MIPI_DPHY_CONTROL(0);
+	s5p_csis_phy_enable(0, enable);
+	s5p_csis_phy_enable(1, enable);
+	s5p_csis_phy_enable(2, enable);
 
-	cfg = __raw_readl(addr);
-	cfg = (cfg | S5P_MIPI_DPHY_SRESETN);
-	__raw_writel(cfg, addr);
-
-	if (1) {
-		cfg |= S5P_MIPI_DPHY_ENABLE;
-	} else if (!(cfg & (S5P_MIPI_DPHY_SRESETN | S5P_MIPI_DPHY_MRESETN)
-			& (~S5P_MIPI_DPHY_SRESETN))) {
-		cfg &= ~S5P_MIPI_DPHY_ENABLE;
-	}
-
-	__raw_writel(cfg, addr);
-
-
-	addr = S5P_MIPI_DPHY_CONTROL(1);
-
-	cfg = __raw_readl(addr);
-	cfg = (cfg | S5P_MIPI_DPHY_SRESETN);
-	__raw_writel(cfg, addr);
-
-	if (1) {
-		cfg |= S5P_MIPI_DPHY_ENABLE;
-	} else if (!(cfg & (S5P_MIPI_DPHY_SRESETN | S5P_MIPI_DPHY_MRESETN)
-			& (~S5P_MIPI_DPHY_SRESETN))) {
-		cfg &= ~S5P_MIPI_DPHY_ENABLE;
-	}
-
-	__raw_writel(cfg, addr);
-
-	addr = S5P_MIPI_DPHY_CONTROL(2);
-
-	cfg = __raw_readl(addr);
-	cfg = (cfg | S5P_MIPI_DPHY_SRESETN);
-	__raw_writel(cfg, addr);
-
-	cfg |= S5P_MIPI_DPHY_ENABLE;
-	if (!(cfg & (S5P_MIPI_DPHY_SRESETN | S5P_MIPI_DPHY_MRESETN)
-			& (~S5P_MIPI_DPHY_SRESETN)))
-		cfg &= ~S5P_MIPI_DPHY_ENABLE;
-
-	__raw_writel(cfg, addr);
 	return 0;
-
 }
 
 int start_mipi_csi(int channel, struct fimc_is_frame_info *f_frame,
@@ -624,13 +585,32 @@ int fimc_is_sensor_probe(struct fimc_is_device_sensor *device, u32 channel)
 	ext = &enum_sensor[SENSOR_NAME_S5K4E5].ext;
 	ext->actuator_con.product_name = ACTUATOR_NAME_DWXXXX;
 	ext->actuator_con.peri_type = SE_I2C;
+#if defined(CONFIG_MACH_V1)
+	ext->actuator_con.peri_setting.i2c.channel
+		= SENSOR_CONTROL_I2C0;
+#else
 	ext->actuator_con.peri_setting.i2c.channel
 		= SENSOR_CONTROL_I2C1;
+#endif
 
-	ext->flash_con.product_name = FLADRV_NAME_MAX77693;
-	ext->flash_con.peri_type = SE_GPIO;
-	ext->flash_con.peri_setting.gpio.first_gpio_port_no = 0;
-	ext->flash_con.peri_setting.gpio.second_gpio_port_no = 1;
+	if (soc_is_exynos5250()) {
+		ext->flash_con.product_name = FLADRV_NAME_KTD267;
+		ext->flash_con.peri_type = SE_GPIO;
+		ext->flash_con.peri_setting.gpio.first_gpio_port_no = 17;
+		ext->flash_con.peri_setting.gpio.second_gpio_port_no = 16;
+	} else if (soc_is_exynos5410()) {
+#if defined(CONFIG_MACH_V1)
+		ext->flash_con.product_name = FLADRV_NAME_KTD267;
+		ext->flash_con.peri_type = SE_GPIO;
+		ext->flash_con.peri_setting.gpio.first_gpio_port_no = 0;
+		ext->flash_con.peri_setting.gpio.second_gpio_port_no = 1;
+#else
+		ext->flash_con.product_name = FLADRV_NAME_MAX77693;
+		ext->flash_con.peri_type = SE_GPIO;
+		ext->flash_con.peri_setting.gpio.first_gpio_port_no = 0;
+		ext->flash_con.peri_setting.gpio.second_gpio_port_no = 1;
+#endif
+	}
 
 	ext->from_con.product_name = FROMDRV_NAME_NOTHING;
 	ext->mclk = 0;

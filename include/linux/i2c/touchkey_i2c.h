@@ -32,6 +32,11 @@
 #define TK_CMD_LED_ON		0x10
 #define TK_CMD_LED_OFF		0x20
 
+#define TK_CMD_DUAL_DETECTION	0x01
+#define TK_BIT_DETECTION_CONFIRM	0xEE
+#define CYPRESS_DETECTION_FLAG		0x1B
+#define TK_DUAL_REG 0x18
+
 #define I2C_M_WR 0		/* for i2c */
 
 #define TK_UPDATE_DOWN		1
@@ -41,7 +46,8 @@
 /* Firmware Version */
 #define TK_FIRMWARE_VER_45  0x09
 #define TK_FIRMWARE_VER_55  0x0c
-#define TK_FIRMWARE_VER_65  0x10
+#define TK_FIRMWARE_VER_65  0x12
+#define TK_MULTI_FW_VER  0x11
 #define TK_MODULE_VER    0x09
 #define TK_MODULE_20045		45
 #define TK_MODULE_20055		55
@@ -171,7 +177,7 @@ struct touchkey_i2c {
 #ifdef TKEY_FLIP_MODE
 	bool enabled_flip;
 #endif
-
+	int support_multi_touch;
 };
 
 extern struct class *sec_class;

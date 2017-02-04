@@ -267,6 +267,26 @@ static struct modemlink_pm_link_activectl active_ctl;
 static void xmm_gpio_revers_bias_clear(void);
 static void xmm_gpio_revers_bias_restore(void);
 
+#if defined(CONFIG_MACH_J_CHN_CU)
+static int optional_cp_crash(void *mc)
+{
+	mif_info("[CP2] froce crash for CP2 - start\n");
+	gpio_direction_input(GPIO_ESC_DUMP_INT_REV02);
+	s3c_gpio_setpull(GPIO_ESC_DUMP_INT_REV02, S3C_GPIO_PULL_NONE);
+	gpio_set_value(GPIO_ESC_DUMP_INT_REV02, 1);
+
+	gpio_direction_output(GPIO_CP2_MSM_RST, 0);
+	msleep(50);
+	gpio_direction_input(GPIO_CP2_MSM_RST);
+	mif_info("[CP2] froce crash for CP2 - end\n");
+
+	gpio_set_value(GPIO_AP_DUMP_INT, 1);
+	mif_info("set ap_dump_int(%d) to high=%d\n",
+		GPIO_AP_DUMP_INT, gpio_get_value(GPIO_AP_DUMP_INT));
+	return 0;
+}
+#endif
+
 #define MAX_CDC_ACM_CH 3
 #define MAX_CDC_NCM_CH 4
 static struct modem_data umts_modem_data = {
@@ -298,6 +318,10 @@ static struct modem_data umts_modem_data = {
 	.max_link_channel = MAX_CDC_ACM_CH + MAX_CDC_NCM_CH,
 	.max_acm_channel = MAX_CDC_ACM_CH,
 	.ipc_version = SIPC_VER_50,
+
+#if defined(CONFIG_MACH_J_CHN_CU)
+	.cp_force_crash = optional_cp_crash,
+#endif
 };
 
 /* HSIC specific function */

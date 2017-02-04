@@ -5,9 +5,9 @@
  *
  * EXYNOS5 - Adaptive Support Voltage Source File
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the Gnu General Public License version 2 as
- * published by the Free Software Foundation.
+ * this program is free software; you can redistribute it and/or modify
+ * it under the terms of the gnu general public license version 2 as
+ * published by the free software foundation.
 */
 
 #ifndef __ASM_ARCH_NEW_ASV_H

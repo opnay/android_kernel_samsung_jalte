@@ -1304,6 +1304,8 @@ int fimc_is_runtime_suspend(struct device *dev)
 	if (core->mem.alloc_ctx)
 		vb2_ion_detach_iommu(core->mem.alloc_ctx);
 #endif
+	/* 1. Enable MIPI */
+	enable_mipi(false);
 
 	if (core->pdata->clk_off) {
 		core->pdata->clk_off(core->pdev);
@@ -1329,7 +1331,7 @@ int fimc_is_runtime_resume(struct device *dev)
 	pr_info("FIMC_IS runtime resume\n");
 
 	/* 1. Enable MIPI */
-	enable_mipi();
+	enable_mipi(true);
 
 	printk(KERN_INFO "FIMC_IS runtime resume - mipi enabled\n");
 
@@ -1428,6 +1430,21 @@ static DEVICE_ATTR(front_camtype, S_IRUGO,
 		camera_front_camtype_show, NULL);
 static DEVICE_ATTR(front_camfw, S_IRUGO, camera_front_camfw_show, NULL);
 
+#ifdef CONFIG_MACH_V1
+static ssize_t camera_rear_camtype_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	char type[] = "SLSI_S5K4E5_FIMC_IS";
+	return sprintf(buf, "%s\n", type);
+}
+
+static ssize_t camera_rear_camfw_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%s %s\n",
+		sysfs_finfo->header_ver, sysfs_pinfo->header_ver);
+}
+#else
 static ssize_t camera_rear_camtype_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -1441,7 +1458,7 @@ static ssize_t camera_rear_camfw_show(struct device *dev,
 	return sprintf(buf, "%s %s\n",
 		sysfs_finfo->header_ver, sysfs_pinfo->header_ver);
 }
-
+#endif
 static DEVICE_ATTR(rear_camtype, S_IRUGO,
 		camera_rear_camtype_show, NULL);
 static DEVICE_ATTR(rear_camfw, S_IRUGO, camera_rear_camfw_show, NULL);

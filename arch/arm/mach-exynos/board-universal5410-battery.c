@@ -58,7 +58,7 @@ unsigned int lpcharge;
 EXPORT_SYMBOL(lpcharge);
 
 static sec_charging_current_t charging_current_table[] = {
-	{0,	0,	0,	0},
+	{1900,	1600,	200,	40 * 60},
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
 	{1900,	1600,	200,	40*60},
@@ -72,6 +72,9 @@ static sec_charging_current_t charging_current_table[] = {
 	{1900,	1600,	200,	40*60},
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
+	{0, 0,	0,	0},/*lan hub*/
+	{460,	460,	200,	40*60},/*mhl_usb*/
+	{0,	0,	0,	0},/*power sharing*/
 };
 
 static bool sec_bat_adc_none_init(
@@ -128,12 +131,14 @@ static bool sec_chg_gpio_init(void)
 
 static int sec_bat_is_lpm_check(char *str)
 {
-	get_option(&str, &lpcharge);
+	if (strncmp(str, "charger", 7) == 0)
+		lpcharge = 1;
+
 	pr_info("%s: Low power charging mode: %d\n", __func__, lpcharge);
 
 	return lpcharge;
 }
-__setup("lpcharge=", sec_bat_is_lpm_check);
+__setup("androidboot.mode=", sec_bat_is_lpm_check);
 
 static bool sec_bat_is_lpm(void)
 {
@@ -147,19 +152,25 @@ static void sec_bat_initial_check(void)
 	union power_supply_propval value;
 
 	if (POWER_SUPPLY_TYPE_BATTERY < current_cable_type) {
-		value.intval = current_cable_type<<ONLINE_TYPE_MAIN_SHIFT;
-		psy_do_property("battery", set,
-			POWER_SUPPLY_PROP_ONLINE, value);
+		if (current_cable_type == POWER_SUPPLY_TYPE_POWER_SHARING) {
+			value.intval = current_cable_type;
+			psy_do_property("ps", set,
+				POWER_SUPPLY_PROP_ONLINE, value);
+		} else {
+			value.intval = current_cable_type<<ONLINE_TYPE_MAIN_SHIFT;
+			psy_do_property("battery", set,
+				POWER_SUPPLY_PROP_ONLINE, value);
+		}
 	} else {
 		psy_do_property("sec-charger", get,
 				POWER_SUPPLY_PROP_ONLINE, value);
 		if (value.intval == POWER_SUPPLY_TYPE_WPC) {
 			value.intval =
 				POWER_SUPPLY_TYPE_WPC<<ONLINE_TYPE_MAIN_SHIFT;
-		psy_do_property("battery", set,
+			psy_do_property("battery", set,
 				POWER_SUPPLY_PROP_ONLINE, value);
+		}
 	}
-}
 }
 
 
@@ -171,12 +182,12 @@ static int sec_bat_check_cable_callback(void)
 	return current_cable_type;
 }
 
-static bool sec_bat_check_jig_status(void) 
+static bool sec_bat_check_jig_status(void)
 {
 	if (current_cable_type == POWER_SUPPLY_TYPE_UARTOFF)
 		return true;
 	else
-		return false; 
+		return false;
 
 }
 
@@ -450,10 +461,21 @@ static int polling_time_table[] = {
 static struct battery_data_t adonis_battery_data[] = {
 /* SDI battery data (High voltage 4.35V) */
 	{
+#if defined(CONFIG_TARGET_LOCALE_KOR)
+#if defined(CONFIG_MACH_JA_KOR_SKT) || \
+	defined(CONFIG_MACH_JA_KOR_KT) || \
+	defined(CONFIG_MACH_JA_KOR_LGT)
+		.RCOMP0 = 0x6C,
+		.RCOMP_charging = 0x79,
+		.temp_cohot = -850,
+		.temp_cocold = -4200,
+#endif
+#else
 		.RCOMP0 = 0x76,
 		.RCOMP_charging = 0x76,
 		.temp_cohot = -700,
 		.temp_cocold = -4875,
+#endif
 		.is_using_model_data = true,
 		.type_str = "SDI",
 	}
@@ -563,6 +585,49 @@ sec_battery_platform_data_t sec_battery_pdata = {
 
 	.temp_check_type = SEC_BATTERY_TEMP_CHECK_TEMP,
 	.temp_check_count = 1,
+#if defined(CONFIG_TARGET_LOCALE_KOR)
+#if defined(CONFIG_MACH_JA_KOR_SKT) || \
+	defined(CONFIG_MACH_JA_KOR_KT)
+	.temp_high_threshold_event = 635,
+	.temp_high_recovery_event = 430,
+	.temp_low_threshold_event = -50,
+	.temp_low_recovery_event = 0,
+	.temp_high_threshold_normal = 635,
+	.temp_high_recovery_normal = 430,
+	.temp_low_threshold_normal = -50,
+	.temp_low_recovery_normal = 0,
+	.temp_high_threshold_lpm = 635,
+	.temp_high_recovery_lpm = 430,
+	.temp_low_threshold_lpm = -50,
+	.temp_low_recovery_lpm = 0,
+#elif defined(CONFIG_MACH_JA_KOR_LGT)
+	.temp_high_threshold_event = 655,
+	.temp_high_recovery_event = 430,
+	.temp_low_threshold_event = -50,
+	.temp_low_recovery_event = 0,
+	.temp_high_threshold_normal = 655,
+	.temp_high_recovery_normal = 430,
+	.temp_low_threshold_normal = -50,
+	.temp_low_recovery_normal = 0,
+	.temp_high_threshold_lpm = 655,
+	.temp_high_recovery_lpm = 430,
+	.temp_low_threshold_lpm = -50,
+	.temp_low_recovery_lpm = 0,
+#endif /* KOR model */
+#elif defined(CONFIG_MACH_J_CHN_CTC)
+	.temp_high_threshold_event = 645,
+	.temp_high_recovery_event = 420,
+	.temp_low_threshold_event = -30,
+	.temp_low_recovery_event = 10,
+	.temp_high_threshold_normal = 645,
+	.temp_high_recovery_normal = 420,
+	.temp_low_threshold_normal = -30,
+	.temp_low_recovery_normal = 10,
+	.temp_high_threshold_lpm = 645,
+	.temp_high_recovery_lpm = 420,
+	.temp_low_threshold_lpm = -30,
+	.temp_low_recovery_lpm = 10,
+#else
 	.temp_high_threshold_event = 700,
 	.temp_high_recovery_event = 415,
 	.temp_low_threshold_event = -30,
@@ -575,6 +640,7 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.temp_high_recovery_lpm = 400,
 	.temp_low_threshold_lpm = -50,
 	.temp_low_recovery_lpm = 0,
+#endif
 	.full_check_type = SEC_BATTERY_FULLCHARGED_CHGPSY,
 	.full_check_type_2nd = SEC_BATTERY_FULLCHARGED_TIME,
 	.full_check_count = 1,
@@ -584,7 +650,11 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL |
 		SEC_BATTERY_FULL_CONDITION_VCELL,
 	.full_condition_soc = 97,
-	.full_condition_vcell = 4300,
+#if defined(CONFIG_MACH_J_CHN_CTC)
+	.full_condition_vcell = 4150,
+#else
+	.full_condition_vcell = 4250,
+#endif
 
 	.recharge_check_count = 2,
 	.recharge_condition_type =

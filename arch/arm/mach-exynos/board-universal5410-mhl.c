@@ -37,14 +37,23 @@
 #define PSY_CHG_NAME "max77693-charger"
 
 static bool mhl_power_on;
+#if defined(CONFIG_MACH_JA_KOR_SKT) || defined(CONFIG_MACH_JA_KOR_KT)
+#define MHL_DEFAULT_SWING 0x35
+#else
 #define MHL_DEFAULT_SWING 0x2D
+#endif
 
 static void sii8240_cfg_gpio(void)
 {
 	printk(KERN_INFO "%s()\n", __func__);
 
 #ifdef CONFIG_MACH_JA
+#if defined(CONFIG_MACH_JA_KOR_LGT)
+	if ( (system_rev < 06)  || (system_rev == 7) ) {
+#else
 	if (system_rev < 06 ) {
+#endif
+
 #endif
 	/* AP_MHL_SDA */
 	s3c_gpio_cfgpin(GPIO_MHL_SDA_18V, S3C_GPIO_SFN(0x0));
@@ -143,6 +152,20 @@ static void sii8240_reset(void)
 	usleep_range(10000, 20000);
 }
 
+static bool sii8240_vbus_present(void)
+{
+	union power_supply_propval value;
+
+	psy_do_property("sec-charger", get, POWER_SUPPLY_PROP_ONLINE, value);
+	pr_info("sii8240: sec-charger : %d\n", value.intval);
+
+	if (value.intval == POWER_SUPPLY_TYPE_BATTERY ||
+			value.intval == POWER_SUPPLY_TYPE_WPC)
+		return false;
+	else
+		return true;
+}
+
 #ifdef __MHL_NEW_CBUS_MSC_CMD__
 static void sii9234_vbus_present(bool on, int value)
 {
@@ -197,7 +220,7 @@ static void sii9234_otg_control(bool onoff)
 	return;
 }
 #endif
-
+#ifndef CONFIG_MACH_V1
 static void muic_mhl_cb(bool otg_enable, int plim)
 {
 	union power_supply_propval value;
@@ -236,11 +259,7 @@ static void muic_mhl_cb(bool otg_enable, int plim)
 		current_cable_type = POWER_SUPPLY_TYPE_BATTERY;
 
 	if (otg_enable) {
-		psy_do_property("sec-charger", get,
-					POWER_SUPPLY_PROP_ONLINE, value);
-		pr_info("sec-charger : %d\n", value.intval);
-		if (value.intval == POWER_SUPPLY_TYPE_BATTERY ||
-				value.intval == POWER_SUPPLY_TYPE_WPC) {
+		if(!sii8240_vbus_present()) {
 			if (!lpcharge) {
 				otg_control(true);
 				current_cable_type = POWER_SUPPLY_TYPE_BATTERY;
@@ -270,7 +289,7 @@ static void muic_mhl_cb(bool otg_enable, int plim)
 			__func__, ret);
 	}
 }
-
+#endif
 static BLOCKING_NOTIFIER_HEAD(acc_notifier);
 
 int acc_register_notifier(struct notifier_block *nb)
@@ -297,7 +316,7 @@ static struct sii8240_platform_data sii8240_pdata = {
 #if defined(__MHL_NEW_CBUS_MSC_CMD__)
 	.vbus_present = sii9234_vbus_present,
 #else
-	.vbus_present = NULL,
+	.vbus_present = sii8240_vbus_present,
 #endif
 #ifdef CONFIG_SAMSUNG_MHL_UNPOWERED
 	.get_vbus_status = sii9234_get_vbus_status,
@@ -389,11 +408,23 @@ struct exynos5_platform_i2c hs_i2c0_data __initdata = {
 int __init exynos5_setup_mhl_i2cport(void)
 {
 #if defined(CONFIG_MACH_JA)
+#if defined(CONFIG_MACH_JA_KOR_LGT)
+	if ( (system_rev < 06) || (system_rev == 7) ) {
+#else
 	if (system_rev < 06) {
+#endif
 		universal5410_mhl_device[0] = &s3c_device_i2c15;
 	} else {
 		universal5410_mhl_device[0] = &s3c_device_i2c15_new;
 	}
+#elif defined(CONFIG_MACH_V1)
+#if defined(CONFIG_V1_3G_REV00) || defined(CONFIG_V1_3G_REV03)
+	if (system_rev > 02) { 
+		exynos5_hs_i2c0_set_platdata(&hs_i2c0_data);
+		universal5410_mhl_device[0] = &exynos5_device_hs_i2c0;
+		return HW_I2C_BUS_ID_MHL;
+	}
+#endif
 #endif
 	return I2C_BUS_ID_MHL;
 }

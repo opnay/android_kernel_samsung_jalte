@@ -2165,10 +2165,12 @@ static int _wm8994_set_fll(struct snd_soc_codec *codec, int id, int src,
 		return -EINVAL;
 	}
 
+#if 0
 	/* Are we changing anything? */
 	if (wm8994->fll[id].src == src &&
 	    wm8994->fll[id].in == freq_in && wm8994->fll[id].out == freq_out)
 		return 0;
+#endif
 
 	/* If we're stopping the FLL redo the old config - no
 	 * registers will actually be written but we avoid GCC flow
@@ -2367,18 +2369,6 @@ static int wm8994_set_dai_sysclk(struct snd_soc_dai *dai,
 	}
 
 	configure_clock(codec);
-
-	/*
-	 * If SYSCLK will be less than 50kHz adjust AIFnCLK dividers
-	 * for detection.
-	 */
-	if (max(wm8994->aifclk[0], wm8994->aifclk[1]) < 50000) {
-		dev_dbg(codec->dev, "Configuring AIFs for 128fs\n");
-		snd_soc_update_bits(codec, WM8994_AIF1_RATE,
-				    WM8994_AIF1CLK_RATE_MASK, 0x1);
-		snd_soc_update_bits(codec, WM8994_AIF2_RATE,
-				    WM8994_AIF2CLK_RATE_MASK, 0x1);
-	}
 
 	return 0;
 }

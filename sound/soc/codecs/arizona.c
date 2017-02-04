@@ -9,7 +9,7 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
-
+#define DEBUG
 #include <linux/gcd.h>
 #include <linux/module.h>
 #include <linux/pm_runtime.h>
@@ -640,7 +640,7 @@ int arizona_hp_ev(struct snd_soc_dapm_widget *w,
 {
 	struct arizona_priv *priv = snd_soc_codec_get_drvdata(w->codec);
 	unsigned int mask = 1 << w->shift;
-	unsigned int val;
+	unsigned int val = 0;
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
@@ -1241,13 +1241,6 @@ const struct snd_soc_dai_ops arizona_dai_ops = {
 	.set_tristate = arizona_set_tristate,
 };
 EXPORT_SYMBOL_GPL(arizona_dai_ops);
-
-const struct snd_soc_dai_ops arizona_simple_dai_ops = {
-	.startup = arizona_startup,
-	.hw_params = arizona_hw_params_rate,
-	.set_sysclk = arizona_dai_set_sysclk,
-};
-EXPORT_SYMBOL_GPL(arizona_simple_dai_ops);
 
 int arizona_init_dai(struct arizona_priv *priv, int id)
 {

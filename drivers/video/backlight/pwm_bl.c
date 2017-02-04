@@ -196,7 +196,11 @@ static SIMPLE_DEV_PM_OPS(pwm_backlight_pm_ops, pwm_backlight_suspend,
 
 static struct platform_driver pwm_backlight_driver = {
 	.driver		= {
+#ifdef CONFIG_MACH_V1
+        .name	= "panel",
+#else
 		.name	= "pwm-backlight",
+#endif		
 		.owner	= THIS_MODULE,
 #ifdef CONFIG_PM
 		.pm	= &pwm_backlight_pm_ops,

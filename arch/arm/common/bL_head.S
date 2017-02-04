@@ -11,7 +11,7 @@
 
 #include <linux/linkage.h>
 #include <asm/bL_entry.h>
-#include "vlock.h"
+#include <asm/bL_vlock.h>
 
 #include <asm/asm-offsets.h>
 

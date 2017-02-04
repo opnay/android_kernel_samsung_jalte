@@ -21,8 +21,28 @@
 
 #include <linux/battery/sec_charging_common.h>
 
-#if defined(CONFIG_CHARGER_MAX77803)
+#if defined(CONFIG_CHARGER_DUMMY) || \
+	defined(CONFIG_CHARGER_PM8917)
+#include <linux/battery/charger/dummy_charger.h>
+#elif defined(CONFIG_CHARGER_MAX8903)
+#include <linux/battery/charger/max8903_charger.h>
+#elif defined(CONFIG_CHARGER_SMB328)
+#include <linux/battery/charger/smb328_charger.h>
+#elif defined(CONFIG_CHARGER_SMB347)
+#include <linux/battery/charger/smb347_charger.h>
+#elif defined(CONFIG_CHARGER_BQ24157)
+#include <linux/battery/charger/bq24157_charger.h>
+#elif defined(CONFIG_CHARGER_BQ24190) || \
+		defined(CONFIG_CHARGER_BQ24191)
+#include <linux/battery/charger/bq24190_charger.h>
+#elif defined(CONFIG_CHARGER_BQ24260)
+#include <linux/battery/charger/bq24260_charger.h>
+#elif defined(CONFIG_CHARGER_MAX77803)
 #include <linux/battery/charger/max77803_charger.h>
+#elif defined(CONFIG_CHARGER_MAX77693)
+#include <linux/battery/charger/max77693_charger.h>
+#elif defined(CONFIG_CHARGER_NCP1851)
+#include <linux/battery/charger/ncp1851_charger.h>
 #endif
 
 struct sec_charger_info {

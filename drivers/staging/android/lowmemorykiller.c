@@ -60,7 +60,7 @@
 #define NR_TO_RECLAIM_PAGES 		(1024*2) /* 8MB, include file pages */
 #define MIN_FREESWAP_PAGES 		(NR_TO_RECLAIM_PAGES*2*NR_CPUS)
 #define MIN_RECLAIM_PAGES 		(NR_TO_RECLAIM_PAGES/8)
-#define MIN_CSWAP_INTERVAL 		(10*HZ) /* 10 senconds */
+#define MIN_CSWAP_INTERVAL 		(5*HZ) /* 5 senconds */
 #else /* CONFIG_SMP */
 #define NR_TO_RECLAIM_PAGES 		1024 /* 4MB, include file pages */
 #define MIN_FREESWAP_PAGES 		(NR_TO_RECLAIM_PAGES*2)
@@ -216,6 +216,11 @@ static int lmk_hotplug_callback(struct notifier_block *self,
 }
 #endif
 
+#if defined(CONFIG_ZSWAP)
+extern atomic_t zswap_pool_pages;
+extern atomic_t zswap_stored_pages;
+#endif
+
 static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *tsk;
@@ -241,9 +246,10 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 	int other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
 	int other_file = global_page_state(NR_FILE_PAGES) -
 						global_page_state(NR_SHMEM);
+	struct reclaim_state *reclaim_state = current->reclaim_state;
 	struct zone *zone;
 
-#ifdef CONFIG_ZRAM_FOR_ANDROID
+#if defined(CONFIG_ZRAM_FOR_ANDROID) || defined(CONFIG_ZSWAP)
 	other_file -= total_swapcache_pages;
 #endif
 
@@ -322,7 +328,6 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 #ifdef ENHANCED_LMK_ROUTINE
 		int is_exist_oom_task = 0;
 #endif
-
 		if (tsk->flags & PF_KTHREAD)
 			continue;
 
@@ -336,6 +341,15 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			continue;
 		}
 		tasksize = get_mm_rss(p->mm);
+#if defined(CONFIG_ZSWAP)
+		if (atomic_read(&zswap_stored_pages)) {
+			lowmem_print(3, "shown tasksize : %d\n", tasksize);
+			tasksize += atomic_read(&zswap_pool_pages) * get_mm_counter(p->mm, MM_SWAPENTS)
+				/ atomic_read(&zswap_stored_pages);
+			lowmem_print(3, "real tasksize : %d\n", tasksize);
+		}
+#endif
+
 		task_unlock(p);
 		if (tasksize <= 0)
 			continue;
@@ -404,6 +418,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			lowmem_deathpending_timeout = jiffies + HZ;
 			send_sig(SIGKILL, selected[i], 0);
 			rem -= selected_tasksize[i];
+			if(reclaim_state)
+				reclaim_state->reclaimed_slab += selected_tasksize[i];
 #ifdef LMK_COUNT_READ
 			lmk_count++;
 #endif
@@ -418,6 +434,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		send_sig(SIGKILL, selected, 0);
 		set_tsk_thread_flag(selected, TIF_MEMDIE);
 		rem -= selected_tasksize;
+		if(reclaim_state)
+			reclaim_state->reclaimed_slab += selected_tasksize;
 #ifdef LMK_COUNT_READ
 		lmk_count++;
 #endif
@@ -946,10 +964,13 @@ static int do_compcache(void * nothing)
 		if (kthread_should_stop())
 			break;
 
-		if (rtcc_reclaim_pages(number_of_reclaim_pages) < minimum_reclaim_pages)
-			cancel_soft_reclaim();
+		if (atomic_read(&s_reclaim.kcompcached_running) == 1) {
+			if (rtcc_reclaim_pages(number_of_reclaim_pages) < minimum_reclaim_pages)
+				cancel_soft_reclaim();
 
-		atomic_set(&s_reclaim.kcompcached_running, 0);
+			atomic_set(&s_reclaim.kcompcached_running, 0);
+		}
+
 		set_current_state(TASK_INTERRUPTIBLE);
 		schedule();
 	}

@@ -46,7 +46,13 @@
 #include <linux/io.h>
 #include <mach/map.h>
 #include "tspdrv.h"
+#ifdef CONFIG_MOTOR_DRV_ISA1200
+#include "ImmVibeSPI_isa1200.c"
+#elif defined(CONFIG_MOTOR_DRV_ISA1400)
+#include "ImmVibeSPI_isa1400.c"
+#else
 #include "ImmVibeSPI.c"
+#endif
 #if defined(VIBE_DEBUG) && defined(VIBE_RECORD)
 #include <tspdrvRecorder.c>
 #endif
@@ -369,16 +375,22 @@ static ssize_t write(struct file *file, const char *buf, size_t count,
 		return 0;
 	}
 
+	/* Check buffer size */
+	if ((count < SPI_HEADER_SIZE) || (count > SPI_BUFFER_SIZE)) {
+		DbgOut((KERN_ERR "tspdrv: invalid write buffer size.\n"));
+		return 0;
+	}
+
+	if (count == SPI_HEADER_SIZE) {
+		g_bOutputDataBufferEmpty = 1;
+	} else {
+		g_bOutputDataBufferEmpty = 0;
+	}
+
 	/* Copy immediately the input buffer */
 	if (0 != copy_from_user(g_cWriteBuffer, buf, count)) {
 		/* Failed to copy all the data, exit */
 		DbgOut((KERN_ERR "tspdrv: copy_from_user failed.\n"));
-		return 0;
-	}
-
-	/* Check buffer size */
-	if ((count <= SPI_HEADER_SIZE) || (count > SPI_BUFFER_SIZE)) {
-		DbgOut((KERN_ERR "tspdrv: invalid write buffer size.\n"));
 		return 0;
 	}
 
@@ -388,7 +400,7 @@ static ssize_t write(struct file *file, const char *buf, size_t count,
 		samples_buffer* pInputBuffer =	(samples_buffer *)
 			(&g_cWriteBuffer[i]);
 
-		if ((i + SPI_HEADER_SIZE) >= count) {
+		if ((i + SPI_HEADER_SIZE) > count) {
 			/*
 			** Index is about to go beyond the buffer size.
 			** (Should never happen).
@@ -515,6 +527,7 @@ static long unlocked_ioctl(struct file *file, unsigned int cmd,
 		break;
 
 	case TSPDRV_MAGIC_NUMBER:
+	case TSPDRV_SET_MAGIC_NUMBER:
 		file->private_data = (void *)TSPDRV_MAGIC_NUMBER;
 		break;
 
@@ -531,8 +544,14 @@ static long unlocked_ioctl(struct file *file, unsigned int cmd,
 		  * If a stop was requested, ignore the request as the amp
 		  * will be disabled by the timer proc when it's ready
 		  */
-		if (!g_bStopRequested)
+#if 0
+		if (!g_bStopRequested) {
 			ImmVibeSPI_ForceOut_AmpDisable(arg);
+#endif
+		g_bStopRequested = true;
+		/* Last data processing to disable amp and stop timer */
+		VibeOSKernelProcessData(NULL);
+		g_bIsPlaying = false;
 		wake_unlock(&vib_wake_lock);
 		break;
 
@@ -550,9 +569,6 @@ static int suspend(struct platform_device *pdev, pm_message_t state)
 	if (g_bIsPlaying) {
 		ret = -EBUSY;
 	} else {
-		/* Disable system timers */
-		vibetonz_clk_off(&pdev->dev);
-
 		ret = 0;
 	}
 
@@ -562,16 +578,6 @@ static int suspend(struct platform_device *pdev, pm_message_t state)
 
 static int resume(struct platform_device *pdev)
 {
-	u32 __iomem *pram;
-
-	/* Restart system timers */
-	vibetonz_clk_on(&pdev->dev);
-
-	/* Restore system timers configuration */
-	pram = ioremap(S5P_PA_TIMER, 4);
-	writel(0x0F00, pram);
-	iounmap(pram);
-
 	DbgOut((KERN_DEBUG "tspdrv: %s.\n", __func__));
 	return 0;
 }

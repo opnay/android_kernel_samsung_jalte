@@ -3,7 +3,7 @@
 #
 config VIDEO_EXYNOS
 	bool "Exynos Multimedia Devices"
-	depends on ARCH_EXYNOS5
+	depends on ARCH_EXYNOS4 || ARCH_EXYNOS5
 	default n
 	select VIDEO_FIXED_MINOR_RANGES
 	help
@@ -22,7 +22,6 @@ if VIDEO_EXYNOS
 	source "drivers/media/video/exynos/tv/Kconfig"
 	source "drivers/media/video/exynos/rotator/Kconfig"
 	source "drivers/media/video/exynos/fimc-is-mc2/Kconfig"
-	source "drivers/media/video/exynos/fimc-is-sensor/Kconfig"
 
 config VIDEO_EXYNOS5_FIMC_IS_SENSOR
 	bool "Exynos FIMC-IS-SENSOR driver"

@@ -96,10 +96,6 @@
 /* flag to ignore all characters coming in */
 #define RXSTAT_DUMMY_READ (0x10000000)
 
-#ifdef CONFIG_BT_BCM4335
-struct pm_qos_request exynos5_bt_mif_qos;
-#endif
-
 #if defined(CONFIG_GPS_BCMxxxxx)
 /* Devices	*/
 #define CONFIG_GPS_S3C_UART	1
@@ -780,7 +776,7 @@ static irqreturn_t s3c64xx_serial_handle_irq(int irq, void *id)
 	if (port->line == 0)
 		schedule_delayed_work(&bt_perf_work, msecs_to_jiffies(100));
 #endif
-	
+
 	if (pend & S3C64XX_UINTM_RXD_MSK) {
 		ret = s3c24xx_serial_rx_chars(irq, id);
 		wr_regl(port, S3C64XX_UINTP, S3C64XX_UINTM_RXD_MSK);
@@ -1276,10 +1272,11 @@ static void s3c24xx_serial_set_termios(struct uart_port *port,
 
 	wr_regl(port, S3C2410_ULCON, ulcon);
 	wr_regl(port, S3C2410_UBRDIV, quot);
-	wr_regl(port, S3C2410_UMCON, umcon);
 
 	if (ourport->info->has_divslot)
 		wr_regl(port, S3C2443_DIVSLOT, udivslot);
+
+	wr_regl(port, S3C2410_UMCON, umcon);
 
 	dbg("uart: ulcon = 0x%08x, ucon = 0x%08x, ufcon = 0x%08x\n",
 	    rd_regl(port, S3C2410_ULCON),
