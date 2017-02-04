@@ -696,8 +696,10 @@ static int pipe_to_sendpage(struct pipe_inode_info *pipe,
 		return -EINVAL;
 
 	more = (sd->flags & SPLICE_F_MORE) ? MSG_MORE : 0;
-	if (sd->len < sd->total_len)
+
+	if (sd->len < sd->total_len && pipe->nrbufs > 1)
 		more |= MSG_SENDPAGE_NOTLAST;
+
 	return file->f_op->sendpage(file, buf->page, buf->offset,
 				    sd->len, &pos, more);
 }
@@ -1007,8 +1009,10 @@ generic_file_splice_write(struct pipe_inode_info *pipe, struct file *out,
 		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
 		ret = file_remove_suid(out);
 		if (!ret) {
-			file_update_time(out);
-			ret = splice_from_pipe_feed(pipe, &sd, pipe_to_file);
+			ret = file_update_time(out);
+			if (!ret)
+				ret = splice_from_pipe_feed(pipe, &sd,
+							    pipe_to_file);
 		}
 		mutex_unlock(&inode->i_mutex);
 	} while (ret > 0);

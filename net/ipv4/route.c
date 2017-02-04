@@ -1884,7 +1884,7 @@ void ip_rt_get_source(u8 *addr, struct sk_buff *skb, struct rtable *rt)
 		fl4.flowi4_iif = skb->dev->ifindex;
 		fl4.flowi4_mark = skb->mark;
 		fl4.flowi4_uid = skb->sk ? sock_i_uid(skb->sk) : 0;
-		
+
 		rcu_read_lock();
 		if (fib_lookup(dev_net(rt->dst.dev), &fl4, &res) == 0)
 			src = FIB_RES_PREFSRC(dev_net(rt->dst.dev), res);
@@ -2067,7 +2067,7 @@ static int ip_route_input_mc(struct sk_buff *skb, __be32 daddr, __be32 saddr,
 	rth->rt_iif		= dev->ifindex;
 	rth->rt_oif		= 0;
 	rth->rt_mark    = skb->mark;
-	rth->rt_uid		= 0;
+	rth->rt_uid	= 0;
 	rth->rt_gateway	= daddr;
 	rth->rt_spec_dst= spec_dst;
 	rth->rt_peer_genid = 0;
@@ -2158,9 +2158,10 @@ static int __mkroute_input(struct sk_buff *skb,
 		flags |= RTCF_DIRECTSRC;
 
 	if (out_dev == in_dev && err &&
+	    skb->protocol == htons(ETH_P_IP) &&
 	    (IN_DEV_SHARED_MEDIA(out_dev) ||
 	     inet_addr_onlink(out_dev, saddr, FIB_RES_GW(*res))))
-		flags |= RTCF_DOREDIRECT;
+		IPCB(skb)->flags |= IPSKB_DOREDIRECT;
 
 	if (skb->protocol != htons(ETH_P_IP)) {
 		/* Not IP (i.e. ARP). Do not create route, if it is
@@ -2197,7 +2198,7 @@ static int __mkroute_input(struct sk_buff *skb,
 	rth->rt_iif 	= in_dev->dev->ifindex;
 	rth->rt_oif 	= 0;
 	rth->rt_mark    = skb->mark;
-	rth->rt_uid		= 0;
+	rth->rt_uid	= 0;
 	rth->rt_gateway	= daddr;
 	rth->rt_spec_dst= spec_dst;
 	rth->rt_peer_genid = 0;
@@ -2381,7 +2382,7 @@ local_input:
 	rth->rt_iif		= dev->ifindex;
 	rth->rt_oif		= 0;
 	rth->rt_mark    = skb->mark;
-	rth->rt_uid		= 0;
+	rth->rt_uid	= 0;
 	rth->rt_gateway	= daddr;
 	rth->rt_spec_dst= spec_dst;
 	rth->rt_peer_genid = 0;
@@ -2586,7 +2587,7 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
 	rth->rt_iif		= orig_oif ? : dev_out->ifindex;
 	rth->rt_oif		= orig_oif;
 	rth->rt_mark    = fl4->flowi4_mark;
-	rth->rt_uid		= fl4->flowi4_uid;
+	rth->rt_uid	= fl4->flowi4_uid;
 	rth->rt_gateway = fl4->daddr;
 	rth->rt_spec_dst= fl4->saddr;
 	rth->rt_peer_genid = 0;
@@ -2838,7 +2839,7 @@ struct rtable *__ip_route_output_key(struct net *net, struct flowi4 *flp4)
 		    rt_is_output_route(rth) &&
 		    rth->rt_oif == flp4->flowi4_oif &&
 		    rth->rt_mark == flp4->flowi4_mark &&
-			rth->rt_uid == flp4->flowi4_uid &&
+		    rth->rt_uid == flp4->flowi4_uid &&
 		    !((rth->rt_key_tos ^ flp4->flowi4_tos) &
 			    (IPTOS_RT_MASK | RTO_ONLINK)) &&
 		    net_eq(dev_net(rth->dst.dev), net) &&
@@ -2989,6 +2990,8 @@ static int rt_fill_info(struct net *net,
 	r->rtm_flags	= (rt->rt_flags & ~0xFFFF) | RTM_F_CLONED;
 	if (rt->rt_flags & RTCF_NOTIFY)
 		r->rtm_flags |= RTM_F_NOTIFY;
+	if (IPCB(skb)->flags & IPSKB_DOREDIRECT)
+		r->rtm_flags |= RTCF_DOREDIRECT;
 
 	NLA_PUT_BE32(skb, RTA_DST, rt->rt_dst);
 
@@ -3016,7 +3019,7 @@ static int rt_fill_info(struct net *net,
 	if (rt->rt_mark)
 		NLA_PUT_BE32(skb, RTA_MARK, rt->rt_mark);
 
-	if (uid_valid(rt->rt_uid))
+	if (rt->rt_uid != (uid_t) -1)
 		NLA_PUT_BE32(skb, RTA_UID, rt->rt_uid);
 
 	error = rt->dst.error;

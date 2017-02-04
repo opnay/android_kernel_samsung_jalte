@@ -587,7 +587,7 @@ void icmp_send(struct sk_buff *skb_in, int type, int code, __be32 info)
 					   IPTOS_PREC_INTERNETCONTROL) :
 					  iph->tos;
 	mark = IP4_REPLY_MARK(net, skb_in->mark);
-	
+
 	if (ip_options_echo(&icmp_param.replyopts.opt.opt, skb_in))
 		goto out_unlock;
 
