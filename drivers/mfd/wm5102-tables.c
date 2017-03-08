@@ -73,15 +73,78 @@ static const struct reg_default wm5102_revb_patch[] = {
 	{ 0x171, 0x0000 },
 	{ 0x35E, 0x000C },
 	{ 0x2D4, 0x0000 },
+	{ 0x4DC, 0x0900 },
 	{ 0x80, 0x0000 },
+};
+
+static const struct reg_default wm5102t_pwr_1[] = {
+	{ 0x46C, 0xC01 },
+	{ 0x46E, 0xC01 },
+	{ 0x470, 0xC01 },
+};
+
+static const struct reg_default wm5102t_pwr_2[] = {
+	{ 0x462, 0xC00 },
+	{ 0x464, 0xC00 },
+	{ 0x466, 0xC00 },
+	{ 0x468, 0xC00 },
+	{ 0x46a, 0xC00 },
+	{ 0x46c, 0xC00 },
+	{ 0x46e, 0xC00 },
+	{ 0x470, 0xC00 },
+	{ 0x476, 0x806 },
+};
+
+static const struct reg_default wm5102t_pwr_3[] = {
+	{ 0x462, 0xC00 },
+	{ 0x464, 0xC00 },
+	{ 0x466, 0xC00 },
+	{ 0x468, 0xC00 },
+	{ 0x46a, 0xC00 },
+	{ 0x46c, 0xC00 },
+	{ 0x46e, 0xC00 },
+	{ 0x470, 0xC00 },
+	{ 0x472, 0xC00 },
+	{ 0x47c, 0x806 },
+	{ 0x47e, 0x80e },
+};
+
+static const struct reg_default wm5102t_pwr_4[] = {
+	{ 0x462, 0xC00 },
+	{ 0x464, 0xC00 },
+	{ 0x466, 0xC00 },
+	{ 0x468, 0xC00 },
+	{ 0x46a, 0xC00 },
+	{ 0x46c, 0xC00 },
+	{ 0x46e, 0xC00 },
+	{ 0x470, 0xC00 },
+	{ 0x472, 0xC00 },
+	{ 0x474, 0xC00 },
+	{ 0x476, 0xC00 },
+	{ 0x478, 0xC00 },
+	{ 0x47a, 0xC00 },
+	{ 0x47c, 0xC00 },
+	{ 0x47e, 0xC00 },
+};
+
+static const struct {
+	const struct reg_default *patch;
+	int size;
+} wm5102t_pwr[] = {
+	{ NULL, 0 },
+	{ wm5102t_pwr_1, ARRAY_SIZE(wm5102t_pwr_1) },
+	{ wm5102t_pwr_2, ARRAY_SIZE(wm5102t_pwr_2) },
+	{ wm5102t_pwr_3, ARRAY_SIZE(wm5102t_pwr_3) },
+	{ wm5102t_pwr_4, ARRAY_SIZE(wm5102t_pwr_4) },
 };
 
 /* We use a function so we can use ARRAY_SIZE() */
 int wm5102_patch(struct arizona *arizona)
 {
 	const struct reg_default *wm5102_patch;
-	int ret = 0;
-	int i, patch_size;
+	int ret;
+	int patch_size;
+	int pwr_index = arizona->pdata.wm5102t_output_pwr;
 
 	switch (arizona->rev) {
 	case 0:
@@ -92,20 +155,20 @@ int wm5102_patch(struct arizona *arizona)
 		patch_size = ARRAY_SIZE(wm5102_revb_patch);
 	}
 
-	regcache_cache_bypass(arizona->regmap, true);
+	ret = regmap_multi_reg_write_bypassed(arizona->regmap,
+						   wm5102_patch,
+						   patch_size);
+	if (ret != 0)
+		goto out;
 
-	for (i = 0; i < patch_size; i++) {
-		ret = regmap_write(arizona->regmap, wm5102_patch[i].reg,
-				   wm5102_patch[i].def);
-		if (ret != 0) {
-			dev_err(arizona->dev, "Failed to write %x = %x: %d\n",
-				wm5102_patch[i].reg, wm5102_patch[i].def, ret);
-			goto out;
-		}
-	}
+	if (pwr_index < ARRAY_SIZE(wm5102t_pwr))
+		ret = regmap_multi_reg_write_bypassed(arizona->regmap,
+					 wm5102t_pwr[pwr_index].patch,
+					 wm5102t_pwr[pwr_index].size);
+	else
+		dev_err(arizona->dev, "Invalid wm5102t output power\n");
 
 out:
-	regcache_cache_bypass(arizona->regmap, false);
 	return ret;
 }
 
@@ -255,9 +318,6 @@ struct regmap_irq_chip wm5102_irq = {
 static const struct reg_default wm5102_reg_default[] = {
 	{ 0x00000008, 0x0019 },   /* R8     - Ctrl IF SPI CFG 1 */ 
 	{ 0x00000009, 0x0001 },   /* R9     - Ctrl IF I2C1 CFG 1 */ 
-	{ 0x00000016, 0x0000 },   /* R22    - Write Sequencer Ctrl 0 */ 
-	{ 0x00000017, 0x0000 },   /* R23    - Write Sequencer Ctrl 1 */ 
-	{ 0x00000018, 0x0000 },   /* R24    - Write Sequencer Ctrl 2 */ 
 	{ 0x00000020, 0x0000 },   /* R32    - Tone Generator 1 */ 
 	{ 0x00000021, 0x1000 },   /* R33    - Tone Generator 2 */ 
 	{ 0x00000022, 0x0000 },   /* R34    - Tone Generator 3 */ 
@@ -1872,6 +1932,9 @@ static bool wm5102_volatile_register(struct device *dev, unsigned int reg)
 	switch (reg) {
 	case ARIZONA_SOFTWARE_RESET:
 	case ARIZONA_DEVICE_REVISION:
+	case ARIZONA_WRITE_SEQUENCER_CTRL_0:
+	case ARIZONA_WRITE_SEQUENCER_CTRL_1:
+	case ARIZONA_WRITE_SEQUENCER_CTRL_2:
 	case ARIZONA_OUTPUT_STATUS_1:
 	case ARIZONA_SAMPLE_RATE_1_STATUS:
 	case ARIZONA_SAMPLE_RATE_2_STATUS:
@@ -1880,6 +1943,10 @@ static bool wm5102_volatile_register(struct device *dev, unsigned int reg)
 	case ARIZONA_ASYNC_SAMPLE_RATE_1_STATUS:
 	case ARIZONA_FLL1_NCO_TEST_0:
 	case ARIZONA_FLL2_NCO_TEST_0:
+	case ARIZONA_DAC_COMP_1:
+	case ARIZONA_DAC_COMP_2:
+	case ARIZONA_DAC_COMP_3:
+	case ARIZONA_DAC_COMP_4:
 	case ARIZONA_FX_CTRL2:
 	case ARIZONA_INTERRUPT_STATUS_1:
 	case ARIZONA_INTERRUPT_STATUS_2:

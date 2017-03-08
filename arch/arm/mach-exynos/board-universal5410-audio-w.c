@@ -252,8 +252,9 @@ static struct arizona_pdata arizona_platform_data = {
 	.jd_gpio5_nopull = true,
 	.init_done = wm5102_init_done,
 	.max_channels_clocked = {
-	    	[0] = 2,
-	}
+	[0] = 2,
+	},
+	.wm5102t_output_pwr = 4,
 };
 
 #ifdef MODE_WM5102_SPI

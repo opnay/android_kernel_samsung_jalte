@@ -27,9 +27,11 @@
 #define srp_err(x...)
 #endif
 
+#ifdef CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
 #define SRP_DISABLE	1
 #define SRP_ENABLE	2
 #define SRP_FIRM_BROKEN	3
+#endif
 
 /* For SRP firmware */
 struct srp_fw_info {
@@ -163,6 +165,14 @@ enum {
 	SLEEP,
 };
 
+#ifdef CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
+#ifdef CONFIG_SND_SAMSUNG_ALP
 extern int srp_check(int disable);
+#else
+int srp_check(int disable) {
+       return 1;
+}
+#endif
+#endif
 
 #endif /* __SRP_ALP_H */

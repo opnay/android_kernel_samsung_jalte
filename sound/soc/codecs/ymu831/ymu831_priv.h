@@ -157,7 +157,12 @@ enum {
 	MC_ASOC_ADIF1_SOURCE,
 	MC_ASOC_ADIF2_SOURCE,
 
+	MC_ASOC_DSP_PARAM,
+	MC_ASOC_DSP_PARAM_OPT,
 	MC_ASOC_CLEAR_DSP_PARAM,
+
+	MC_ASOC_PLAYBACK_SCENARIO,
+	MC_ASOC_CAPTURE_SCENARIO,
 
 	MC_ASOC_PARAMETER_SETTING,
 
@@ -170,7 +175,6 @@ enum {
 	MC_ASOC_MIC3_BIAS,
 	MC_ASOC_MIC4_BIAS,
 #endif
-
 	MC_ASOC_N_REG
 };
 #define MC_ASOC_N_VOL_REG			(MC_ASOC_DVOL_APLAY_D+1)
@@ -189,9 +193,11 @@ enum {
 #define MC_ASOC_AUDIO_MODE_AUDIO_INCALL3	(10)
 #define MC_ASOC_AUDIO_MODE_INCALL4		(11)
 #define MC_ASOC_AUDIO_MODE_AUDIO_INCALL4	(12)
+#define MC_ASOC_AUDIO_MODE_AUDIOCP		(13)
 
 #define MC_ASOC_AUDIO_MODE_AUDIOEX		(5)
 #define MC_ASOC_AUDIO_MODE_AUDIOVR		(6)
+#define MC_ASOC_AUDIO_MODE_AUDIOLB		(7)
 
 #define MC_ASOC_OUTPUT_PATH_SP			(0)
 #define MC_ASOC_OUTPUT_PATH_RC			(1)
@@ -272,8 +278,8 @@ struct mc_asoc_jack {
 
 struct mc_asoc_platform_data {
 	void	(*set_ext_micbias)(int en);
-	void	(*set_ext_sub_micbias)(int en);
 	void	(*set_codec_ldod)(int status);
+	int	irq;
 };
 
 struct mc_asoc_data {
@@ -292,6 +298,7 @@ struct mc_asoc_data {
 	struct mc_asoc_dsp_param	param_store[4][2];
 	struct mc_asoc_jack		jack;
 	struct mc_asoc_platform_data	*pdata;
+	int	(*penableclkfn)(struct snd_soc_codec *, int, bool);
 };
 
 struct mc_asoc_priv {
@@ -306,6 +313,8 @@ extern void	mc_asoc_read_data(UINT8	bSlaveAdr,
 				UINT8 *pbData,
 				UINT32 dSize);
 extern	void	mc_asoc_set_codec_ldod(int status);
+extern	UINT8	mc_asoc_get_bus_select(void);
+extern	void	mc_asoc_enable_clock(int enable);
 
 
 /*

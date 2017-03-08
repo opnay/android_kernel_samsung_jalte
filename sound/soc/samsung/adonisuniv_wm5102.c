@@ -36,7 +36,6 @@
 #include <mach/exynos5-audio.h>
 #include <linux/mfd/arizona/registers.h>
 #include <linux/mfd/arizona/core.h>
-#include <sound/tlv.h>
 
 #include "i2s.h"
 #include "i2s-regs.h"
@@ -52,7 +51,14 @@
 #define CLK_MODE_MEDIA 0
 #define CLK_MODE_TELEPHONY 1
 
-static DECLARE_TLV_DB_SCALE(digital_tlv, -6400, 50, 0);
+typedef enum {
+	MICBIAS1ON,
+	MICBIAS2ON,
+	MICBIAS3ON,
+	MICBIAS1OFF,
+	MICBIAS2OFF,
+	MICBIAS3OFF
+} micbias_type;
 
 struct wm5102_machine_priv {
 	int clock_mode;
@@ -62,10 +68,10 @@ struct wm5102_machine_priv {
 	struct delayed_work mic_work;
 	struct wake_lock jackdet_wake_lock;
 	int aif2mode;
+	int micbias_mode;
 
 	int aif1rate;
-	unsigned int hp_impedance_step;
-
+	int aif2rate;
 };
 static int lhpf1_coeff;
 static int lhpf2_coeff;
@@ -82,6 +88,10 @@ const char *aif2_mode_text[] = {
 	"Slave", "Master"
 };
 
+const char *micbias_mode_text[] = {
+	"BIAS1ON", "BIAS2ON", "BIAS3ON", "BIAS1OFF", "BIAS2OFF", "BIAS3OFF"
+};
+
 static const struct soc_enum lhpf_filter_mode_enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(lhpf_filter_text), lhpf_filter_text),
 };
@@ -90,17 +100,21 @@ static const struct soc_enum aif2_mode_enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(aif2_mode_text), aif2_mode_text),
 };
 
+static const struct soc_enum micbias_mode_enum[] = {
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(micbias_mode_text), micbias_mode_text),
+};
+
 static struct {
 	int min;           /* Minimum impedance */
 	int max;           /* Maximum impedance */
 	unsigned int gain; /* Register value to set for this measurement */
 } hp_gain_table[] = {
-	{    0,      42, 0 },
-	{   43,     100, 2 },
-	{  101,     200, 4 },
-	{  201,     450, 6 },
-	{  451,    1000, 8 },
-	{ 1001, INT_MAX, 0 },
+	{    0,      42, 0x6c | ARIZONA_OUT_VU },
+	{   43,     100, 0x70 | ARIZONA_OUT_VU },
+	{  101,     200, 0x74 | ARIZONA_OUT_VU },
+	{  201,     450, 0x78 | ARIZONA_OUT_VU },
+	{  451,    1000, 0x7c | ARIZONA_OUT_VU },
+	{ 1001, INT_MAX, 0x6c | ARIZONA_OUT_VU },
 };
 
 static struct snd_soc_codec *the_codec;
@@ -108,66 +122,39 @@ static struct snd_soc_codec *the_codec;
 void adonisuniv_wm5102_hpdet_cb(unsigned int meas)
 {
 	int i;
-	struct wm5102_machine_priv *priv;
 
 	WARN_ON(!the_codec);
 	if (!the_codec)
 		return;
 
-	priv = snd_soc_card_get_drvdata(the_codec->card);
-
 	for (i = 0; i < ARRAY_SIZE(hp_gain_table); i++) {
 		if (meas < hp_gain_table[i].min || meas > hp_gain_table[i].max)
 			continue;
 
-		dev_crit(the_codec->dev, "SET GAIN %d step for %d ohms\n",
+		dev_crit(the_codec->dev, "SET GAIN %x for %d ohms\n",
 			 hp_gain_table[i].gain, meas);
-		priv->hp_impedance_step = hp_gain_table[i].gain;
+		snd_soc_write(the_codec, ARIZONA_DAC_DIGITAL_VOLUME_1L,
+				hp_gain_table[i].gain);
+		snd_soc_write(the_codec, ARIZONA_DAC_DIGITAL_VOLUME_1R,
+				hp_gain_table[i].gain);
 	}
-}
-
-static int wm5102_put_impedance_volsw(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
-	struct wm5102_machine_priv *priv
-		= snd_soc_card_get_drvdata(codec->card);
-	struct soc_mixer_control *mc =
-		(struct soc_mixer_control *)kcontrol->private_value;
-	unsigned int reg = mc->reg;
-	unsigned int shift = mc->shift;
-	int max = mc->max;
-	unsigned int mask = (1 << fls(max)) - 1;
-	unsigned int invert = mc->invert;
-	int err;
-	unsigned int val, val_mask;
-
-	val = (ucontrol->value.integer.value[0] & mask);
-	val += priv->hp_impedance_step;
-	dev_crit(codec->dev, "SET GAIN %d according to impedance, moved %d step\n",
-			 val, priv->hp_impedance_step);
-
-	if (invert)
-		val = max - val;
-	val_mask = mask << shift;
-	val = val << shift;
-
-	err = snd_soc_update_bits_locked(codec, reg, val_mask, val);
-	if (err < 0)
-		return err;
-
-	return err;
 }
 
 static int adonisuniv_start_sysclk(struct snd_soc_card *card)
 {
 	struct wm5102_machine_priv *priv = snd_soc_card_get_drvdata(card);
 	int ret;
+	int fs;
+
+	if (priv->aif1rate >= 192000)
+		fs = 256;
+	else
+		fs = 512;
 
 	ret = snd_soc_codec_set_pll(priv->codec, WM5102_FLL1,
 				     ARIZONA_CLK_SRC_MCLK1,
 				    ADONISUNIV_DEFAULT_MCLK1,
-				    priv->aif1rate * 512);
+				    priv->aif1rate * fs);
 	if (ret != 0) {
 		dev_err(priv->codec->dev, "Failed to start FLL1: %d\n", ret);
 		return ret;
@@ -199,8 +186,8 @@ static int adonisuniv_stop_sysclk(struct snd_soc_card *card)
 
 #ifdef USE_BIAS_LEVEL_POST
 static int adonisuniv_set_bias_level(struct snd_soc_card *card,
-				  struct snd_soc_dapm_context *dapm,
-				  enum snd_soc_bias_level level)
+				     struct snd_soc_dapm_context *dapm,
+				     enum snd_soc_bias_level level)
 {
 	struct snd_soc_dai *codec_dai = card->rtd[0].codec_dai;
 
@@ -212,7 +199,7 @@ static int adonisuniv_set_bias_level(struct snd_soc_card *card,
 	switch (level) {
 	case SND_SOC_BIAS_PREPARE:
 		if (dapm->bias_level != SND_SOC_BIAS_STANDBY)
-			break;
+		break;
 
 		adonisuniv_start_sysclk(card);
 		break;
@@ -321,6 +308,18 @@ static void adonisuniv_gpio_init(void)
 	/*This is tempary code to enable for main mic.(force enable GPIO) */
 	gpio_set_value(GPIO_MICBIAS_EN, 0);
 #endif
+#ifdef GPIO_SUB_MICBIAS_EN
+	int ret;
+
+	/* Sub Microphone BIAS */
+	ret = gpio_request(GPIO_SUB_MICBIAS_EN, "SUBMIC_BIAS");
+	if (ret) {
+		pr_err(KERN_ERR "SUBMIC_BIAS_EN GPIO set error!\n");
+		return;
+	}
+	gpio_direction_output(GPIO_SUB_MICBIAS_EN, 1);
+	gpio_set_value(GPIO_SUB_MICBIAS_EN, 0);
+#endif
 }
 
 /*
@@ -345,10 +344,31 @@ static int adonisuniv_ext_mainmicbias(struct snd_soc_dapm_widget *w,
 	}
 
 	dev_dbg(codec->dev, "Main Mic BIAS: %d\n", event);
-#else
-	dev_err(codec->dev, "Noting to do for Main Mic BIAS\n");
 #endif
 
+	return 0;
+}
+
+static int adonisuniv_ext_submicbias(struct snd_soc_dapm_widget *w,
+			struct snd_kcontrol *kcontrol,  int event)
+{
+#ifdef GPIO_SUB_MICBIAS_EN
+	struct snd_soc_card *card = w->dapm->card;
+	struct snd_soc_codec *codec = card->rtd[0].codec;
+
+	switch (event) {
+
+	case SND_SOC_DAPM_PRE_PMU:
+		gpio_set_value(GPIO_SUB_MICBIAS_EN,  1);
+		break;
+
+	case SND_SOC_DAPM_POST_PMD:
+		gpio_set_value(GPIO_SUB_MICBIAS_EN,  0);
+		break;
+	}
+
+	dev_dbg(codec->dev, "Sub Mic BIAS: %d\n", event);
+#endif
 	return 0;
 }
 
@@ -415,11 +435,72 @@ static int set_aif2_mode(struct snd_kcontrol *kcontrol,
 	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
 	struct wm5102_machine_priv *priv
 		= snd_soc_card_get_drvdata(codec->card);
+	struct snd_soc_dai *codec_dai = codec->card->rtd[0].codec_dai;
+
+	if((priv->aif2mode == 1) && (ucontrol->value.integer.value[0] == 0)) {
+		int ret;
+		ret = snd_soc_dai_set_pll(codec_dai, WM5102_FLL2, 0, 0, 0);
+		if (ret != 0)
+			dev_err(codec->dev,
+					"Failed to stop FLL2: %d\n", ret);
+	}
 
 	priv->aif2mode = ucontrol->value.integer.value[0];
 
 	dev_info(codec->dev, "set aif2 mode: %s\n",
 					 aif2_mode_text[priv->aif2mode]);
+	return  0;
+}
+
+static int get_micbias_mode(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+	struct wm5102_machine_priv *priv
+		= snd_soc_card_get_drvdata(codec->card);
+
+	ucontrol->value.integer.value[0] = priv->micbias_mode;
+	return 0;
+}
+
+static int set_micbias_mode(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+	struct regmap *regmap = codec->control_data;
+	micbias_type micbias = ucontrol->value.integer.value[0];
+
+	switch (micbias) {
+
+	case MICBIAS1ON:
+		regmap_update_bits(regmap, ARIZONA_MIC_BIAS_CTRL_1, ARIZONA_MICB1_ENA_MASK,
+				ARIZONA_MICB1_ENA);
+		break;
+	case MICBIAS2ON:
+		regmap_update_bits(regmap, ARIZONA_MIC_BIAS_CTRL_2, ARIZONA_MICB2_ENA_MASK,
+				ARIZONA_MICB2_ENA);
+		break;
+	case MICBIAS3ON:
+		regmap_update_bits(regmap, ARIZONA_MIC_BIAS_CTRL_3, ARIZONA_MICB3_ENA_MASK,
+				ARIZONA_MICB3_ENA);
+		break;
+	case MICBIAS1OFF:
+		regmap_update_bits(regmap, ARIZONA_MIC_BIAS_CTRL_1, ARIZONA_MICB1_ENA_MASK,
+				0);
+		break;
+	case MICBIAS2OFF:
+		regmap_update_bits(regmap, ARIZONA_MIC_BIAS_CTRL_2, ARIZONA_MICB2_ENA_MASK,
+				0);
+		break;
+	case MICBIAS3OFF:
+		regmap_update_bits(regmap, ARIZONA_MIC_BIAS_CTRL_3, ARIZONA_MICB3_ENA_MASK,
+				0);
+		break;
+	default:
+		break;
+	}
+	dev_info(codec->dev, "set micbias mode: %s\n",
+					 micbias_mode_text[micbias]);
 	return  0;
 }
 
@@ -433,17 +514,9 @@ static const struct snd_kcontrol_new adonisuniv_codec_controls[] = {
 	SOC_ENUM_EXT("AIF2 Mode", aif2_mode_enum[0],
 		get_aif2_mode, set_aif2_mode),
 
-	SOC_SINGLE_EXT_TLV("HPOUT1L Impedance Volume",
-		ARIZONA_DAC_DIGITAL_VOLUME_1L,
-		ARIZONA_OUT1L_VOL_SHIFT, 0xbf, 0,
-		snd_soc_get_volsw, wm5102_put_impedance_volsw,
-		digital_tlv),
+	SOC_ENUM_EXT("MICBIAS Mode", micbias_mode_enum[0],
+		get_micbias_mode, set_micbias_mode),
 
-	SOC_SINGLE_EXT_TLV("HPOUT1R Impedance Volume",
-		ARIZONA_DAC_DIGITAL_VOLUME_1R,
-		ARIZONA_OUT1L_VOL_SHIFT, 0xbf, 0,
-		snd_soc_get_volsw, wm5102_put_impedance_volsw,
-		digital_tlv),
 };
 
 static const struct snd_kcontrol_new adonisuniv_controls[] = {
@@ -469,7 +542,7 @@ const struct snd_soc_dapm_widget adonisuniv_dapm_widgets[] = {
 
 	SND_SOC_DAPM_MIC("Headset Mic", NULL),
 	SND_SOC_DAPM_MIC("Main Mic", adonisuniv_ext_mainmicbias),
-	SND_SOC_DAPM_MIC("Sub Mic", NULL),
+	SND_SOC_DAPM_MIC("Sub Mic", adonisuniv_ext_submicbias),
 	SND_SOC_DAPM_MIC("3rd Mic", NULL),
 };
 
@@ -484,6 +557,8 @@ const struct snd_soc_dapm_route adonisuniv_dapm_routes[] = {
 
 	{ "SPK", NULL, "SPKOUTLN" },
 	{ "SPK", NULL, "SPKOUTLP" },
+	{ "SPK", NULL, "SPKOUTRN" },
+	{ "SPK", NULL, "SPKOUTRP" },
 
 	{ "VPS", NULL, "HPOUT2L" },
 	{ "VPS", NULL, "HPOUT2R" },
@@ -497,10 +572,10 @@ const struct snd_soc_dapm_route adonisuniv_dapm_routes[] = {
 	{ "Headset Mic", NULL, "MICBIAS1" },
 	{ "IN1R", NULL, "Headset Mic" },
 
-	{ "Sub Mic", NULL, "MICBIAS2" },
+	{ "Sub Mic", NULL, "MICBIAS3" },
 	{ "IN2L", NULL, "Sub Mic" },
 
-	{ "3rd Mic", NULL, "MICBIAS3" },
+	{ "3rd Mic", NULL, "MICBIAS2" },
 	{ "IN2R", NULL, "3rd Mic" },
 };
 
@@ -579,15 +654,22 @@ static int adonisuniv_wm5102_aif2_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 	struct wm5102_machine_priv *priv = snd_soc_card_get_drvdata(rtd->card);
 	int ret;
-	int prate, bclk;
+	int bclk;
 
 	dev_info(codec_dai->dev, "aif2: %dch, %dHz, %dbytes\n",
 						params_channels(params),
 						params_rate(params),
 						params_buffer_bytes(params));
 
-	prate = params_rate(params);
-	switch (prate) {
+	if (priv->aif2rate != params_rate(params)) {
+		ret = snd_soc_dai_set_pll(codec_dai, WM5102_FLL2, 0, 0, 0);
+		if (ret != 0)
+			dev_err(codec_dai->dev,
+					"Failed to stop FLL2: %d\n", ret);
+		priv->aif2rate = params_rate(params);
+	}
+
+	switch (priv->aif2rate) {
 	case 8000:
 		bclk = 256000;
 		break;
@@ -598,7 +680,6 @@ static int adonisuniv_wm5102_aif2_hw_params(struct snd_pcm_substream *substream,
 		dev_warn(codec_dai->dev,
 				"Unsupported LRCLK %d, falling back to 8000Hz\n",
 				(int)params_rate(params));
-		prate = 8000;
 		bclk = 256000;
 	}
 
@@ -713,6 +794,8 @@ static int adonisuniv_late_probe(struct snd_soc_card *card)
 
 	codec_dai->driver->playback.channels_max =
 				cpu_dai->driver->playback.channels_max;
+	/* close codec device immediately when pcm is closed */
+	codec->ignore_pmdown_time = true;
 
 	snd_soc_dapm_ignore_suspend(&codec->dapm, "RCV");
 	snd_soc_dapm_ignore_suspend(&codec->dapm, "VPS");
@@ -830,15 +913,11 @@ static struct snd_soc_dai_driver adonisuniv_ext_dai[] = {
 
 static struct snd_soc_dai_link adonisuniv_dai[] = {
 	{
-		.name = "AdonisUniv_WM5102 Playback",
-		.stream_name = "Sec_Dai",
-		.cpu_dai_name = "samsung-i2s.4",
+		.name = "AdonisUniv_WM5102 Multi Ch",
+		.stream_name = "Pri_Dai",
+		.cpu_dai_name = "samsung-i2s.0",
 		.codec_dai_name = "wm5102-aif1",
-#ifdef CONFIG_SND_SAMSUNG_USE_IDMA
-		.platform_name = "samsung-idma",
-#else
 		.platform_name = "samsung-audio",
-#endif
 		.codec_name = "wm5102-codec",
 		.ops = &adonisuniv_wm5102_aif1_ops,
 	},
@@ -863,11 +942,15 @@ static struct snd_soc_dai_link adonisuniv_dai[] = {
 		.ignore_suspend = 1,
 	},
 	{
-		.name = "AdonisUniv_WM5102 Multi Ch",
-		.stream_name = "Pri_Dai",
-		.cpu_dai_name = "samsung-i2s.0",
+		.name = "AdonisUniv_WM5102 Playback",
+		.stream_name = "Sec_Dai",
+		.cpu_dai_name = "samsung-i2s.4",
 		.codec_dai_name = "wm5102-aif1",
+#ifdef CONFIG_SND_SAMSUNG_USE_IDMA
+		.platform_name = "samsung-idma",
+#else
 		.platform_name = "samsung-audio",
+#endif
 		.codec_name = "wm5102-codec",
 		.ops = &adonisuniv_wm5102_aif1_ops,
 	},
@@ -942,6 +1025,9 @@ static int __devexit snd_adonisuniv_remove(struct platform_device *pdev)
 
 #ifdef GPIO_MICBIAS_EN
 	gpio_free(GPIO_MICBIAS_EN);
+#endif
+#ifdef GPIO_SUB_MICBIAS_EN
+	gpio_free(GPIO_SUB_MICBIAS_EN);
 #endif
 
 	return 0;

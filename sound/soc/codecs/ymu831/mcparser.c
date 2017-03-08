@@ -6,7 +6,7 @@
  *
  *	Description	: MC Driver parse control
  *
- *	Version		: 1.0.4	2013.01.17
+ *	Version		: 2.0.1	2013.04.22
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.	In no event will the authors be held liable for any damages

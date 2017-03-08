@@ -29,7 +29,12 @@
 #define ST_RUNNING		(1<<0)
 #define ST_OPENED		(1<<1)
 
-#define CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
+#ifdef CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
+#define DMA_SRAM	0
+#define DMA_DRAM	1
+
+bool dma_ram;
+#endif
 
 static const struct snd_pcm_hardware idma_hardware = {
 	.info = SNDRV_PCM_INFO_INTERLEAVED |
@@ -66,21 +71,49 @@ struct idma_ctrl {
 };
 
 static struct idma_info {
-	spinlock_t		lock;
-	void __iomem		*regs;
-	dma_addr_t		lp_tx_addr;
+	spinlock_t	lock;
+	void		 __iomem  *regs;
+	dma_addr_t	lp_tx_addr;
 #ifdef CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
 	void			*dma_area;
 	struct snd_dma_buffer	sram_buf;
 	struct snd_dma_buffer	dram_buf;
 #endif
+	u32 sample_bit;
 } idma;
+
+int check_dram_status(void)
+{
+#ifdef CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
+	return dma_ram;
+#endif
+	return 0;
+}
+EXPORT_SYMBOL_GPL(check_dram_status);
+
+static int get_sample_bit(struct snd_pcm_hw_params *params)
+{
+	/* format */
+	switch (params_format(params)) {
+	case SNDRV_PCM_FORMAT_S16_LE:
+	case SNDRV_PCM_FORMAT_U16_LE:
+		return 16;
+	case SNDRV_PCM_FORMAT_S24_LE:
+	case SNDRV_PCM_FORMAT_U24_LE:
+		return 24;
+	case SNDRV_PCM_FORMAT_U8:
+	case SNDRV_PCM_FORMAT_S8:
+		return 8;
+	default:
+		return 16;
+	}
+}
 
 static void idma_getpos(dma_addr_t *res, struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct idma_ctrl *prtd = runtime->private_data;
-	u32 maxcnt = snd_pcm_lib_buffer_bytes(substream) >> 2;
+	u32 maxcnt = snd_pcm_lib_buffer_bytes(substream) >> 2; 
 	u32 trncnt = readl(idma.regs + I2STRNCNT) & 0xffffff;
 
 	/*
@@ -90,7 +123,11 @@ static void idma_getpos(dma_addr_t *res, struct snd_pcm_substream *substream)
 	if (prtd->state == ST_RUNNING)
 		trncnt = trncnt == 0 ? maxcnt - 1 : trncnt - 1;
 
-	*res = trncnt << 2;
+	if (idma.sample_bit == 24)
+		*res = ((trncnt << 2) / prtd->periodsz) * prtd->periodsz;
+	else
+		*res = trncnt << 2;
+
 }
 
 static int idma_enqueue(struct snd_pcm_substream *substream)
@@ -176,7 +213,6 @@ static int idma_hw_params(struct snd_pcm_substream *substream,
 	struct idma_ctrl *prtd = substream->runtime->private_data;
 	u32 mod = readl(idma.regs + I2SMOD);
 	u32 ahb = readl(idma.regs + I2SAHB);
-	unsigned long rate = params_rate(params);
 #ifdef CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
 	struct snd_dma_buffer *buf;
 	bool sram_avail = false;
@@ -189,7 +225,6 @@ static int idma_hw_params(struct snd_pcm_substream *substream,
 
 	snd_pcm_set_runtime_buffer(substream, &substream->dma_buffer);
 	runtime->dma_bytes = params_buffer_bytes(params);
-
 #ifdef CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
 	if (runtime->dma_bytes <= 32 * 1024) {
 		sram_avail = true;
@@ -205,10 +240,12 @@ static int idma_hw_params(struct snd_pcm_substream *substream,
 		buf = &idma.sram_buf;
 		idma.lp_tx_addr = idma.sram_buf.addr;
 		idma.dma_area   = idma.sram_buf.area;
+		dma_ram = DMA_SRAM;
 	} else {			/* dram buffer used */
 		buf = &idma.dram_buf;
 		idma.lp_tx_addr = idma.dram_buf.addr;
 		idma.dma_area   = idma.dram_buf.area;
+		dma_ram = DMA_DRAM;
 	}
 
 	prtd->start = prtd->pos = buf->addr;
@@ -223,10 +260,12 @@ static int idma_hw_params(struct snd_pcm_substream *substream,
 #endif
 	idma_setcallbk(substream, idma_done);
 
-	pr_info("I:%s:DmaAddr=@%x Total=%d PrdSz=%d #Prds=%d dma_area=0x%x rate=%ld\n",
+	idma.sample_bit = get_sample_bit(params);
+
+	pr_info("I:%s:DmaAddr=@%x Total=%d PrdSz=%d #Prds=%d dma_area=0x%x\n",
 		(substream->stream == SNDRV_PCM_STREAM_PLAYBACK) ? "P" : "C",
 			prtd->start, runtime->dma_bytes,  prtd->periodsz,
-			prtd->period, (unsigned int)runtime->dma_area, rate);
+			prtd->period, (unsigned int)runtime->dma_area);
 
 	return 0;
 }
@@ -349,16 +388,16 @@ static irqreturn_t iis_irq(int irqno, void *dev_id)
 		writel(iisahb, idma.regs + I2SAHB);
 
 		if (prtd->state & ST_RUNNING) {
-		addr = readl(idma.regs + I2SLVL0ADDR) - idma.lp_tx_addr;
-		addr += prtd->periodsz;
-		addr %= (prtd->end - prtd->start);
-		addr += idma.lp_tx_addr;
+			addr = readl(idma.regs + I2SLVL0ADDR) - idma.lp_tx_addr;
+			addr += prtd->periodsz;
+			addr %= (prtd->end - prtd->start);
+			addr += idma.lp_tx_addr;
 
-		writel(addr, idma.regs + I2SLVL0ADDR);
+			writel(addr, idma.regs + I2SLVL0ADDR);
 
-		if (prtd->cb)
-			prtd->cb(prtd->token, prtd->period);
-	}
+			if (prtd->cb)
+				prtd->cb(prtd->token, prtd->period);
+		}
 	}
 
 	return IRQ_HANDLED;
@@ -375,6 +414,9 @@ static int idma_open(struct snd_pcm_substream *substream)
 	prtd = kzalloc(sizeof(struct idma_ctrl), GFP_KERNEL);
 	if (prtd == NULL)
 		return -ENOMEM;
+
+        /* Clear AHB register */
+	writel(0, idma.regs + I2SAHB);
 
 	ret = request_irq(IRQ_I2S0, iis_irq, 0, "i2s", prtd);
 	if (ret < 0) {
@@ -435,7 +477,6 @@ static void idma_free(struct snd_pcm *pcm)
 
 	buf->area = NULL;
 	buf->addr = 0;
-
 #ifdef CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
 	buf = &idma.dram_buf;
 
@@ -443,7 +484,6 @@ static void idma_free(struct snd_pcm *pcm)
 				      buf->area, buf->addr);
 	buf->area = NULL;
 #endif
-
 }
 
 static int preallocate_idma_buffer(struct snd_pcm *pcm, int stream)
@@ -452,13 +492,13 @@ static int preallocate_idma_buffer(struct snd_pcm *pcm, int stream)
 	struct snd_dma_buffer *buf = &substream->dma_buffer;
 
 	buf->dev.dev = pcm->card->dev;
-	buf->dev.type = SNDRV_DMA_TYPE_CONTINUOUS;
 	buf->private_data = NULL;
 
+	/* Assign PCM buffer pointers */
+	buf->dev.type = SNDRV_DMA_TYPE_CONTINUOUS;
 	buf->addr = idma.lp_tx_addr;
 	buf->bytes = idma_hardware.buffer_bytes_max;
 	buf->area = (unsigned char *)ioremap(buf->addr, buf->bytes);
-
 #ifdef CONFIG_SND_SAMSUNG_USE_IDMA_DRAM
 	/* info sram_buf */
 	memcpy(&idma.sram_buf, buf, sizeof(struct snd_dma_buffer));
