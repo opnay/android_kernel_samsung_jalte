@@ -393,7 +393,6 @@ static int ksb_fs_open(struct inode *ip, struct file *fp)
 
 	dev_dbg(ksb->device, ":%s", ksb->id_info.name);
 	dbg_log_event(ksb, "FS-OPEN", 0, 0);
-	pr_info("FS-OPEN");
 
 	fp->private_data = ksb;
 	set_bit(FILE_OPENED, &ksb->flags);
@@ -432,7 +431,6 @@ static int ksb_fs_release(struct inode *ip, struct file *fp)
 	if (test_bit(USB_DEV_CONNECTED, &ksb->flags))
 		dev_dbg(ksb->device, ":%s", ksb->id_info.name);
 	dbg_log_event(ksb, "FS-RELEASE", 0, 0);
-	pr_info("FS-RELEASE");
 
 	clear_bit(FILE_OPENED, &ksb->flags);
 	fp->private_data = NULL;
@@ -835,7 +833,6 @@ static int ksb_usb_suspend(struct usb_interface *ifc, pm_message_t message)
 
 	if (pm_runtime_autosuspend_expiration(&ksb->udev->dev)) {
 		dbg_log_event(ksb, "SUSP ABORT-TimeCheck", 0, 0);
-		pr_info("SUSP ABORT-TimeCheck");
 		return -EBUSY;
 	}
 
@@ -845,7 +842,6 @@ static int ksb_usb_suspend(struct usb_interface *ifc, pm_message_t message)
 	if (!list_empty(&ksb->to_ks_list)) {
 		spin_unlock_irqrestore(&ksb->lock, flags);
 		dbg_log_event(ksb, "SUSPEND ABORT", 0, 0);
-		pr_info("SUSPEND ABORT");
 		/*
 		 * Now wakeup the reader process and queue
 		 * Rx URBs for more data.
@@ -878,7 +874,6 @@ static void ksb_usb_disconnect(struct usb_interface *ifc)
 	struct data_pkt *pkt;
 
 	dbg_log_event(ksb, "PID-DETACH", 0, 0);
-	pr_info("PID-DETACH");
 
 	clear_bit(USB_DEV_CONNECTED, &ksb->flags);
 	wake_up(&ksb->ks_wait_q);

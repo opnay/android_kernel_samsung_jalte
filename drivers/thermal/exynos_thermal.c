@@ -45,8 +45,6 @@
 #include <plat/cpu.h>
 
 #include <mach/tmu.h>
-#include <mach/sec_debug.h>
-
 
 /*Exynos generic registers*/
 #define EXYNOS_TMU_REG_TRIMINFO		0x0
@@ -1015,8 +1013,6 @@ static int exynos_tmu_read(struct exynos_tmu_data *data)
 	if (check_mif_probed())
 		exynos_tmu_mif_call_notifier(mif_event);
 
-	sec_debug_aux_log(SEC_DEBUG_AUXLOG_THERMAL_CHANGE, "[TMU] %d, %d, %d, %d", alltemp[0], alltemp[1], alltemp[2], alltemp[3]);
-
 	return max;
 }
 
@@ -1052,8 +1048,6 @@ static irqreturn_t exynos_tmu_irq(int irq, void *id)
 {
 	struct exynos_tmu_data *data = id;
 	int i;
-
-	sec_debug_aux_log(SEC_DEBUG_AUXLOG_THERMAL_CHANGE, "[IRQ] %d", irq);
 
 	for (i = 0; i < EXYNOS_TMU_COUNT; i++)
 		disable_irq_nosync(data->irq[i]);

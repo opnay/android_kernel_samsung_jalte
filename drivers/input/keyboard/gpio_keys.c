@@ -67,40 +67,10 @@ struct gpio_keys_drvdata {
 	bool flip_cover;
 	struct delayed_work flip_cover_dwork;
 	struct wake_lock flip_wake_lock;
-#ifdef CONFIG_SENSORS_HALL_IRQ_CTRL
-	struct mutex irq_lock;
-	bool gsm_area;
-#endif
 #endif
 	struct gpio_button_data data[0];
 };
 
-/* workaround for JA3g project */
-
-#ifdef CONFIG_SENSORS_HALL_IRQ_CTRL
-struct gpio_keys_drvdata *g_drvdata;
-
-
-
-static ssize_t hall_irq_ctrl_store(struct device *dev, struct device_attribute *attr,
-		const char *buf, size_t count)
-{
-	pr_info("%s: %s\n", __func__, buf);
-
-	if (!strncasecmp(buf, "ON", 2)) {
-		g_drvdata->gsm_area = true;
-	} else if (!strncasecmp(buf, "OFF", 3)) {
-		g_drvdata->gsm_area = false;
-	} else {
-		pr_info("%s: Wrong command, current state %s\n",
-				__func__, g_drvdata->gsm_area?"ON":"OFF");
-	}
-
-	return count;
-}
-static DEVICE_ATTR(hall_irq_ctrl, 0664, NULL, hall_irq_ctrl_store);
-
-#endif
 /*
  * SYSFS interface for enabling/disabling keys and switches:
  *
@@ -452,9 +422,6 @@ static struct attribute *sec_key_attrs[] = {
 	&dev_attr_wakeup_keys.attr,
 #ifdef CONFIG_SENSORS_HALL
 	&dev_attr_hall_detect.attr,
-#ifdef CONFIG_SENSORS_HALL_IRQ_CTRL
-	&dev_attr_hall_irq_ctrl.attr,
-#endif
 #endif
 	NULL,
 };
@@ -814,10 +781,6 @@ static void flip_cover_work(struct work_struct *work)
 static void flip_cover_work(struct work_struct *work)
 {
 	bool first;
-#ifdef CONFIG_SENSORS_HALL_IRQ_CTRL
-	bool second;
-	int retry;
-#endif
 	struct gpio_keys_drvdata *ddata =
 		container_of(work, struct gpio_keys_drvdata,
 				flip_cover_dwork.work);
@@ -827,20 +790,6 @@ static void flip_cover_work(struct work_struct *work)
 	printk(KERN_DEBUG "[keys] %s #1 : %d\n",
 		__func__, first);
 
-/* fake intrrupt checking for JA3g project */
-#ifdef CONFIG_SENSORS_HALL_IRQ_CTRL
-if (g_drvdata->gsm_area) {
-for(retry=0;retry<10;retry++)
-{
-		mdelay(7);
-		second = gpio_get_value(ddata->gpio_flip_cover);
-		if (first != second) {
-			pr_info("%s: not stable interrupt\n", __func__);
-			return;
-		}
-}
-}
-#endif
 	if(ddata->flip_cover != first) {
 		ddata->flip_cover = first;
 		input_report_switch(ddata->input,
@@ -1113,11 +1062,7 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 	/* Enable auto repeat feature of Linux input subsystem */
 	if (pdata->rep)
 		__set_bit(EV_REP, input->evbit);
-#ifdef CONFIG_SENSORS_HALL_IRQ_CTRL
-	mutex_init(&ddata->irq_lock);
-	ddata->gsm_area = false;
-	g_drvdata = ddata;
-#endif
+
 	for (i = 0; i < pdata->nbuttons; i++) {
 		struct gpio_keys_button *button = &pdata->buttons[i];
 		struct gpio_button_data *bdata = &ddata->data[i];

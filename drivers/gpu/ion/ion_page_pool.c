@@ -22,6 +22,7 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/shrinker.h>
+#include <linux/swap.h>
 #include "ion_priv.h"
 
 #include <linux/swap.h>

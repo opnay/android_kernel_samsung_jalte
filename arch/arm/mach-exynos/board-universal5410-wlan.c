@@ -218,7 +218,7 @@ static int brcm_wlan_power(int onoff)
 			bt_off = 1;
 			gpio_set_value(GPIO_BT_EN, GPIO_LEVEL_HIGH);
 			printk("[brcm_wlan_power] BT_REG_ON -> On\n");
-			udelay(50);
+			msleep(100);
 		}
 		else {
 			bt_off = 0;
@@ -244,7 +244,6 @@ static int brcm_wlan_power(int onoff)
 #ifdef ENABLE_4335BT_WAR
 	/*  Xtal start up workaround patch */
 	if(onoff && (bt_off == 1) && (bt_is_running == 0)) {
-		udelay(100);
 		gpio_set_value(GPIO_BT_EN, GPIO_LEVEL_LOW);
 		printk("[brcm_wlan_power]  BT_REG_ON -> Off\n");
 	}
