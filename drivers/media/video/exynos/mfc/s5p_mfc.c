@@ -856,10 +856,13 @@ static void s5p_mfc_handle_frame_new(struct s5p_mfc_ctx *ctx, unsigned int err)
 					sizeof(struct timeval));
 			}
 
-			if (!no_order)
+			if (!no_order) {
 				ctx->last_framerate =
 					get_framerate_by_timestamp(
 						ctx, &dst_buf->vb.v4l2_buf);
+			ctx->last_framerate =
+					(ctx->qos_ratio * ctx->last_framerate) / 100;
+			}
 
 			vb2_buffer_done(&dst_buf->vb,
 				s5p_mfc_err_dspl(err) ?
@@ -1786,10 +1789,15 @@ static int s5p_mfc_open(struct file *file)
 #endif
 	if (is_drm == MFCDRM_NONE) {
 		if (dev->num_drm_inst) {
-			mfc_err("Can not open non-DRM instance\n");
-			mfc_err("DRM instance is already opened.\n");
-			ret = -EINVAL;
-			goto err_drm_start;
+			if (node != MFCNODE_ENCODER) {
+				mfc_err("Can not open non-DRM instance\n");
+				mfc_err("DRM instance is already opened.\n");
+				ret = -EINVAL;
+				goto err_drm_start;
+			} else {
+				mfc_info("Work for getting extra information.\n");
+				ctx->state = MFCINST_ERROR;
+			}
 		}
 	} else {
 		if (is_drm == MFCDRM_MAGIC_KEY)
@@ -1990,6 +1998,7 @@ static int s5p_mfc_release(struct file *file)
 	struct s5p_mfc_ctx *ctx = fh_to_mfc_ctx(file->private_data);
 	struct s5p_mfc_dev *dev = NULL;
 	struct s5p_mfc_enc *enc = NULL;
+	int ret = 0;
 
 	mfc_info("mfc driver release called\n");
 
@@ -2001,9 +2010,12 @@ static int s5p_mfc_release(struct file *file)
 
 	if (need_to_wait_frame_start(ctx)) {
 		ctx->state = MFCINST_ABORT;
-		if (s5p_mfc_wait_for_done_ctx(ctx,
-				S5P_FIMV_R2H_CMD_FRAME_DONE_RET, 0))
+		ret = s5p_mfc_wait_for_done_ctx(ctx,
+		S5P_FIMV_R2H_CMD_FRAME_DONE_RET, 0);
+		if (ret == 1)
 			s5p_mfc_cleanup_timeout(ctx);
+		else if (ret == -1)
+			mfc_err("continue progress\n");
 	}
 
 	if (ctx->type == MFCINST_ENCODER) {

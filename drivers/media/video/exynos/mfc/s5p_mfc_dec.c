@@ -2648,6 +2648,7 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 	int aborted = 0;
 	int index = 0;
     int prev_state;
+	int ret = 0;
 
 	if (!ctx) {
 		mfc_err("no mfc context to run\n");
@@ -2666,9 +2667,12 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 
 	if (need_to_wait_frame_start(ctx)) {
 		ctx->state = MFCINST_ABORT;
-		if (s5p_mfc_wait_for_done_ctx(ctx,
-				S5P_FIMV_R2H_CMD_FRAME_DONE_RET, 0))
+		ret = s5p_mfc_wait_for_done_ctx(ctx,
+		S5P_FIMV_R2H_CMD_FRAME_DONE_RET, 0);
+		if (ret == 1)
 			s5p_mfc_cleanup_timeout(ctx);
+		else if (ret == -1)
+			mfc_err("continue progress\n");
 
 		aborted = 1;
 	}
@@ -2693,6 +2697,8 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 		dec->dpb_queue_cnt = 0;
 		dec->consumed = 0;
 		dec->remained_size = 0;
+		dec->y_addr_for_pb = 0;
+		
 
 		while (index < MFC_MAX_BUFFERS) {
 			index = find_next_bit(&ctx->dst_ctrls_avail,
@@ -2732,6 +2738,7 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 		spin_lock_irq(&dev->condlock);
 		set_bit(ctx->num, &dev->ctx_work_bits);
 		spin_unlock_irq(&dev->condlock);
+		s5p_mfc_clean_ctx_int_flags(ctx);
 		s5p_mfc_try_run(dev);
 		if (s5p_mfc_wait_for_done_ctx(ctx,
 				S5P_FIMV_R2H_CMD_DPB_FLUSH_RET, 0))

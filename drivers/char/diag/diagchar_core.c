@@ -1181,7 +1181,7 @@ static int __init diagchar_init(void)
 	dev_t dev;
 	int error;
 
-#if defined(CONFIG_DIAG_MODE)
+#if defined(CONFIG_DIAG_MODE) && defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
 	if (!diag_mode) {
 		pr_info("diagchar_core isn't enabled.\n");
 		return -EPERM;
