@@ -115,7 +115,7 @@ struct sromc_access_cfg {
 #define INT_MASK_RES_ACK_RFS	0x0200	/* Response of REQ_ACK_RFS       */
 #define INT_MASK_SEND_RFS	0x0100	/* Indicate sending RFS data     */
 
-extern int system_rev;
+extern unsigned int system_rev;
 
 /* Function prototypes */
 static void config_dpram_port_gpio(void);

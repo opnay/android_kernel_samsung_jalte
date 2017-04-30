@@ -46,6 +46,7 @@ snd-soc-littlemill-objs := littlemill.o
 snd-soc-adonisuniv-wm1811-objs := adonisuniv_wm1811.o
 snd-soc-adonisuniv-wm5102-objs := adonisuniv_wm5102.o
 snd-soc-adonisuniv-ymu831-objs := adonisuniv_ymu831.o
+snd-soc-adonisduos-ymu831-objs := adonisduos_ymu831.o
 snd-soc-adonisuniv-wm1811-slsi-objs := adonisuniv_wm1811_slsi.o
 snd-soc-adonisuniv-ymu831-slsi-objs := adonisuniv_ymu831_slsi.o
 
@@ -73,6 +74,7 @@ obj-$(CONFIG_SND_SOC_LOWLAND) += snd-soc-lowland.o
 obj-$(CONFIG_SND_SOC_LITTLEMILL) += snd-soc-littlemill.o
 obj-$(CONFIG_SND_SOC_ADONISUNIV_WM1811) += snd-soc-adonisuniv-wm1811.o
 obj-$(CONFIG_SND_SOC_ADONISUNIV_WM5102) += snd-soc-adonisuniv-wm5102.o
+obj-$(CONFIG_SND_SOC_ADONISDUOS_YMU831) += snd-soc-adonisduos-ymu831.o
 obj-$(CONFIG_SND_SOC_ADONISUNIV_YMU831) += snd-soc-adonisuniv-ymu831.o
 obj-$(CONFIG_SND_SOC_ADONISUNIV_WM1811_SLSI) += snd-soc-adonisuniv-wm1811-slsi.o
 obj-$(CONFIG_SND_SOC_ADONISUNIV_YMU831_SLSI) += snd-soc-adonisuniv-ymu831-slsi.o

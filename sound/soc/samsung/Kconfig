@@ -94,6 +94,15 @@ config SND_SOC_ADONISUNIV_WM5102
           Say Y if you want to add support for SoC audio on Universal 5410 Board
           with the WM8994
 
+config SND_SOC_ADONISDUOS_YMU831
+	tristate "SoC I2S Audio support for Adonis DUOS - YMU831"
+	depends on SND_SOC_SAMSUNG && MACH_UNIVERSAL5410
+	select SND_SAMSUNG_I2S
+	select SND_SOC_YAMAHA_YMU831
+	help
+          Say Y if you want to add support for SoC audio on Universal 5410 Board
+          with the YMU831
+
 config SND_SOC_ADONISUNIV_WM1811_SLSI
 	tristate "SoC I2S Audio support for Adonis Univ - WM8994 SLSI"
 	depends on SND_SOC_SAMSUNG && MACH_UNIVERSAL5410
@@ -304,3 +313,11 @@ config SND_SOC_LITTLEMILL
 	select SND_SAMSUNG_I2S
 	select MFD_WM8994
 	select SND_SOC_WM8994
+
+config SND_DUOS_MODEM_SWITCH
+	bool "Select DUOS Modem"
+	depends on SND_SOC_SAMSUNG
+
+config SND_USE_YMU831_LDODE_GPIO
+	bool "Use YMU831_LDODE_GPIO"
+	depends on SND_SOC_SAMSUNG && SND_SOC_YAMAHA_YMU831
