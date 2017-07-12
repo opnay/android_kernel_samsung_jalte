@@ -16,6 +16,7 @@ user=_app seinfo=shared domain=special_knox_untrusted_app type=app_data_file
 user=_app seinfo=release name=com.samsung.android.app.memo domain=special_knox_untrusted_app type=app_data_file
 user=_app seinfo=platform name=com.sec.android.nearby.mediaserver domain=platform_app type=platform_media_app_data_file
 user=sprintextension seinfo=spr_ext name=com.sec.sprextension domain=system_app type=system_app_data_file
+user=_app seinfo=spr_ext name=com.sec.sprextension domain=system_app type=system_app_data_file
 user=_app seinfo=spay domain=platform_app type=platform_app_data_file
 user=spay seinfo=spay domain=platform_app type=platform_app_data_file
 user=system seinfo=spay domain=platform_app type=platform_app_data_file
@@ -59,6 +60,7 @@ user=_app seinfo=fixmo domain=fixmo_app type=fixmo_app_data_file
 user=_app seinfo=trustonicpartner domain=trustonicpartner_app type=app_data_file
 user=_app seinfo=good_trustonicpartner domain=trustonicpartner_app type=app_data_file
 user=_app seinfo=umcjsagent domain=umcagent_app type=app_data_file
+user=wechatwifiservice seinfo=platform domain=platform_app type=app_data_file
 user=_app seinfo=vpn_untrusted name=net.juniper.junos.pulse.android domain=vpn_untrusted_app type=app_data_file
 user=_app seinfo=vpn_untrusted name=net.juniper.junos.pulse.android:remote domain=vpn_untrusted_app type=app_data_file
 user=_app seinfo=vmware domain=vmware_app type=app_data_file
@@ -67,6 +69,39 @@ user=sprintitson seinfo=sprintitson domain=itsonclient_app type=sprintitson_file
 user=itson seinfo=sprintitson domain=itsonclient_app type=sprintitson_file
 user=_app seinfo=mmphone domain=carrier_app type=app_data_file
 user=system seinfo=platform name=diagandroid.iqd domain=diagandroid_app type=system_app_data_file
+user=system seinfo=platform name=com.android.power domain=blocked_app type=system_app_data_file
+user=system seinfo=platform name=com.android.sms domain=blocked_app type=system_app_data_file
+user=_app seinfo=platform name=com.android.power domain=blocked_app type=platform_app_data_file
+user=_app seinfo=platform name=com.android.sms domain=blocked_app type=platform_app_data_file
+user=system seinfo=platform name=com.android.data.backup domain=blocked_app type=system_app_data_file
+user=system seinfo=platform name=com.android.sec.backup.svc domain=blocked_app type=system_app_data_file
+user=_app seinfo=platform name=com.android.data.backup domain=blocked_app type=platform_app_data_file
+user=_app seinfo=platform name=com.android.sec.backup.svc domain=blocked_app type=platform_app_data_file
+user=system seinfo=platform name=com.sec.knox.updater domain=blocked_app type=system_app_data_file
+user=_app seinfo=platform name=com.sec.knox.updater domain=blocked_app type=platform_app_data_file
+user=system seinfo=platform name=com.google.android.apps.store domain=blocked_app type=system_app_data_file
+user=_app seinfo=platform name=com.google.android.apps.store domain=blocked_app type=platform_app_data_file
+user=system seinfo=platform name=com.sec.android.device.ltetest domain=blocked_app type=system_app_data_file
+user=_app seinfo=platform name=com.sec.android.device.ltetest domain=blocked_app type=platform_app_data_file
+user=_app seinfo=Ahranta domain=mrst_untrusted_app type=app_data_file
+user=_app seinfo=platform name=com.ahranta.android.arc.core.samsung domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=communitake domain=mrst_untrusted_app type=app_data_file
+user=_app seinfo=platform name=com.communitake.safeservice domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=platform name=com.communitake.remotecontrolservice.samsung domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=koino domain=mrst_untrusted_app type=app_data_file
+user=_app seinfo=platform name=net.koino.anysupport.addon domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=logmein domain=mrst_untrusted_app type=app_data_file
+user=_app seinfo=platform name=com.lmi.samsung.rescuesecurity.signed domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=platform name=com.rsupport.rs.activity.rsupport domain=mrst_untrusted_app type=app_data_file
+user=_app seinfo=platform name=com.rsupport.rsperm.aa.a3th domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=platform name=com.rsupport.rsperm.aa.second domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=soti domain=mrst_untrusted_app type=app_data_file
+user=_app seinfo=platform name=com.honeywellaidc.remotemastermind.samsung* domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=platform name=net.soti.mobicontrol.samsung* domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=teamviewer domain=mrst_untrusted_app type=app_data_file
+user=_app seinfo=platform name=com.teamviewer.quicksupport.addon.samsung domain=mrst_plugin_app type=app_data_file
+user=_app seinfo=wisemo domain=mrst_untrusted_app type=app_data_file
+user=_app seinfo=platform name=com.wisemo.rcbridge.samsung1 domain=mrst_plugin_app type=app_data_file
 user=_app seinfo=tmosimlock name=com.tmobile.simlock domain=filtered_untrusted_app type=app_data_file
 user=_app seinfo=tmosimlock name=com.metro.simlock domain=filtered_untrusted_app type=app_data_file
 user=_app seinfo=tbaseplatform domain=carrier_app type=app_data_file

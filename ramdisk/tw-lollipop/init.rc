@@ -324,6 +324,7 @@ on post-fs-data
     mkdir /data/misc/wifi/sockets 0770 wifi wifi
     mkdir /data/misc/wifi/wpa_supplicant 0770 wifi wifi
     mkdir /data/misc/wifi_share_profile 0771 wifi system
+    mkdir /data/misc/wifi_hostapd 0771 wifi system
     mkdir /data/misc/ethernet 0770 system system
     mkdir /data/misc/dhcp 0770 dhcp dhcp
     mkdir /data/misc/user 0771 root root
@@ -333,6 +334,16 @@ on post-fs-data
     chown system wifi /data/misc/wifi/wpa_supplicant.conf
     mkdir /data/local 0751 root root
     mkdir /data/misc/media 0700 media media
+
+    #h2k permission
+    mkdir /efs/cpk 0771 radio system
+    chmod 0644 /efs/redata.bin
+    chmod 0644 /efs/cpk/redata.bin
+    chown radio radio /efs/h2k.dat
+    chown radio radio /efs/cpk/h2k.dat
+    chmod 0644 /efs/h2k.dat
+    chmod 0644 /efs/cpk/h2k.dat
+    chown system system /efs/drm/h2k
 
     # icd
     check_icd
@@ -353,6 +364,7 @@ on post-fs-data
     mkdir /data/app-lib 0771 system system
     mkdir /data/app 0771 system system
     mkdir /data/property 0700 root root
+    mkdir /data/tombstones 0771 system system
 
     # SA, System SW, SAMSUNG 
     # create log directory
@@ -641,6 +653,7 @@ on boot
    chown system radio /sys/class/power_supply/battery/siop_level
    chown system radio /sys/class/power_supply/battery/wc_enable
    chown system radio /sys/class/power_supply/battery/update
+   chown media sdcard_rw /sys/class/power_supply/battery/store_mode
    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/call
    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/video
    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/music
@@ -962,12 +975,12 @@ service media /system/bin/mediaserver
 service apaservice /system/bin/apaservice
     class main
     user jack
-    group system inet sdcard_rw sdcard_r media_rw shell
+    group inet sdcard_rw sdcard_r media_rw shell
 
 service jackservice /system/bin/jackservice
     class main
     user jack
-    group system audio inet shell
+    group audio inet shell
     
 # One shot invocation to deal with encrypted volume.
 service defaultcrypto /system/bin/vdc --wait cryptfs mountdefaultencrypted
