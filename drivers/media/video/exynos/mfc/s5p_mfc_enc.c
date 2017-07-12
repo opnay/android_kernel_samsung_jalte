@@ -2113,6 +2113,11 @@ static int vidioc_s_fmt(struct file *file, void *priv, struct v4l2_format *f)
 
 	mfc_debug_enter();
 
+	if (ctx->state == MFCINST_ERROR) {
+		mfc_err("Normal and DRM instance could not run at the same time\n");
+		return -EINVAL;
+	}
+
 	ret = vidioc_try_fmt(file, priv, f);
 	if (ret)
 		return ret;
