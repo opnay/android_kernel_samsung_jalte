@@ -266,7 +266,7 @@ struct skb_shared_info {
 	/* Intermediate layers must ensure that destructor_arg
 	 * remains valid until skb destructor */
 	void *		destructor_arg;
-    
+
  // ------------- START of KNOX_VPN ------------------//
 	uid_t uid;
 	pid_t pid;
@@ -329,7 +329,7 @@ typedef unsigned char *sk_buff_data_t;
 #define NET_SKBUFF_NF_DEFRAG_NEEDED 1
 #endif
 
-/** 
+/**
  *	struct sk_buff - socket buffer
  *	@next: Next buffer in list
  *	@prev: Previous buffer in list
@@ -524,7 +524,7 @@ struct sk_buff {
  */
 static inline struct dst_entry *skb_dst(const struct sk_buff *skb)
 {
-	/* If refdst was not refcounted, check we still are in a 
+	/* If refdst was not refcounted, check we still are in a
 	 * rcu_read_lock section
 	 */
 	WARN_ON((skb->_skb_refdst & SKB_DST_NOREF) &&
@@ -1937,7 +1937,7 @@ static inline int skb_cow_head(struct sk_buff *skb, unsigned int headroom)
  *	is untouched. Otherwise it is extended. Returns zero on
  *	success. The skb is freed on error.
  */
- 
+
 static inline int skb_padto(struct sk_buff *skb, unsigned int len)
 {
 	unsigned int size = skb->len;
@@ -2110,7 +2110,7 @@ extern int	       skb_copy_datagram_iovec(const struct sk_buff *from,
 					       int size);
 extern int	       skb_copy_and_csum_datagram_iovec(struct sk_buff *skb,
 							int hlen,
-							struct iovec *iov);
+							struct iovec *iov, int len);
 extern int	       skb_copy_datagram_from_iovec(struct sk_buff *skb,
 						    int offset,
 						    const struct iovec *from,
