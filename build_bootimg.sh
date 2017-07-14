@@ -47,6 +47,7 @@ cp -r $RAMDISK_DIR_ORIG/* $RAMDISK_DIR/
 find $RAMDISK_DIR -name EMPTY -exec rm -rf {} \;
 find $RAMDISK_DIR -name "*~" -exec rm -rf {} \;
 # Copy Module and strip.
+mkdir -p $RAMDISK_DIR/lib/modules/
 for i in `find $KERNEL_OUT -name "*.ko"`; do
 	echo $i
 	$strip --strip-unneeded $i
