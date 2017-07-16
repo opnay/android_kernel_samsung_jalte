@@ -160,7 +160,7 @@ static void mdm_power_down_common(struct mdm_modem_drv *mdm_drv)
 		*/
 		msleep(4000);
 	}
-#ifndef CONFIG_UMTS_MODEM_XMM6360
+#ifdef CONFIG_UMTS_MODEM_XMM6360
 	mdm_peripheral_disconnect(mdm_drv);
 #endif
 }
@@ -178,7 +178,6 @@ static void mdm_do_first_power_on(struct mdm_modem_drv *mdm_drv)
 
 	mdm_drv->shutdown = 0;
 
-	pr_err("%s: Powering on modem for the first time\n", __func__);
 	pr_err("%s: Powering on modem for the first time\n", __func__);
 	gpio_direction_output(mdm_drv->ap2mdm_wakeup_gpio, 0);
 	mdm_peripheral_disconnect(mdm_drv);
