@@ -247,7 +247,7 @@ on post-fs
     chmod 0440 /proc/slabinfo
 
     #change permissions on kmsg & sysrq-trigger so bugreports can grab kthread stacks
-    chown root system /proc/kmsg
+    chown system system /proc/kmsg
     chmod 0440 /proc/kmsg
     chown root system /proc/sysrq-trigger
     chmod 0220 /proc/sysrq-trigger
