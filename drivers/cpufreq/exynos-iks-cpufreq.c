@@ -36,7 +36,6 @@
 #include <mach/tmu.h>
 #include <mach/asv-exynos.h>
 #include <plat/cpu.h>
-#include <mach/sec_debug.h>
 
 struct lpj_info {
 	unsigned long   ref;
@@ -543,8 +542,6 @@ static int exynos_target(struct cpufreq_policy *policy,
 	/* save the frequency & cpu number */
 	set_req_freq(policy->cpu, target_freq);
 
-	sec_debug_aux_log(SEC_DEBUG_AUXLOG_CPU_CLOCK_SWITCH_CHANGE, "IN  : cpu=%d cluster=%c pre=%d, new=%d", policy->cpu, (cur == CA7 ? 'L' : 'B'), freqs[cur]->old, target_freq);
-
 #if defined(CONFIG_CPU_FREQ_GOV_USERSPACE) || defined(CONFIG_CPU_FREQ_GOV_PERFORMANCE)
 	if ((strcmp(policy->governor->name, "userspace") == 0)
 		|| strcmp(policy->governor->name, "performance") == 0) {
@@ -615,9 +612,6 @@ done:
 		exynos_switch(policy, !cur);
 #endif
 out:
- 	sec_debug_aux_log(SEC_DEBUG_AUXLOG_CPU_CLOCK_SWITCH_CHANGE, "OUT : cpu=%d cluster=%c pre=%d, new=%d other=%x", \
-		policy->cpu, (cur == CA7 ? 'L' : 'B'), freqs[cur]->old, VIRT_FREQ(new_freq,cur), do_switch << 2 | later << 1 | (ret == 0 ? 0 : 1));
-
 	mutex_unlock(&cpufreq_lock);
 
 	return ret;
