@@ -27,10 +27,19 @@
 
 #include <mach/cpufreq.h>
 
+#include <plat/cpu.h>
+
 /*
  * dbs is used in this file as a shortform for demandbased switching
  * It helps to keep variable names smaller, simpler
  */
+ #ifdef CONFIG_ARM_EXYNOS5420_CPUFREQ
+ #define B_MAX_FREQ	(1900000)
+ #define L_MAX_FREQ	(650000)
+ #else
+ #define B_MAX_FREQ	(1600000)
+ #define L_MAX_FREQ	(600000)
+ #endif
 
 #define DEF_FREQUENCY_DOWN_DIFFERENTIAL		(10)
 #define DEF_FREQUENCY_UP_THRESHOLD		(80)
@@ -42,11 +51,11 @@
 #define MICRO_FREQUENCY_MIN_SAMPLE_RATE		(80000)
 #define MIN_FREQUENCY_UP_THRESHOLD		(10)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
-#define MAX_FREQ_BLANK				(1600000)
+#define MAX_FREQ_BLANK				B_MAX_FREQ
 
 #define DEF_FREQUENCY_UP_THRESHOLD_L		(50)
 #define DEF_FREQUENCY_UP_STEP_LEVEL_B		(1200000)
-#define DEF_FREQUENCY_UP_STEP_LEVEL_L		(600000)
+#define DEF_FREQUENCY_UP_STEP_LEVEL_L		L_MAX_FREQ
 #define DEF_FREQUENCY_DOWN_STEP_LEVEL           (800000)
 #define DEF_FREQUENCY_DOWN_DIFFER_L		(20)
 #define DEF_FREQUENCY_HIGH_ZONE			(1200000)
@@ -54,11 +63,11 @@
 #define MICRO_FREQUENCY_UP_THRESHOLD_H		(90)
 #define MICRO_FREQUENCY_UP_THRESHOLD_L		(60)
 #define MICRO_FREQUENCY_UP_STEP_LEVEL_B		(1200000)
-#define MICRO_FREQUENCY_UP_STEP_LEVEL_L		(600000)
+#define MICRO_FREQUENCY_UP_STEP_LEVEL_L		L_MAX_FREQ
 #define MICRO_FREQUENCY_DOWN_STEP_LEVEL		(100000)
 #define MICRO_FREQUENCY_DOWN_DIFFER_L		(20)
-#define MIN_FREQUENCY_UP_STEP_LEVEL		(100000)
-#define MAX_FREQUENCY_UP_STEP_LEVEL		(1800000)
+#define MIN_FREQUENCY_UP_STEP_LEVEL		(500000)
+#define MAX_FREQUENCY_UP_STEP_LEVEL		B_MAX_FREQ
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -1004,7 +1013,11 @@ skip_hotplug_out_2:
 	 * can support the current CPU usage without triggering the up
 	 * policy. To be safe, we focus 10 points under the threshold.
 	 */
+#ifdef CONFIG_SOC_EXYNOS5410
 	if (policy->cur >= DEF_FREQUENCY_STEP_ZONE) {
+#else
+	if (policy->cur > dbs_tuners_ins.down_step_level) {
+#endif
 		/*
 		 * If current freq is over 800MHz, and load freq is smaller than
 		 * 92(by 95-3), decrease freq as below condition.
@@ -1165,7 +1178,7 @@ static int should_io_be_busy(void)
 	return 0;
 }
 
-static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
+static int __ref cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				   unsigned int event)
 {
 	unsigned int cpu = policy->cpu;
