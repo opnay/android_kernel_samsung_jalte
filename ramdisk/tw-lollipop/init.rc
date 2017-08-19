@@ -252,7 +252,7 @@ on post-fs
     chown root system /proc/sysrq-trigger
     chmod 0220 /proc/sysrq-trigger
     chown system log /proc/last_kmsg
-    chmod 0440 /proc/last_kmsg
+    chmod 0444 /proc/last_kmsg
     chown system log /proc/sec_log
 
     # make the selinux kernel policy world-readable
