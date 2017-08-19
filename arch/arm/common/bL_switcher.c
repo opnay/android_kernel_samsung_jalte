@@ -487,7 +487,7 @@ EXPORT_SYMBOL_GPL(bL_cluster_switch_request);
 
 int __init bL_switcher_init(const struct bL_power_ops *ops)
 {
-	int cpu, ret, err;
+	int cpu, ret;
 
 	pr_info("big.LITTLE switcher initializing\n");
 
