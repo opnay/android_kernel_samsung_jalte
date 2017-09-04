@@ -139,9 +139,7 @@ static int lowmem_minfree[6] = {
 };
 static int lowmem_minfree_size = 4;
 
-
 static unsigned int offlining;
-static struct task_struct *lowmem_deathpending;
 static unsigned long lowmem_deathpending_timeout;
 
 #define lowmem_print(level, x...)			\
@@ -150,27 +148,9 @@ static unsigned long lowmem_deathpending_timeout;
 			pr_info(x);			\
 	} while (0)
 
-static int
-task_notify_func(struct notifier_block *self, unsigned long val, void *data);
-
-
 #ifdef CONFIG_ANDROID_LOW_MEMORY_KILLER_AUTODETECT_OOM_ADJ_VALUES
 static int lowmem_oom_adj_to_oom_score_adj(int oom_adj);
 #endif
-
-static struct notifier_block task_nb = {
-	.notifier_call  = task_notify_func,
-};
-
-static int
-task_notify_func(struct notifier_block *self, unsigned long val, void *data)
-{
-	struct task_struct *task = data;
-	if (task == lowmem_deathpending)
-		lowmem_deathpending = NULL;
-
-	return NOTIFY_OK;
-}
 
 #ifdef CONFIG_MEMORY_HOTPLUG
 static int lmk_hotplug_callback(struct notifier_block *self,
@@ -234,18 +214,6 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			}
 		}
 	}
-	/*
-	 * If we already have a death outstanding, then
-	 * bail out right away; indicating to vmscan
-	 * that we have nothing further to offer on
-	 * this pass.
-	 *
-	 * Note: Currently you need CONFIG_PROFILING
-	 * for this to work correctly.
-	 */
-	if (lowmem_deathpending &&
-		time_before_eq(jiffies, lowmem_deathpending_timeout))
-		return 0;
 
 	if (lowmem_adj_size < array_size)
 		array_size = lowmem_adj_size;
@@ -288,6 +256,12 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		if (!p)
 			continue;
 
+		if (test_tsk_thread_flag(p, TIF_MEMDIE) &&
+		    time_before_eq(jiffies, lowmem_deathpending_timeout)) {
+			task_unlock(p);
+			rcu_read_unlock();
+			return 0;
+		}
 		oom_score_adj = p->signal->oom_score_adj;
 		if (oom_score_adj < min_score_adj) {
 			task_unlock(p);
@@ -909,7 +883,6 @@ static struct shrinker lowmem_shrinker = {
 
 static int __init lowmem_init(void)
 {
-	task_free_register(&task_nb);
 	register_shrinker(&lowmem_shrinker);
 #ifdef CONFIG_MEMORY_HOTPLUG
 	hotplug_memory_notifier(lmk_hotplug_callback, 0);
@@ -946,7 +919,6 @@ static int __init lowmem_init(void)
 static void __exit lowmem_exit(void)
 {
 	unregister_shrinker(&lowmem_shrinker);
-	task_free_unregister(&task_nb);
 
 #ifdef CONFIG_ZRAM_FOR_ANDROID
 	idle_notifier_unregister(&kcompcache_idle_nb);
