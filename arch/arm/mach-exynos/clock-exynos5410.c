@@ -3113,7 +3113,7 @@ static int exynos5_epll_set_rate(struct clk *clk, unsigned long rate)
 	}
 
 	if (i == ARRAY_SIZE(exynos5_epll_div)) {
-		printk(KERN_ERR "%s: Invalid Clock VPLL Frequency\n", __func__);
+		printk(KERN_ERR "%s: Invalid Clock EPLL Frequency\n", __func__);
 		return -EINVAL;
 	}
 
