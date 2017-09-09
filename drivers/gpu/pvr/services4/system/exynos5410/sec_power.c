@@ -50,9 +50,13 @@ MODULE_PARM_DESC(sgx_gpu_power_state, "SGX power current status");
 
 void gpu_voltage_set(int sgx_vol)
 {
-	PVR_LOG(("SGX change voltage [%d] -> [%d] mV", sgx_gpu_vol, sgx_vol));
-	regulator_set_voltage(g3d_pd_regulator, sgx_vol, sgx_vol);
-	sgx_gpu_vol = regulator_get_voltage(g3d_pd_regulator);
+	if (sgx_gpu_vol == sgx_vol) {
+		PVR_LOG(("SGX voltage already [%d] mV", sgx_vol));
+	} else {
+		PVR_LOG(("SGX change voltage [%d] -> [%d] mV", sgx_gpu_vol, sgx_vol));
+		regulator_set_voltage(g3d_pd_regulator, sgx_vol, sgx_vol);
+		sgx_gpu_vol = regulator_get_voltage(g3d_pd_regulator);
+	}
 }
 
 int gpu_regulator_enable(void)
