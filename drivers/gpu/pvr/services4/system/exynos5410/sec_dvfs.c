@@ -191,6 +191,12 @@ static ssize_t set_max_clock(struct device *d, struct device_attribute *a, const
 }
 static DEVICE_ATTR(sgx_dvfs_max_lock, S_IRUGO | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH, get_max_clock, set_max_clock);
 
+static ssize_t get_cur_clock(struct device *d, struct device_attribute *a, char *buf)
+{
+	return sprintf(buf, "%d\n", g_gpu_dvfs_data[sgx_dvfs_level].clock);
+}
+static DEVICE_ATTR(sgx_dvfs_cur_clk, S_IRUGO | S_IRGRP | S_IROTH, get_cur_clock, NULL);
+
 void sec_gpu_dvfs_init(void)
 {
 	struct platform_device *pdev;
@@ -222,6 +228,8 @@ void sec_gpu_dvfs_init(void)
 		PVR_LOG(("device_create_file: dev_attr_sgx_dvfs_min_lock fail"));
 	if (device_create_file(&pdev->dev, &dev_attr_sgx_dvfs_max_lock) < 0)
 		PVR_LOG(("device_create_file: dev_attr_sgx_dvfs_max_lock fail"));
+	if (device_create_file(&pdev->dev, &dev_attr_sgx_dvfs_cur_clk) <0)
+		PVR_LOG(("device_create_file: dev_attr_sgx_dvfs_cur_clk fail"));
 
 	 /* Generate DVFS table list*/
 	for( i = 0; i < sizeof(default_dvfs_data) / sizeof(GPU_DVFS_DATA) ; i++) {
