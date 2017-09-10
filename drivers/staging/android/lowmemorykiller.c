@@ -86,11 +86,7 @@ static uint32_t minimum_reclaim_pages = MIN_RECLAIM_PAGES;
 static uint32_t minimum_interval_time = MIN_CSWAP_INTERVAL;
 #endif /* CONFIG_ZRAM_FOR_ANDROID */
 
-#define LMK_COUNT_READ
-
-#ifdef LMK_COUNT_READ
 static uint32_t lmk_count = 0;
-#endif
 
 #ifdef CONFIG_ANDROID_OOM_KILLER
 #define MULTIPLE_OOM_KILLER
@@ -304,9 +300,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		rem -= selected_tasksize;
 		if(reclaim_state)
 			reclaim_state->reclaimed_slab += selected_tasksize;
-#ifdef LMK_COUNT_READ
 		lmk_count++;
-#endif
 	}
 	lowmem_print(4, "lowmem_shrink %lu, %x, return %d\n",
 		     sc->nr_to_scan, sc->gfp_mask, rem);
@@ -1027,10 +1021,7 @@ module_param_array_named(minfree, lowmem_minfree, uint, &lowmem_minfree_size,
 			 S_IRUGO | S_IWUSR);
 module_param_named(debug_level, lowmem_debug_level, uint, S_IRUGO | S_IWUSR);
 
-#ifdef LMK_COUNT_READ
 module_param_named(lmkcount, lmk_count, uint, S_IRUGO);
-#endif
-
 #ifdef OOM_COUNT_READ
 module_param_named(oomcount, oom_count, uint, S_IRUGO);
 #endif
