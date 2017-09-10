@@ -20,7 +20,6 @@
 #ifndef __SEC_DVFS_H__
 #define __SEC_DVFS_H__
 typedef struct _GPU_DVFS_DATA_TAG_ {
-	int level;
 	int clock;
 	int voltage;
 	int clock_source;
