@@ -47,27 +47,23 @@
 /* #define USING_BOOST_UP_MODE */
 /* #define USING_BOOST_DOWN_MODE */
 
-#define setmask(a, b) (((1 < a) < 24)|b)
-#define getclockmask(a) ((a | 0xFF000000) > 24)
-#define getlevelmask(a) (a | 0xFFFFFF)
-
 /* start define DVFS info */
 static GPU_DVFS_DATA default_dvfs_data[] = {
-/* clock, voltage, src clk, min, max, min2, max2, stay, mask, etc */
+/* clock, voltage, min, max, min2, max2, stay */
 #ifdef USING_640MHZ
-	{ 640, 1250000,     640, 180, 256,   170, 256, 0, 0, 0 }, // Level 0
-	{ 532, 1175000,     532, 170, 250,   160, 250, 1, 0, 0 },
-	{ 480, 1150000,     480, 160, 230,   150, 250, 2, 0, 0 },
-	{ 440, 1050000,     440, 150, 210,   150, 250, 2, 0, 0 },
-	{ 350,  950000,     350, 140, 190,   140, 250, 3, 0, 0 },
-	{ 333,  925000,     333, 130, 170,   140, 250, 3, 0, 0 },
-	{ 266,  900000,     266, 120, 150,   130, 220, 3, 0, 0 },
-	{ 177,  900000,     177,   0, 130,     0, 220, 3, 0, 0 },
+	{ 640, 1250000, 180, 256, 170, 256, 0 }, // Level 0
+	{ 532, 1175000, 170, 250, 160, 250, 1 },
+	{ 480, 1150000, 160, 230, 150, 250, 2 },
+	{ 440, 1050000, 150, 210, 150, 250, 2 },
+	{ 350,  950000, 140, 190, 140, 250, 3 },
+	{ 333,  925000, 130, 170, 140, 250, 3 },
+	{ 266,  900000, 120, 150, 130, 220, 3 },
+	{ 177,  900000,   0, 130,   0, 220, 3 },
 #else
-	{ 480, 1100000,     480, 170, 256,   160, 256, 0, 0, 0 }, // Level 0
-	{ 350,  925000,     350, 160, 190,   150, 210, 0, 0, 0 },
-	{ 266,  900000,     266, 150, 200,   140, 250, 0, 0, 0 },
-	{ 177,  900000,     177,   0, 200,     0, 220, 0, 0, 0 },
+	{ 480, 1100000, 170, 256, 160, 256, 0 }, // Level 0
+	{ 350,  925000, 160, 190, 150, 210, 0 },
+	{ 266,  900000, 150, 200, 140, 250, 0 },
+	{ 177,  900000,   0, 200,   0, 220, 0 },
 #endif
 
 };
@@ -205,13 +201,11 @@ void sec_gpu_dvfs_init(void)
 	for (i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
 		g_gpu_dvfs_data[i].clock = default_dvfs_data[i].clock;
 		g_gpu_dvfs_data[i].voltage = get_match_volt(ID_G3D, default_dvfs_data[i].clock * 1000);
-		g_gpu_dvfs_data[i].clock_source = default_dvfs_data[i].clock_source;
 		g_gpu_dvfs_data[i].min_threadhold = default_dvfs_data[i].min_threadhold;
 		g_gpu_dvfs_data[i].max_threadhold = default_dvfs_data[i].max_threadhold;
 		g_gpu_dvfs_data[i].quick_down_threadhold = default_dvfs_data[i].quick_down_threadhold;
 		g_gpu_dvfs_data[i].quick_up_threadhold = default_dvfs_data[i].quick_up_threadhold;
 		g_gpu_dvfs_data[i].stay_total_count = default_dvfs_data[i].stay_total_count;
-		g_gpu_dvfs_data[i].mask  = setmask(i, default_dvfs_data[i].clock);
 		PVR_LOG(("G3D DVFS Info: Level:%d, Clock:%d MHz, Voltage:%d uV", i, g_gpu_dvfs_data[i].clock, g_gpu_dvfs_data[i].voltage));
 	}
 	/* default dvfs level depend on default clock setting */
