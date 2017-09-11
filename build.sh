@@ -66,7 +66,7 @@ read
 
 ## Clean output Directory
 echo " ** Clean Directory"
-rm -rf $KERNEL_OUT
+#rm -rf $KERNEL_OUT
 mkdir -p $KERNEL_OUT
 
 ## Config
