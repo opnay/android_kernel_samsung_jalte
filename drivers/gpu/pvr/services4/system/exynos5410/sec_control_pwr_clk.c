@@ -94,6 +94,7 @@ int sec_gpu_pwr_clk_deinit(void)
 void sec_gpu_vol_clk_change(int sgx_clock, int sgx_voltage)
 {
 	int cur_sgx_clock;
+	PVR_LOG(("INFO: %s: Get value: %d, %d", __func__, sgx_clock, sgx_voltage));
 	mutex_lock(&lock);
 	cur_sgx_clock = gpu_clock_get();
 	sgx_voltage += gpu_voltage_marin;
@@ -148,6 +149,7 @@ static int sec_gpu_clock_disable(void)
 static int sec_gpu_clock_enable(void)
 {
 	int err = 0;
+	PVR_LOG(("INFO: %s: Run", __func__));
 	/*adonis must be set parent function after runtime pm resume*/
 	err = gpu_clock_set_parent();
 	if (err) {

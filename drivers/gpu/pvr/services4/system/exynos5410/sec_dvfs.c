@@ -265,6 +265,7 @@ static int g_debug_CCB_Info_Flag = 0;
 static int g_debug_CCB_count = 1;
 int sec_clock_change_up(int level, int step)
 {
+	PVR_LOG(("INFO: %s: Get value: %d, %d", __func__, level, step));
 	level -= step;
 
 	if (level < 0)
@@ -288,6 +289,7 @@ int sec_clock_change_up(int level, int step)
 
 int sec_clock_change_down(int level, int step)
 {
+	PVR_LOG(("INFO: %s: Get value: %d, %d", __func__, level, step));
 	sgx_dvfs_down_requirement--;
 	if (sgx_dvfs_down_requirement > 0 )
 		return level;
@@ -351,6 +353,8 @@ void sec_gpu_dvfs_handler(int utilization_value)
 {
 	if (custom_threshold_change)
 		sec_custom_threshold_set();
+
+	PVR_LOG(("INFO: %s: Get value: %d", __func__, utilization_value));
 
 	/*utilization_value is zero mean is gpu going to idle*/
 	if (utilization_value == 0)
