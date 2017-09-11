@@ -34,8 +34,6 @@
 #define BASE_START_LEVEL		0
 #define BASE_UP_STEP_LEVEL		1
 #define BASE_DWON_STEP_LEVEL	1
-#define BASE_QUICK_UP_LEVEL		2
-#define BASE_QUICK_DOWN_LEVEL	2
 #define DOWN_REQUIREMENT_THRESHOLD	3
 #ifdef USING_640MHZ
 #define GPU_DVFS_MAX_LEVEL		8
@@ -43,27 +41,23 @@
 #define GPU_DVFS_MAX_LEVEL		4
 #endif
 
-/* boost mode need more test */
-/* #define USING_BOOST_UP_MODE */
-/* #define USING_BOOST_DOWN_MODE */
-
 /* start define DVFS info */
 static GPU_DVFS_DATA default_dvfs_data[] = {
-/* clock, voltage, min, max, min2, max2, stay */
+/* clock, voltage, min, max, stay */
 #ifdef USING_640MHZ
-	{ 640, 1250000, 180, 256, 170, 256, 0 }, // Level 0
-	{ 532, 1175000, 170, 250, 160, 250, 1 },
-	{ 480, 1150000, 160, 230, 150, 250, 2 },
-	{ 440, 1050000, 150, 210, 150, 250, 2 },
-	{ 350,  950000, 140, 190, 140, 250, 3 },
-	{ 333,  925000, 130, 170, 140, 250, 3 },
-	{ 266,  900000, 120, 150, 130, 220, 3 },
-	{ 177,  900000,   0, 130,   0, 220, 3 },
+	{ 640, 1250000, 180, 256, 0 }, // Level 0
+	{ 532, 1175000, 170, 250, 1 },
+	{ 480, 1150000, 160, 230, 2 },
+	{ 440, 1050000, 150, 210, 2 },
+	{ 350,  950000, 140, 190, 3 },
+	{ 333,  925000, 130, 170, 3 },
+	{ 266,  900000, 120, 150, 3 },
+	{ 177,  900000,   0, 130, 3 },
 #else
-	{ 480, 1100000, 170, 256, 160, 256, 0 }, // Level 0
-	{ 350,  925000, 160, 190, 150, 210, 0 },
-	{ 266,  900000, 150, 200, 140, 250, 0 },
-	{ 177,  900000,   0, 200,   0, 220, 0 },
+	{ 480, 1100000, 170, 256, 0 }, // Level 0
+	{ 350,  925000, 160, 190, 0 },
+	{ 266,  900000, 150, 200, 0 },
+	{ 177,  900000,   0, 200, 0 },
 #endif
 
 };
@@ -203,8 +197,6 @@ void sec_gpu_dvfs_init(void)
 		g_gpu_dvfs_data[i].voltage = get_match_volt(ID_G3D, default_dvfs_data[i].clock * 1000);
 		g_gpu_dvfs_data[i].min_threadhold = default_dvfs_data[i].min_threadhold;
 		g_gpu_dvfs_data[i].max_threadhold = default_dvfs_data[i].max_threadhold;
-		g_gpu_dvfs_data[i].quick_down_threadhold = default_dvfs_data[i].quick_down_threadhold;
-		g_gpu_dvfs_data[i].quick_up_threadhold = default_dvfs_data[i].quick_up_threadhold;
 		g_gpu_dvfs_data[i].stay_total_count = default_dvfs_data[i].stay_total_count;
 		PVR_LOG(("G3D DVFS Info: Level:%d, Clock:%d MHz, Voltage:%d uV", i, g_gpu_dvfs_data[i].clock, g_gpu_dvfs_data[i].voltage));
 	}
@@ -329,19 +321,13 @@ int sec_custom_threshold_set()
 		if (custom_threshold_change == 1) {
 			g_gpu_dvfs_data[i].min_threadhold = custom_threshold[i * 4];
 			g_gpu_dvfs_data[i].max_threadhold = custom_threshold[i * 4 + 1];
-			g_gpu_dvfs_data[i].quick_down_threadhold = custom_threshold[i * 4 + 2];
-			g_gpu_dvfs_data[i].quick_up_threadhold = custom_threshold[i * 4 + 3];
-			PVR_LOG(("set custom_threshold level[%d] min[%d],max[%d],q_min[%d],q_max[%d]", i,
-					g_gpu_dvfs_data[i].min_threadhold, g_gpu_dvfs_data[i].max_threadhold,
-					g_gpu_dvfs_data[i].quick_down_threadhold, g_gpu_dvfs_data[i].quick_up_threadhold));
+			PVR_LOG(("set custom_threshold level[%d] min[%d],max[%d]", i,
+					g_gpu_dvfs_data[i].min_threadhold, g_gpu_dvfs_data[i].max_threadhold));
 		} else {
 			g_gpu_dvfs_data[i].min_threadhold = default_dvfs_data[i].min_threadhold;
 			g_gpu_dvfs_data[i].max_threadhold = default_dvfs_data[i].max_threadhold;
-			g_gpu_dvfs_data[i].quick_down_threadhold = default_dvfs_data[i].quick_down_threadhold;
-			g_gpu_dvfs_data[i].quick_up_threadhold = default_dvfs_data[i].quick_up_threadhold;
-			PVR_LOG(("set threshold value restore level[%d] min[%d],max[%d],q_min[%d],q_max[%d]", i,
-					g_gpu_dvfs_data[i].min_threadhold, g_gpu_dvfs_data[i].max_threadhold,
-					g_gpu_dvfs_data[i].quick_down_threadhold, g_gpu_dvfs_data[i].quick_up_threadhold));
+			PVR_LOG(("set threshold value restore level[%d] min[%d],max[%d]", i,
+					g_gpu_dvfs_data[i].min_threadhold, g_gpu_dvfs_data[i].max_threadhold));
 		}
 	}
 	custom_threshold_change = 0;
@@ -405,23 +391,11 @@ void sec_gpu_dvfs_handler(int utilization_value)
 
 		/* check current level's threadhold value */
 		if (g_gpu_dvfs_data[sgx_dvfs_level].min_threadhold > utilization_value) {
-#if defined(USING_BOOST_DOWN_MODE)
-			/* check need Quick up/down change */
-			if (g_gpu_dvfs_data[sgx_dvfs_level].quick_down_threadhold >= utilization_value)
-				sgx_dvfs_level = sec_clock_change_down(sgx_dvfs_level, BASE_QUICK_DOWN_LEVEL);
-			else
-#endif
-				/* need to down current clock */
-				sgx_dvfs_level = sec_clock_change_down(sgx_dvfs_level, BASE_DWON_STEP_LEVEL);
-
+			/* need to down current clock */
+			sgx_dvfs_level = sec_clock_change_down(sgx_dvfs_level, BASE_DWON_STEP_LEVEL);
 		} else if (g_gpu_dvfs_data[sgx_dvfs_level].max_threadhold < utilization_value) {
-#if defined(USING_BOOST_UP_MODE)
-			if (g_gpu_dvfs_data[sgx_dvfs_level].quick_up_threadhold <= utilization_value)
-				sgx_dvfs_level = sec_clock_change_up(sgx_dvfs_level, BASE_QUICK_UP_LEVEL);
-			else
-#endif
-				/* need to up current clock */
-				sgx_dvfs_level = sec_clock_change_up(sgx_dvfs_level, BASE_UP_STEP_LEVEL);
+			/* need to up current clock */
+			sgx_dvfs_level = sec_clock_change_up(sgx_dvfs_level, BASE_UP_STEP_LEVEL);
 		} else sgx_dvfs_down_requirement = g_gpu_dvfs_data[sgx_dvfs_level].stay_total_count;
 	}
 	g_g3dfreq = g_gpu_dvfs_data[sgx_dvfs_level].clock;

@@ -24,8 +24,6 @@ typedef struct _GPU_DVFS_DATA_TAG_ {
 	int voltage;
 	int min_threadhold;
 	int max_threadhold;
-	int quick_down_threadhold;
-	int quick_up_threadhold;
 	int stay_total_count;
 } GPU_DVFS_DATA, *pGPU_DVFS_DATA;
 
