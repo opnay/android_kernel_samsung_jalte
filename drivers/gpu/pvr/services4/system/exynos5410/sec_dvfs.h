@@ -22,14 +22,13 @@
 typedef struct _GPU_DVFS_DATA_TAG_ {
 	int clock;
 	int voltage;
-	int min_threadhold;
-	int max_threadhold;
+	int threadhold;
 	int stay_total_count;
 } GPU_DVFS_DATA, *pGPU_DVFS_DATA;
 
 void sec_gpu_dvfs_init(void);
-int sec_clock_change_up(int level, int step);
-int sec_clock_change_down(int value, int step);
+int sec_clock_change_up(int level);
+int sec_clock_change_down(int value);
 int sec_gpu_dvfs_level_from_clk_get(int clock);
 void sec_gpu_dvfs_down_requirement_reset(void);
 int sec_custom_threshold_set(void);

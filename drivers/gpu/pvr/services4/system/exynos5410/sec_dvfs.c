@@ -33,7 +33,7 @@
 #define MAX_DVFS_LEVEL			10
 #define BASE_START_LEVEL		0
 #define BASE_UP_STEP_LEVEL		1
-#define BASE_DWON_STEP_LEVEL	1
+#define BASE_DOWN_STEP_LEVEL	1
 #define DOWN_REQUIREMENT_THRESHOLD	3
 #ifdef USING_640MHZ
 #define GPU_DVFS_MAX_LEVEL		8
@@ -43,21 +43,21 @@
 
 /* start define DVFS info */
 static GPU_DVFS_DATA default_dvfs_data[] = {
-/* clock, voltage, min, max, stay */
+/* clock, voltage, hold, stay */
 #ifdef USING_640MHZ
-	{ 640, 1250000, 180, 256, 0 }, // Level 0
-	{ 532, 1175000, 170, 250, 1 },
-	{ 480, 1150000, 160, 230, 2 },
-	{ 440, 1050000, 150, 210, 2 },
-	{ 350,  950000, 140, 190, 3 },
-	{ 333,  925000, 130, 170, 3 },
-	{ 266,  900000, 120, 150, 3 },
-	{ 177,  900000,   0, 130, 3 },
+	{ 640, 1250000, 220, 2 }, // Level 0
+	{ 532, 1175000, 180, 2 },
+	{ 480, 1150000, 140, 2 },
+	{ 440, 1050000, 120, 2 },
+	{ 350,  950000,  90, 1 },
+	{ 333,  925000,  60, 1 },
+	{ 266,  900000,  30, 1 },
+	{ 177,  900000,   0, 0 },
 #else
-	{ 480, 1100000, 170, 256, 0 }, // Level 0
-	{ 350,  925000, 160, 190, 0 },
-	{ 266,  900000, 150, 200, 0 },
-	{ 177,  900000,   0, 200, 0 },
+	{ 480, 1100000, 170, 0 }, // Level 0
+	{ 350,  925000, 160, 0 },
+	{ 266,  900000, 150, 0 },
+	{ 177,  900000,   0, 0 },
 #endif
 
 };
@@ -195,8 +195,7 @@ void sec_gpu_dvfs_init(void)
 	for (i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
 		g_gpu_dvfs_data[i].clock = default_dvfs_data[i].clock;
 		g_gpu_dvfs_data[i].voltage = get_match_volt(ID_G3D, default_dvfs_data[i].clock * 1000);
-		g_gpu_dvfs_data[i].min_threadhold = default_dvfs_data[i].min_threadhold;
-		g_gpu_dvfs_data[i].max_threadhold = default_dvfs_data[i].max_threadhold;
+		g_gpu_dvfs_data[i].threadhold = default_dvfs_data[i].threadhold;
 		g_gpu_dvfs_data[i].stay_total_count = default_dvfs_data[i].stay_total_count;
 		PVR_LOG(("G3D DVFS Info: Level:%d, Clock:%d MHz, Voltage:%d uV", i, g_gpu_dvfs_data[i].clock, g_gpu_dvfs_data[i].voltage));
 	}
@@ -255,10 +254,9 @@ extern unsigned int *g_debug_CCB_Info_WO;
 extern int g_debug_CCB_Info_WCNT;
 static int g_debug_CCB_Info_Flag = 0;
 static int g_debug_CCB_count = 1;
-int sec_clock_change_up(int level, int step)
+int sec_clock_change_up(int level)
 {
-	PVR_LOG(("INFO: %s: Get value: %d, %d", __func__, level, step));
-	level -= step;
+	PVR_LOG(("INFO: %s: Get value: %d", __func__, level));
 
 	if (level < 0)
 		level = 0;
@@ -279,14 +277,13 @@ int sec_clock_change_up(int level, int step)
 	return level;
 }
 
-int sec_clock_change_down(int level, int step)
+int sec_clock_change_down(int level)
 {
-	PVR_LOG(("INFO: %s: Get value: %d, %d", __func__, level, step));
+	PVR_LOG(("INFO: %s: Get value: %d", __func__, level));
 	sgx_dvfs_down_requirement--;
 	if (sgx_dvfs_down_requirement > 0 )
 		return level;
 
-	level += step;
 
 	if (level > GPU_DVFS_MAX_LEVEL - 1)
 		level = GPU_DVFS_MAX_LEVEL - 1;
@@ -319,15 +316,11 @@ int sec_custom_threshold_set()
 
 	for (i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
 		if (custom_threshold_change == 1) {
-			g_gpu_dvfs_data[i].min_threadhold = custom_threshold[i * 4];
-			g_gpu_dvfs_data[i].max_threadhold = custom_threshold[i * 4 + 1];
-			PVR_LOG(("set custom_threshold level[%d] min[%d],max[%d]", i,
-					g_gpu_dvfs_data[i].min_threadhold, g_gpu_dvfs_data[i].max_threadhold));
+			g_gpu_dvfs_data[i].threadhold = custom_threshold[i * 4];
+			PVR_LOG(("set custom_threshold level[%d] ,val[%d]", i, g_gpu_dvfs_data[i].threadhold));
 		} else {
-			g_gpu_dvfs_data[i].min_threadhold = default_dvfs_data[i].min_threadhold;
-			g_gpu_dvfs_data[i].max_threadhold = default_dvfs_data[i].max_threadhold;
-			PVR_LOG(("set threshold value restore level[%d] min[%d],max[%d]", i,
-					g_gpu_dvfs_data[i].min_threadhold, g_gpu_dvfs_data[i].max_threadhold));
+			g_gpu_dvfs_data[i].threadhold = default_dvfs_data[i].threadhold;
+			PVR_LOG(("set threshold value restore level[%d] val[%d]", i, g_gpu_dvfs_data[i].threadhold));
 		}
 	}
 	custom_threshold_change = 0;
@@ -363,10 +356,9 @@ void sec_gpu_dvfs_handler(int utilization_value)
 
 				sec_gpu_vol_clk_change(g_gpu_dvfs_data[sgx_dvfs_level].clock, g_gpu_dvfs_data[sgx_dvfs_level].voltage);
 
-				PVR_LOG(("INFO: CUSTOM DVFS [%d MHz] (%d, %d), utilization [%d] -(%d MHz)",
+				PVR_LOG(("INFO: CUSTOM DVFS [%d MHz] (%d), utilization [%d] -(%d MHz)",
 						gpu_clock_get(),
-						g_gpu_dvfs_data[sgx_dvfs_level].min_threadhold,
-						g_gpu_dvfs_data[sgx_dvfs_level].max_threadhold,
+						g_gpu_dvfs_data[sgx_dvfs_level].threadhold,
 						utilization_value,
 						sgx_dvfs_custom_clock
 						));
@@ -384,19 +376,25 @@ void sec_gpu_dvfs_handler(int utilization_value)
 			return;
 		}
 
-		PVR_DPF((PVR_DBG_MESSAGE, "INFO: AUTO DVFS [%d MHz] <%d, %d>, utilization [%d]",
+		PVR_DPF((PVR_DBG_MESSAGE, "INFO: AUTO DVFS [%d MHz] <%d>, utilization [%d]",
 				gpu_clock_get(),
-				g_gpu_dvfs_data[sgx_dvfs_level].min_threadhold,
-				g_gpu_dvfs_data[sgx_dvfs_level].max_threadhold, utilization_value));
+				g_gpu_dvfs_data[sgx_dvfs_level].threadhold, utilization_value));
 
-		/* check current level's threadhold value */
-		if (g_gpu_dvfs_data[sgx_dvfs_level].min_threadhold > utilization_value) {
-			/* need to down current clock */
-			sgx_dvfs_level = sec_clock_change_down(sgx_dvfs_level, BASE_DWON_STEP_LEVEL);
-		} else if (g_gpu_dvfs_data[sgx_dvfs_level].max_threadhold < utilization_value) {
-			/* need to up current clock */
-			sgx_dvfs_level = sec_clock_change_up(sgx_dvfs_level, BASE_UP_STEP_LEVEL);
-		} else sgx_dvfs_down_requirement = g_gpu_dvfs_data[sgx_dvfs_level].stay_total_count;
+		for (int i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
+			if (g_gpu_dvfs_data[i].threadhold > utilization_value)
+				continue;
+			else if (g_gpu_dvfs_data[i].threadhold <= utilization_value) {
+				if (sgx_dvfs_level == i)
+					sgx_dvfs_down_requirement = g_gpu_dvfs_data[sgx_dvfs_level].stay_total_count;
+				else if (sgx_dvfs_level > i)
+					sgx_dvfs_level = sec_clock_change_down(i);
+				else // sgx_dvfs_level < i
+					sgx_dvfs_level = sec_clock_change_up(i);
+
+				break;
+			}
+		}
+
 	}
 	g_g3dfreq = g_gpu_dvfs_data[sgx_dvfs_level].clock;
 }
