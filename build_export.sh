@@ -1,4 +1,4 @@
-IMMORTAL_VERSION=v1.13
+IMMORTAL_VERSION=v1.14
 
 JN=16 #`grep process /proc/cpuinfo | wc -l`
 
