@@ -35,11 +35,7 @@
 #define BASE_UP_STEP_LEVEL		1
 #define BASE_DOWN_STEP_LEVEL	1
 #define DOWN_REQUIREMENT_THRESHOLD	3
-#ifdef USING_640MHZ
-#define GPU_DVFS_MAX_LEVEL		8
-#else
-#define GPU_DVFS_MAX_LEVEL		4
-#endif
+#define GPU_DVFS_MAX_LEVEL		ARRAY_SIZE(default_dvfs_data)
 
 /* start define DVFS info */
 static GPU_DVFS_DATA default_dvfs_data[] = {
