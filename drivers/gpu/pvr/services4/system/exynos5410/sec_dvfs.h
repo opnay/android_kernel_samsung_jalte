@@ -22,7 +22,7 @@
 typedef struct _GPU_DVFS_DATA_TAG_ {
 	int clock;
 	int voltage;
-	int threadhold;
+	int threshold;
 	int stay_total_count;
 } GPU_DVFS_DATA, *pGPU_DVFS_DATA;
 

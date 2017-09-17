@@ -191,7 +191,7 @@ void sec_gpu_dvfs_init(void)
 	for (i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
 		g_gpu_dvfs_data[i].clock = default_dvfs_data[i].clock;
 		g_gpu_dvfs_data[i].voltage = get_match_volt(ID_G3D, default_dvfs_data[i].clock * 1000);
-		g_gpu_dvfs_data[i].threadhold = default_dvfs_data[i].threadhold;
+		g_gpu_dvfs_data[i].threshold = default_dvfs_data[i].threshold;
 		g_gpu_dvfs_data[i].stay_total_count = default_dvfs_data[i].stay_total_count;
 		PVR_LOG(("G3D DVFS Info: Level:%d, Clock:%d MHz, Voltage:%d uV", i, g_gpu_dvfs_data[i].clock, g_gpu_dvfs_data[i].voltage));
 	}
@@ -276,11 +276,11 @@ int sec_custom_threshold_set()
 
 	for (i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
 		if (custom_threshold_change == 1) {
-			g_gpu_dvfs_data[i].threadhold = custom_threshold[i * 4];
-			PVR_LOG(("set custom_threshold level[%d] ,val[%d]", i, g_gpu_dvfs_data[i].threadhold));
+			g_gpu_dvfs_data[i].threshold = custom_threshold[i * 4];
+			PVR_LOG(("set custom_threshold level[%d] ,val[%d]", i, g_gpu_dvfs_data[i].threshold));
 		} else {
-			g_gpu_dvfs_data[i].threadhold = default_dvfs_data[i].threadhold;
-			PVR_LOG(("set threshold value restore level[%d] val[%d]", i, g_gpu_dvfs_data[i].threadhold));
+			g_gpu_dvfs_data[i].threshold = default_dvfs_data[i].threshold;
+			PVR_LOG(("set threshold value restore level[%d] val[%d]", i, g_gpu_dvfs_data[i].threshold));
 		}
 	}
 	custom_threshold_change = 0;
@@ -318,7 +318,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 
 				PVR_LOG(("INFO: CUSTOM DVFS [%d MHz] (%d), utilization [%d] -(%d MHz)",
 						gpu_clock_get(),
-						g_gpu_dvfs_data[sgx_dvfs_level].threadhold,
+						g_gpu_dvfs_data[sgx_dvfs_level].threshold,
 						utilization_value,
 						sgx_dvfs_custom_clock
 						));
@@ -338,10 +338,10 @@ void sec_gpu_dvfs_handler(int utilization_value)
 
 		PVR_DPF((PVR_DBG_MESSAGE, "INFO: AUTO DVFS [%d MHz] <%d>, utilization [%d]",
 				gpu_clock_get(),
-				g_gpu_dvfs_data[sgx_dvfs_level].threadhold, utilization_value));
+				g_gpu_dvfs_data[sgx_dvfs_level].threshold, utilization_value));
 
 		for (int i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
-			if (g_gpu_dvfs_data[i].threadhold <= utilization_value) {
+			if (g_gpu_dvfs_data[i].threshold <= utilization_value) {
 				if (sgx_dvfs_level > i) { // to down
 					sgx_dvfs_down_requirement--;
 
