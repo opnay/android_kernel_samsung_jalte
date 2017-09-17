@@ -250,44 +250,8 @@ extern unsigned int *g_debug_CCB_Info_WO;
 extern int g_debug_CCB_Info_WCNT;
 static int g_debug_CCB_Info_Flag = 0;
 static int g_debug_CCB_count = 1;
-int sec_clock_change_up(int level)
-{
+int sec_clock_change(int level) {
 	PVR_LOG(("INFO: %s: Get value: %d", __func__, level));
-
-	if (level < 0)
-		level = 0;
-
-	if (sgx_dvfs_max_lock) {
-		if (level < custom_max_lock_level)
-			level = custom_max_lock_level;
-	}
-
-	sgx_dvfs_down_requirement = g_gpu_dvfs_data[level].stay_total_count;
-	sec_gpu_vol_clk_change(g_gpu_dvfs_data[level].clock, g_gpu_dvfs_data[level].voltage);
-	if ((g_debug_CCB_Info_Flag % g_debug_CCB_count) == 0)
-		PVR_LOG(("SGX CCB RO : %d, WO : %d, Total : %d", *g_debug_CCB_Info_RO, *g_debug_CCB_Info_WO, g_debug_CCB_Info_WCNT));
-
-	g_debug_CCB_Info_WCNT = 0;
-	g_debug_CCB_Info_Flag ++;
-
-	return level;
-}
-
-int sec_clock_change_down(int level)
-{
-	PVR_LOG(("INFO: %s: Get value: %d", __func__, level));
-	sgx_dvfs_down_requirement--;
-	if (sgx_dvfs_down_requirement > 0 )
-		return level;
-
-
-	if (level > GPU_DVFS_MAX_LEVEL - 1)
-		level = GPU_DVFS_MAX_LEVEL - 1;
-
-	if (sgx_dvfs_min_lock) {
-		if (level > custom_min_lock_level)
-			level = custom_min_lock_level;
-	}
 
 	sgx_dvfs_down_requirement = g_gpu_dvfs_data[level].stay_total_count;
 	sec_gpu_vol_clk_change(g_gpu_dvfs_data[level].clock, g_gpu_dvfs_data[level].voltage);
@@ -377,15 +341,29 @@ void sec_gpu_dvfs_handler(int utilization_value)
 				g_gpu_dvfs_data[sgx_dvfs_level].threadhold, utilization_value));
 
 		for (int i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
-			if (g_gpu_dvfs_data[i].threadhold > utilization_value)
-				continue;
-			else if (g_gpu_dvfs_data[i].threadhold <= utilization_value) {
-				if (sgx_dvfs_level == i)
+			if (g_gpu_dvfs_data[i].threadhold <= utilization_value) {
+				if (sgx_dvfs_level > i) { // to down
+					sgx_dvfs_down_requirement--;
+
+					if (sgx_dvfs_down_requirement > 0 )
+						break;
+
+					if (sgx_dvfs_min_lock) {
+						if (i > custom_min_lock_level)
+							i = custom_min_lock_level;
+					}
+
+					sgx_dvfs_level = sec_clock_change(i);
+				} else if (sgx_dvfs_level < i) { // to up
+					if (sgx_dvfs_max_lock) {
+						if (i < custom_max_lock_level)
+							i = custom_max_lock_level;
+					}
+
+					sgx_dvfs_level = sec_clock_change(i);
+				} else { // sgx_dvfs_level == i
 					sgx_dvfs_down_requirement = g_gpu_dvfs_data[sgx_dvfs_level].stay_total_count;
-				else if (sgx_dvfs_level > i)
-					sgx_dvfs_level = sec_clock_change_down(i);
-				else // sgx_dvfs_level < i
-					sgx_dvfs_level = sec_clock_change_up(i);
+				}
 
 				break;
 			}
