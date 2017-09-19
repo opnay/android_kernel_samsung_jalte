@@ -4,7 +4,6 @@
 #########
 source build_export.sh
 
-RAMDISK_DIR_ORIG=""
 BOOTIMG="boot"
 is_name=false
 
@@ -22,11 +21,11 @@ for tmp in $@; do
 	fi
 	case $tmp in
 		-o | --out) is_name=true;;
-		*) RAMDISK_DIR_ORIG=$tmp;;
+		*) RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/$tmp;;
 	esac
 done
 
-if [ '$RAMDISK_DIR_ORIG' == '' ] || [ ! -e $RAMDISK_DIR_ORIG ]; then
+if [ '$RAMDISK_DIR_ORIG' == '/' ] || [ ! -e $RAMDISK_DIR_ORIG ]; then
 	echo -e "Directory was not found ($RAMDISK_DIR_ORIG)"
 	exit
 fi

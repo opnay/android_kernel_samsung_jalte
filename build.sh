@@ -27,12 +27,6 @@ case $1 in
 	*) help;;
 esac
 
-case $2 in
-	tw-kitkat | tw-lollipop) BOOTIMG=boot;;
-	recovery | recovery-cm | recovery-philz) BOOTIMG=recovery;;
-	*) help;;
-esac
-
 RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/$2
 
 # Check Settings.
@@ -87,7 +81,7 @@ fi
 
 ## Make boot.img
 echo " ** Make bootimg"
-./build_bootimg.sh -o $BOOTIMG $RAMDISK_DIR_ORIG
+./build_bootimg.sh -o $BOOTIMG $2
 
 if [ -e $KERNEL_OUT_BOOTIMG/$BOOTIMG.img ]; then
 	echo "Build Complete!!"
