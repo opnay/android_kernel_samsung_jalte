@@ -4,7 +4,6 @@
 #########
 source build_export.sh
 
-KERNEL_OUT_BOOTIMG=`pwd`/bootimg
 RAMDISK_DIR_ORIG=""
 BOOTIMG="boot"
 is_name=false
