@@ -1,11 +1,13 @@
-source build_export.sh
+source build/export.sh
 
 # Export
 export ARCH=arm
 export CROSS_COMPILE=$TOOLCHAIN_PREFIX
+DEFCONFIG=none
+BOOTIMG=boot
 
 function help() {
-	echo -e "Usage : build.sh <skt/kt/lg> <ramdisk>"
+	echo -e "Usage : build.sh [-r | --recovery] <skt/kt/lg> <ramdisk>"
 	echo -e "  <ramdisk> :"
 	echo -e "\ttw-kitkat\tSamsung Touchwiz Kitkat"
 	echo -e "\ttw-lollipop\tSamsung Touchwiz Lollipop"
@@ -15,43 +17,40 @@ function help() {
 	exit
 }
 
-# Check Usage
-if [ $# != 2 ]; then
-	help
-fi
-
-case $1 in
-	skt) DEFCONFIG=jalteskt_immortal_defconfig;;
-	lg) DEFCONFIG=jaltelgt_immortal_defconfig;;
-	kt) DEFCONFIG=jaltektt_immortal_defconfig;;
-	*) help;;
-esac
-
-RAMDISK_DIR_ORIG=$RAMDISK_DIR_ORIG/$2
+for tmp in $@; do
+	case $tmp in
+		skt) DEFCONFIG=jalteskt_immortal_defconfig;;
+		lg) DEFCONFIG=jaltelgt_immortal_defconfig;;
+		kt) DEFCONFIG=jaltektt_immortal_defconfig;;
+		-r | --recovery) BOOTIMG=recovery;;
+		-h | --help) help; exit;;
+		*) RAMDISK=$RAMDISK_ORIG/$tmp;;
+	esac
+done
 
 # Check Settings.
-echo "Check Script Settings"
+echo -e "==== Check Settings\n"
 
 if [ $BOOTIMG == "recovery" ]; then
-	echo " * Recovery Build : true"
+	echo "== Recovery Build "
 fi
-echo " * Kernel Directory : $KERNEL_DIR"
-echo " * Output Directory : $KERNEL_OUT"
-echo " * boot.img Directory : $KERNEL_OUT_BOOTIMG"
-echo " * Ramdisk Directory : $RAMDISK_DIR_ORIG"
-if [ ! -e $RAMDISK_DIR_ORIG ]; then
-	echo " ***** Ramdisk directory was not found *****"
+echo " Kernel : $KERNEL_DIR"
+echo " Output : $KERNEL_OUT"
+echo " Build out : $KERNEL_BUILD_OUT"
+echo " Ramdisk : $RAMDISK"
+if [ ! -e $RAMDISK ]; then
+	echo -e "\n ***** Ramdisk directory was not found *****"
 	exit
 fi
-echo " * Toolchain : $CROSS_COMPILE"
+echo " Toolchain : $CROSS_COMPILE"
 if [ ! -e "$CROSS_COMPILE"ld ]; then
-	echo " ***** Toolchain was not found *****"
+	echo -e "\n ***** Toolchain was not found *****"
 	exit
 fi
-echo " * Make job number : $JN"
-echo " * Defconfig : $DEFCONFIG"
+echo " Make job number : $JN"
+echo " Defconfig : $DEFCONFIG"
 if [ ! -e $KERNEL_DIR/arch/arm/configs/$DEFCONFIG ]; then
-	echo " ***** Defconfig was not found *****"
+	echo -e "\n ***** Defconfig was not found *****"
 	exit
 fi
 
@@ -81,11 +80,11 @@ fi
 
 ## Make boot.img
 echo " ** Make bootimg"
-./build_bootimg.sh -o $BOOTIMG $2
+./build_bootimg.sh -o $BOOTIMG $RAMDISK
 
-if [ -e $KERNEL_OUT_BOOTIMG/$BOOTIMG.img ]; then
+if [ -e $KERNEL_BUILD_OUT/$BOOTIMG.img ]; then
 	echo "Build Complete!!"
-	echo "boot.img : $KERNEL_OUT_BOOTIMG/$BOOTIMG.img"
+	echo "boot.img : $KERNEL_BUILD_OUT/$BOOTIMG.img"
 else
 	echo "Couldn't make boot.img"
 fi

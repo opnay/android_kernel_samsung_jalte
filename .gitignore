@@ -87,5 +87,5 @@ GTAGS
 \#*#
 
 # kernel output directory
-bootimg
+build/out
 out

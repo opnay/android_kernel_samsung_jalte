@@ -1,9 +1,0 @@
-ui_print("Galaxy S4 LTE");
-ui_print("      Immortal Kernel vX.XX");
-ui_print("      for XX");
-ui_print("===============================");
-ui_print("");
-ui_print("- Flashing boot.img");
-package_extract_file("boot.img","/dev/block/mmcblk0p9");
-ui_print("");
-ui_print("- Finished");
