@@ -24,7 +24,7 @@ for tmp in $@; do
 		kt) DEFCONFIG=jaltektt_immortal_defconfig;;
 		-r | --recovery) BOOTIMG=recovery;;
 		-h | --help) help; exit;;
-		*) RAMDISK=$RAMDISK_ORIG/$tmp;;
+		*) RAMDISK=$tmp;;
 	esac
 done
 
@@ -37,8 +37,8 @@ fi
 echo " Kernel : $KERNEL_DIR"
 echo " Output : $KERNEL_OUT"
 echo " Build out : $KERNEL_BUILD_OUT"
-echo " Ramdisk : $RAMDISK"
-if [ ! -e $RAMDISK ]; then
+echo " Ramdisk : $RAMDISK_ORIG/$RAMDISK"
+if [ ! -e $RAMDISK_ORIG/$RAMDISK ]; then
 	echo -e "\n ***** Ramdisk directory was not found *****"
 	exit
 fi
@@ -79,8 +79,8 @@ if [ ! -e $KERNEL_OUT/arch/arm/boot/zImage ]; then
 fi
 
 ## Make boot.img
-echo " ** Make bootimg"
-./build_bootimg.sh -o $BOOTIMG $RAMDISK
+echo -e "\n ** Make bootimg"
+./build/build_bootimg.sh -o $BOOTIMG $RAMDISK
 
 if [ -e $KERNEL_BUILD_OUT/$BOOTIMG.img ]; then
 	echo "Build Complete!!"
