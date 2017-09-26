@@ -32,7 +32,7 @@
 
 #include "sec_clock.h"
 
-#if defined(CONFIG_EXYNOS5410_BTS)
+#ifdef CONFIG_EXYNOS5410_BTS
 void __iomem *sgx_bts_base;
 unsigned int sgx_clk_status;
 #endif
@@ -148,7 +148,7 @@ int gpu_clks_get(void)
 		}
 	}
 
-#if defined(CONFIG_EXYNOS5410_BTS)
+#ifdef CONFIG_EXYNOS5410_BTS
 	sgx_bts_base = ioremap(EXYNOS5_PA_BTS_G3D0, PAGE_SIZE);
 #endif
 
@@ -207,7 +207,7 @@ void gpu_clks_put(void)
 		clk_put(g3d_clock_hydra);
 		g3d_clock_hydra = 0;
 	}
-#if defined(CONFIG_EXYNOS5410_BTS)
+#ifdef CONFIG_EXYNOS5410_BTS
 	iounmap(sgx_bts_base);
 #endif
 }
@@ -246,7 +246,7 @@ int gpu_clock_enable()
 		PVR_LOG(("SGX sgx_hyd clock enable fail!"));
 		return err;
 	}
-#if defined(CONFIG_EXYNOS5410_BTS)
+#ifdef CONFIG_EXYNOS5410_BTS
 	sgx_clk_status = 1;
 #endif
 	return err;
@@ -254,10 +254,10 @@ int gpu_clock_enable()
 
 void gpu_clock_disable()
 {
-#if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
+#ifdef SUPPORT_ACTIVE_POWER_MANAGEMENT
 	clk_disable(sgx_core);
 	clk_disable(sgx_hyd);
-#if defined(CONFIG_EXYNOS5410_BTS)
+#ifdef CONFIG_EXYNOS5410_BTS
 	sgx_clk_status = 0;
 #endif
 #endif
@@ -286,7 +286,7 @@ void gpu_clock_set(int sgx_clk)
 		mif_sdiv = __raw_readl(EXYNOS5_BPLL_CON0);
 		mif_sdiv &= 0x7;
 
-#if defined(CONFIG_EXYNOS5410_BTS)
+#ifdef CONFIG_EXYNOS5410_BTS
 		{
 			unsigned int bts = 0;
 			if (sgx_clk_status && __raw_readl(sgx_bts_base+0))

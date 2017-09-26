@@ -24,10 +24,10 @@
  *
  ******************************************************************************/
 
-#if !defined(__SYSINFO_H__)
+#ifndef __SYSINFO_H__
 #define __SYSINFO_H__
 
-#if defined(PVR_LINUX_USING_WORKQUEUES)
+#ifdef PVR_LINUX_USING_WORKQUEUES
 #define MAX_HW_TIME_US				(1000000)
 #define WAIT_TRY_COUNT				(20000)
 #else

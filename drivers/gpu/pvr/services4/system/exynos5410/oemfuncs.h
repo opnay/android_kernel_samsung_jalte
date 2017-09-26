@@ -24,10 +24,10 @@
  *
 ******************************************************************************/
 
-#if !defined(__OEMFUNCS_H__)
+#ifndef __OEMFUNCS_H__
 #define __OEMFUNCS_H__
 
-#if defined (__cplusplus)
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -67,7 +67,7 @@ typedef struct PVRSRV_DC_OEM_JTABLE_TAG
 	PFN_SRV_READREGSTRING			pfnOEMWriteRegistryString;
 
 } PVRSRV_DC_OEM_JTABLE;
-#if defined(__cplusplus)
+#ifdef __cplusplus
 }
 #endif
 

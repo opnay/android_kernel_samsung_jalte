@@ -33,7 +33,7 @@
 
 #define GPU_UTILIZATION_TIME 100 /* 100 msec */
 
-#if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
+#ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 extern struct pm_qos_request exynos5_g3d_mif_qos;
 extern struct pm_qos_request exynos5_g3d_int_qos;
 #endif
@@ -62,7 +62,7 @@ extern void sec_gpu_dvfs_handler(int utilization_value);
 /*this function is SGX H/W state callback function*/
 IMG_VOID SysSGXIdleTransition(IMG_BOOL bSGXIdle)
 {
-	#if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
+	#ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 	if(bEnableMIFMornitering)
 	{
 	#endif
@@ -70,7 +70,7 @@ IMG_VOID SysSGXIdleTransition(IMG_BOOL bSGXIdle)
 			sgx_hw_end(); /* wakeup state */
 		else
 			sgx_hw_start(); /* idle state */
-	#if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
+	#ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 	}
 	else
 	{

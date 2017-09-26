@@ -24,7 +24,7 @@
  *
  ******************************************************************************/
 
-#if !defined(__SOCCONFIG_H__)
+#ifndef __SOCCONFIG_H__
 #define __SOCCONFIG_H__
 
 #define VS_PRODUCT_NAME	"exynos5410"
@@ -36,7 +36,7 @@ extern struct platform_device *gpsPVRLDMDev;
 #define SYS_SGX_HWRECOVERY_TRACE_RESET_TIME_PERIOD	5000000
 #define SYS_SGX_MAX_HWRECOVERY_OCCURANCE_COUNT		2
 
-#if defined(SGX_FEATURE_HOST_PORT)
+#ifdef SGX_FEATURE_HOST_PORT
 	
 	#define SYS_SGX_HP_SIZE		0x0
 	

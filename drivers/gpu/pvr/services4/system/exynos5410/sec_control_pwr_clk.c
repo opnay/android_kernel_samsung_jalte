@@ -33,7 +33,7 @@
 #define WAKEUP_LOCK_CLOCK   266
 #define WAKEUP_LOCK_VOLTAGE 900000
 
-#if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
+#ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 static struct pm_qos_request exynos5_g3d_cpu_qos;
 struct pm_qos_request exynos5_g3d_mif_qos;
 struct pm_qos_request exynos5_g3d_int_qos;
@@ -66,7 +66,7 @@ int sec_gpu_pwr_clk_init(void)
 		return ret;
 	}
 	gpu_power_init();
-#if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
+#ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 	pm_qos_add_request(&exynos5_g3d_cpu_qos, PM_QOS_CPU_FREQ_MIN, 0);
 	pm_qos_add_request(&exynos5_g3d_int_qos, PM_QOS_DEVICE_THROUGHPUT, 0);
 	pm_qos_add_request(&exynos5_g3d_mif_qos, PM_QOS_BUS_THROUGHPUT, 0);
@@ -82,7 +82,7 @@ int sec_gpu_pwr_clk_deinit(void)
 	ret = gpu_regulator_disable();
 	if (ret)
 		PVR_DPF((PVR_DBG_ERROR, "gpu_regulator_disable error[%d]", ret));
-#if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
+#ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 	pm_qos_remove_request(&exynos5_g3d_cpu_qos);
 	pm_qos_remove_request(&exynos5_g3d_int_qos);
 	pm_qos_remove_request(&exynos5_g3d_mif_qos);
@@ -98,7 +98,7 @@ void sec_gpu_vol_clk_change(int sgx_clock, int sgx_voltage)
 	mutex_lock(&lock);
 	cur_sgx_clock = gpu_clock_get();
 	sgx_voltage += gpu_voltage_marin;
-#if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
+#ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 	if (sec_gpu_power_on) {
 
 	if (sgx_clock >= sec_gpu_top_clock) {
@@ -189,7 +189,7 @@ int sec_gpu_pwr_clk_state_set(sec_gpu_state state)
 	switch (state) {
 	case GPU_PWR_CLK_STATE_ON:
 	{
-#if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
+#ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 		pm_qos_update_request(&exynos5_g3d_int_qos, 200000);
 		if (sec_gpu_setting_clock < MIF_THRESHHOLD_VALUE_CLK)
 			pm_qos_update_request(&exynos5_g3d_mif_qos, 267000);
@@ -226,7 +226,7 @@ int sec_gpu_pwr_clk_state_set(sec_gpu_state state)
 			mutex_unlock(&lock);
 			return err;
 		}
-#if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
+#ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 		pm_qos_update_request(&exynos5_g3d_cpu_qos, 0);
 		pm_qos_update_request(&exynos5_g3d_int_qos, 0);
 		pm_qos_update_request(&exynos5_g3d_mif_qos, 0);

@@ -34,7 +34,7 @@
 #include "servicesext.h"
 
 
-#if defined(SLSI_EXYNOS5410)
+#ifdef SLSI_EXYNOS5410
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
 #include <linux/clk.h>
@@ -129,7 +129,7 @@ static PVRSRV_ERROR SysLocateDevices(SYS_DATA *psSysData)
 #endif
 
 
-#if defined(SGX_FEATURE_HOST_PORT)
+#ifdef SGX_FEATURE_HOST_PORT
 	
 	gsSGXDeviceMap.sHPSysPBase.uiAddr = 0;
 	gsSGXDeviceMap.sHPCpuPBase.uiAddr = 0;
@@ -184,7 +184,7 @@ PVRSRV_ERROR SysInitialise()
 		return eError;
 	}
 
-#if defined(CONFIG_PVR_SGX_DVFS)
+#ifdef CONFIG_PVR_SGX_DVFS
 	sec_gpu_dvfs_init();
 	sec_gpu_utilization_init();
 #endif
@@ -201,14 +201,14 @@ PVRSRV_ERROR SysInitialise()
 	gpsSysData->pvSysSpecificData = (IMG_PVOID)&gsSysSpecificData;
 	OSMemSet(&gsSGXDeviceMap, 0, sizeof(SGX_DEVICE_MAP));
 	
- #if !defined(SGX_DYNAMIC_TIMING_INFO)
+#ifndef SGX_DYNAMIC_TIMING_INFO
 	psTimingInfo = &gsSGXDeviceMap.sTimingInfo;
 	psTimingInfo->ui32CoreClockSpeed = SYS_SGX_CLOCK_SPEED;
 	psTimingInfo->ui32HWRecoveryFreq = SYS_SGX_HWRECOVERY_TIMEOUT_FREQ; 
 	psTimingInfo->ui32ActivePowManLatencyms = SYS_SGX_ACTIVE_POWER_LATENCY_MS; 
 	psTimingInfo->ui32uKernelFreq = SYS_SGX_PDS_TIMER_FREQ; 
 
-#if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
+#ifdef SUPPORT_ACTIVE_POWER_MANAGEMENT
 	psTimingInfo->bEnableActivePM = IMG_TRUE;
 #else	
 	psTimingInfo->bEnableActivePM = IMG_FALSE;
@@ -317,7 +317,7 @@ PVRSRV_ERROR SysInitialise()
 		return eError;
 	}
 
-#if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
+#ifdef SUPPORT_ACTIVE_POWER_MANAGEMENT
 	eError = sec_gpu_pwr_clk_state_set(GPU_PWR_CLK_STATE_OFF);
 	if (eError != PVRSRV_OK)
 	{
@@ -335,7 +335,7 @@ PVRSRV_ERROR SysFinalise(IMG_VOID)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
     
-#if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
+#ifdef SUPPORT_ACTIVE_POWER_MANAGEMENT
 	eError = sec_gpu_pwr_clk_state_set(GPU_PWR_CLK_STATE_ON);
 	if (eError != PVRSRV_OK)
 	{
@@ -345,7 +345,7 @@ PVRSRV_ERROR SysFinalise(IMG_VOID)
 		return eError;
 	}
 #endif	
-#if defined(SYS_USING_INTERRUPTS)
+#ifdef SYS_USING_INTERRUPTS
 
 	eError = OSInstallMISR(gpsSysData);
 	if (eError != PVRSRV_OK)
@@ -388,7 +388,7 @@ PVRSRV_ERROR SysFinalise(IMG_VOID)
 		PVR_LOG(("SysFinalise: Version string: %s", gpsSysData->pszVersionString));
 	}
 
-#if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
+#ifdef SUPPORT_ACTIVE_POWER_MANAGEMENT
 	eError = sec_gpu_pwr_clk_state_set(GPU_PWR_CLK_STATE_OFF);
 	if (eError != PVRSRV_OK)
 	{
@@ -415,7 +415,7 @@ PVRSRV_ERROR SysDeinitialise (SYS_DATA *psSysData)
 		return PVRSRV_OK;
 	}
 
-#if defined(SYS_USING_INTERRUPTS)
+#ifdef SYS_USING_INTERRUPTS
 
 	psSysSpecData = (SYS_SPECIFIC_DATA *) psSysData->pvSysSpecificData;
 
@@ -573,7 +573,7 @@ IMG_UINT32 SysGetInterruptSource(SYS_DATA* psSysData,
 								 PVRSRV_DEVICE_NODE *psDeviceNode)
 {	
 	PVR_UNREFERENCED_PARAMETER(psSysData);
-#if defined(NO_HARDWARE)
+#ifdef NO_HARDWARE
 	
 	return 0xFFFFFFFF;
 #else
