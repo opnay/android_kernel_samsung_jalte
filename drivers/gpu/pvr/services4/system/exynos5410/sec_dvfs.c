@@ -61,6 +61,7 @@ static GPU_DVFS_DATA default_dvfs_data[] = {
 /* end define DVFS info */
 GPU_DVFS_DATA g_gpu_dvfs_data[MAX_DVFS_LEVEL];
 
+bool gpu_idle = false;
 int sgx_dvfs_level = -1;
 /* this value is dvfs mode- 0: auto, others: custom lock */
 int sgx_dvfs_custom_clock;
@@ -178,7 +179,8 @@ static DEVICE_ATTR(sgx_dvfs_max_lock, S_IRUGO | S_IWUSR | S_IRGRP | S_IWGRP | S_
 
 static ssize_t get_cur_clock(struct device *d, struct device_attribute *a, char *buf)
 {
-	return sprintf(buf, "%d\n", g_gpu_dvfs_data[sgx_dvfs_level].clock);
+	return sprintf(buf, "%d\n",
+		(!!gpu_idle) ? 0 : g_gpu_dvfs_data[sgx_dvfs_level].clock);
 }
 static DEVICE_ATTR(sgx_dvfs_cur_clk, S_IRUGO | S_IRGRP | S_IROTH, get_cur_clock, NULL);
 
@@ -293,11 +295,15 @@ void sec_gpu_dvfs_handler(int utilization_value)
 	if (custom_threshold_change)
 		sec_custom_threshold_set();
 
+	/*utilization_value is zero mean is gpu going to idle*/
+	if (utilization_value == 0) {
+		gpu_idle = true;
+		return;
+	}
+
 	PVR_LOG(("INFO: %s: Get value: %d", __func__, utilization_value));
 
-	/*utilization_value is zero mean is gpu going to idle*/
-	if (utilization_value == 0)
-		return;
+	gpu_idle = false;
 
 #ifdef CONFIG_ASV_MARGIN_TEST
 	sgx_dvfs_custom_clock = set_g3d_freq;
@@ -354,7 +360,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 				sgx_dvfs_level = sec_clock_change(sgx_dvfs_level + 1);
 				break;
 			}
-			
+
 			if (g_gpu_dvfs_data[i].threshold <= utilization_value) {
 				if (sgx_dvfs_level > i) { // to up
 					if (sgx_dvfs_max_lock) {
