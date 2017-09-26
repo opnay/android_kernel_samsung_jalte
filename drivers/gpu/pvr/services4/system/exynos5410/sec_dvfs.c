@@ -363,10 +363,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 					}
 
 					sgx_dvfs_level = sec_clock_change(i);
-				} else { // sgx_dvfs_level == i
-					sgx_dvfs_down_requirement = g_gpu_dvfs_data[sgx_dvfs_level].stay_total_count;
 				}
-
 				break;
 			}
 		}
