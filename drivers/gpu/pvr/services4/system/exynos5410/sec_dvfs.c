@@ -41,7 +41,7 @@
 static GPU_DVFS_DATA default_dvfs_data[] = {
 /* clock, voltage, hold, stay */
 #ifdef USING_640MHZ
-	{ 640, 1200000, 250, 2 }, // Level 0
+	{ 640, 1175000, 250, 0 }, // Level 0
 	{ 532, 1150000, 220, 2 },
 	{ 480, 1100000, 180, 2 },
 	{ 440, 1025000, 160, 2 },
