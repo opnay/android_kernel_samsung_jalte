@@ -33,6 +33,7 @@
 #define MAX_DVFS_LEVEL			10
 #define BASE_START_LEVEL		0
 #define DOWN_REQUIREMENT_THRESHOLD	3
+#define TURBO_UTILIZATION_THRESHOLD	50
 #define GPU_DVFS_MAX_LEVEL		ARRAY_SIZE(default_dvfs_data)
 
 /* start define DVFS info */
@@ -288,6 +289,7 @@ int sec_custom_threshold_set()
 }
 
 unsigned int g_g3dfreq;
+int util_value = 0;
 void sec_gpu_dvfs_handler(int utilization_value)
 {
 	if (custom_threshold_change)
@@ -296,6 +298,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 	/*utilization_value is zero mean is gpu going to idle*/
 	if (utilization_value == 0) {
 		gpu_idle = true;
+		util_value = 0;
 		return;
 	}
 
@@ -366,6 +369,10 @@ void sec_gpu_dvfs_handler(int utilization_value)
 							i = custom_max_lock_level;
 					}
 
+					if ((i != GPU_DVFS_MAX_LEVEL)
+						&& ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD)) {
+						i += 1;
+					}
 					sgx_dvfs_level = sec_clock_change(i);
 				}
 				break;
@@ -373,5 +380,6 @@ void sec_gpu_dvfs_handler(int utilization_value)
 		}
 
 	}
+	util_value = utilization_value;
 	g_g3dfreq = g_gpu_dvfs_data[sgx_dvfs_level].clock;
 }
