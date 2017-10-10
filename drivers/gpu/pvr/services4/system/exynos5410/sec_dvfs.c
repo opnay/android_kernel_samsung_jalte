@@ -32,8 +32,6 @@
 
 #define MAX_DVFS_LEVEL			10
 #define BASE_START_LEVEL		0
-#define BASE_UP_STEP_LEVEL		1
-#define BASE_DOWN_STEP_LEVEL	1
 #define DOWN_REQUIREMENT_THRESHOLD	3
 #define GPU_DVFS_MAX_LEVEL		ARRAY_SIZE(default_dvfs_data)
 
