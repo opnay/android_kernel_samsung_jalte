@@ -288,7 +288,6 @@ int sec_custom_threshold_set()
 	return 1;
 }
 
-unsigned int g_g3dfreq;
 int util_value = 0;
 void sec_gpu_dvfs_handler(int utilization_value)
 {
@@ -381,5 +380,4 @@ void sec_gpu_dvfs_handler(int utilization_value)
 
 	}
 	util_value = utilization_value;
-	g_g3dfreq = g_gpu_dvfs_data[sgx_dvfs_level].clock;
 }
