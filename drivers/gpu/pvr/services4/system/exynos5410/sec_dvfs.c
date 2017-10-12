@@ -33,6 +33,8 @@
 #define MAX_DVFS_LEVEL			10
 #define BASE_START_LEVEL		0
 #define DOWN_REQUIREMENT_THRESHOLD	3
+#define DVFS_UP_THRESHOLD		200
+#define DVFS_DOWN_THRESHOLD		20
 #define TURBO_UTILIZATION_THRESHOLD	50
 #define GPU_DVFS_MAX_LEVEL		ARRAY_SIZE(default_dvfs_data)
 
@@ -41,12 +43,12 @@ static GPU_DVFS_DATA default_dvfs_data[] = {
 /* clock, voltage, hold, stay */
 #ifdef USING_640MHZ
 	{ 640, 1175000, 250, 0 }, // Level 0
-	{ 532, 1150000, 220, 2 },
-	{ 480, 1100000, 170, 2 },
-	{ 440, 1025000, 120, 2 },
-	{ 350,  950000,  80, 1 },
-	{ 333,  925000,  40, 1 },
-	{ 266,  900000,  20, 1 },
+	{ 532, 1150000, 210, 2 },
+	{ 480, 1100000, 150, 2 },
+	{ 440, 1025000, 100, 2 },
+	{ 350,  950000,  60, 1 },
+	{ 333,  925000,  30, 1 },
+	{ 266,  900000,  10, 1 },
 	{ 177,  900000,   0, 0 },
 #else
 	{ 480, 1100000, 170, 0 }, // Level 0
@@ -291,6 +293,8 @@ int sec_custom_threshold_set()
 int util_value = 0;
 void sec_gpu_dvfs_handler(int utilization_value)
 {
+	int level = 0;
+
 	if (custom_threshold_change)
 		sec_custom_threshold_set();
 
@@ -346,38 +350,47 @@ void sec_gpu_dvfs_handler(int utilization_value)
 				gpu_clock_get(),
 				g_gpu_dvfs_data[sgx_dvfs_level].threshold, utilization_value));
 
-		for (int i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
-			if(sgx_dvfs_level < i) { // to down
-				if (--sgx_dvfs_down_requirement > 0)
-					break;
-
-				if (sgx_dvfs_min_lock) {
-					if (i > custom_min_lock_level)
-						i = custom_min_lock_level;
-				}
-
-				// Clock down 1 level
-				sgx_dvfs_level = sec_clock_change(sgx_dvfs_level + 1);
-				break;
-			}
-
-			if (g_gpu_dvfs_data[i].threshold <= utilization_value) {
-				if (sgx_dvfs_level > i) { // to up
-					if (sgx_dvfs_max_lock) {
-						if (i < custom_max_lock_level)
+		if (sgx_dvfs_level == (GPU_DVFS_MAX_LEVEL - 1)) {
+			// for lowest clock
+			for (int i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
+				if (g_gpu_dvfs_data[i].threshold <= utilization_value) {
+					if (sgx_dvfs_level > i) { // to up
+						if (sgx_dvfs_max_lock && (i < custom_max_lock_level))
 							i = custom_max_lock_level;
-					}
 
-					if ((i != GPU_DVFS_MAX_LEVEL)
-						&& ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD)) {
-						i += 1;
+						sgx_dvfs_level = sec_clock_change(i);
 					}
-					sgx_dvfs_level = sec_clock_change(i);
+					break;
 				}
-				break;
+			}
+		} else {
+			// for the other clocks
+			if (utilization_value >= DVFS_UP_THRESHOLD) { // to UP
+				level = sgx_dvfs_level + 1; // increase 1 step
+
+				if (sgx_dvfs_max_lock && (level < custom_max_lock_level))
+					level = custom_max_lock_level;
+
+				if ((level != GPU_DVFS_MAX_LEVEL)
+					&& ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD))
+					level += 1;
+
+				sgx_dvfs_level = sec_clock_change(level);
+			} else if (utilization_value < DVFS_DOWN_THRESHOLD) {
+				if (--sgx_dvfs_down_requirement > 0)
+					goto exit;
+
+				level = sgx_dvfs_level - 1;
+
+				if (sgx_dvfs_min_lock && (level > custom_min_lock_level))
+					level = custom_min_lock_level;
+
+				sgx_dvfs_level = sec_clock_change(level);
 			}
 		}
 
 	}
+exit:
 	util_value = utilization_value;
+	return;
 }
