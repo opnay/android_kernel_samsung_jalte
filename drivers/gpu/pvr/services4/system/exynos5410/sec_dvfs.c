@@ -33,7 +33,7 @@
 #define MAX_DVFS_LEVEL			10
 #define BASE_START_LEVEL		0
 #define DOWN_REQUIREMENT_THRESHOLD	3
-#define DVFS_UP_THRESHOLD		200
+#define DVFS_UP_THRESHOLD		150
 #define DVFS_DOWN_THRESHOLD		20
 #define TURBO_UTILIZATION_THRESHOLD	50
 #define GPU_DVFS_MAX_LEVEL		ARRAY_SIZE(default_dvfs_data)
@@ -43,12 +43,12 @@ static GPU_DVFS_DATA default_dvfs_data[] = {
 /* clock, voltage, hold, stay */
 #ifdef USING_640MHZ
 	{ 640, 1175000, 250, 0 }, // Level 0
-	{ 532, 1150000, 210, 2 },
-	{ 480, 1100000, 150, 2 },
-	{ 440, 1025000, 100, 2 },
-	{ 350,  950000,  60, 1 },
-	{ 333,  925000,  30, 1 },
-	{ 266,  900000,  10, 1 },
+	{ 532, 1150000, 180, 1 },
+	{ 480, 1100000, 100, 1 },
+	{ 440, 1025000,  60, 1 },
+	{ 350,  950000,  40, 2 },
+	{ 333,  925000,  20, 2 },
+	{ 266,  900000,  10, 2 },
 	{ 177,  900000,   0, 0 },
 #else
 	{ 480, 1100000, 170, 0 }, // Level 0
