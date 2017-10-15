@@ -13,7 +13,7 @@ RAMDISK_OUT=$KERNEL_BUILD_OUT/ramdisk
 RAMDISK_ORIG=$KERNEL_BUILD/ramdisk
 
 ## Binary
-TOOLCHAIN_PREFIX=/workspace/bin/gcc-linaro-5.4.1-2017.05-x86_64_arm-eabi/bin/arm-eabi-
+TOOLCHAIN_PREFIX=/workspace/bin/gcc-linaro-4.9.4-2017.01-x86_64_arm-eabi/bin/arm-eabi-
 strip="$TOOLCHAIN_PREFIX"strip
 mkbootfs="$KERNEL_BIN/mkbootfs"
 mkbootimg="$KERNEL_DIR/scripts/mkbootimg"
