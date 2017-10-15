@@ -298,8 +298,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 	if (custom_threshold_change)
 		sec_custom_threshold_set();
 
-	/*utilization_value is zero mean is gpu going to idle*/
-	if (utilization_value == 0) {
+	if (utilization_value < 0) { // gpu going to idle
 		gpu_idle = true;
 		util_value = 0;
 		return;

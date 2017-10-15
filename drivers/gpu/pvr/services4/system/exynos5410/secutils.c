@@ -159,11 +159,11 @@ static void sec_gpu_utilization_handler(void *arg)
 	mutex_lock(&time_data_lock);
 
 	if (total_work_time == 0) {
-		if (!hw_start_time) {
+		if (!hw_start_time) { // hw idle
 
 			mutex_unlock(&time_data_lock);
 
-			sec_gpu_dvfs_handler(0);
+			sec_gpu_dvfs_handler(-1);
 			return;
 		}
 	}
