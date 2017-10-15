@@ -293,7 +293,7 @@ int sec_custom_threshold_set()
 int util_value = 0;
 void sec_gpu_dvfs_handler(int utilization_value)
 {
-	int level = 0;
+	int i, level = 0;
 
 	if (custom_threshold_change)
 		sec_custom_threshold_set();
@@ -351,7 +351,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 
 		if (sgx_dvfs_level == (GPU_DVFS_MAX_LEVEL - 1)) {
 			// for lowest clock
-			for (int i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
+			for (i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
 				if (g_gpu_dvfs_data[i].threshold <= utilization_value) {
 					if (sgx_dvfs_level > i) { // to up
 						if (sgx_dvfs_max_lock && (i < custom_max_lock_level))
