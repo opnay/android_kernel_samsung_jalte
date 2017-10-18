@@ -747,11 +747,12 @@ static struct regulator_init_data s2m_ldo37_data = {
 static struct regulator_init_data s2m_ldo38_data = {
 	.constraints	= {
 		.name		= "touchkey_led",
-		.min_uV		= 3300000,
+		.min_uV		= 2500000,
 		.max_uV		= 3300000,
 		.apply_uV	= 1,
 		.always_on	= 0,
-		.valid_ops_mask	= REGULATOR_CHANGE_STATUS,
+		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
+				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
 			.enabled	= 0,
 			.disabled	= 1,
