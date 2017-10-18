@@ -98,7 +98,7 @@
 #endif
 
 #define  TOUCHKEY_FW_UPDATEABLE_HW_REV  11
-#define TOUCHKEY_BOOSTER
+/*#define TOUCHKEY_BOOSTER*/
 #ifdef TOUCHKEY_BOOSTER
 #include <linux/pm_qos.h>
 #define TOUCH_BOOSTER_OFF_TIME	300

@@ -1,9 +1,9 @@
 #ifndef _GPIO_KEYS_H
 #define _GPIO_KEYS_H
 
-#ifdef CONFIG_MACH_JA
+/*#ifdef CONFIG_MACH_JA
 #define KEY_BOOSTER
-#endif
+#endif*/
 
 #ifdef KEY_BOOSTER
 #include <linux/pm_qos.h>

@@ -25,7 +25,7 @@
 /*#define dev_dbg(dev, fmt, arg...) dev_info(dev, fmt, ##arg)*/
 
 #define SYNAPTICS_DEVICE_NAME	"GT-I95XX"
-#define TSP_BOOSTER
+/*#define TSP_BOOSTER*/
 #ifdef TSP_BOOSTER
 #include <linux/pm_qos.h>
 #endif
