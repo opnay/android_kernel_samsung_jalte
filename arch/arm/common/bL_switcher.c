@@ -182,7 +182,7 @@ static int bL_switchpoint(unsigned long _arg)
  */
 static DEFINE_SPINLOCK(switch_gic_lock);
 
-static unsigned int bL_gic_id[BL_CPUS_PER_CLUSTER][BL_NR_CLUSTERS];
+static unsigned int bL_gic_id[MAX_CPUS_PER_CLUSTER][MAX_NR_CLUSTERS];
 
 /*
  * bL_switch_to - Switch to a specific cluster for the current CPU
@@ -456,7 +456,7 @@ int bL_cluster_switch_request(unsigned int new_cluster)
 		return -EPERM;
 	}
 
-	for (cpu = BL_CPUS_PER_CLUSTER - 1; cpu >= 0; cpu--) {
+	for (cpu = MAX_CPUS_PER_CLUSTER - 1; cpu >= 0; cpu--) {
 		if (unlikely(!cpu_online(cpu)))
 			continue;
 
@@ -567,7 +567,7 @@ int __init bL_switcher_init(const struct bL_power_ops *ops)
 
 	pr_info("big.LITTLE switcher initializing\n");
 
-	if (BL_NR_CLUSTERS != 2) {
+	if (MAX_NR_CLUSTERS != 2) {
 		pr_err("%s: only dual cluster systems are supported\n", __func__);
 		return -EINVAL;
 	}

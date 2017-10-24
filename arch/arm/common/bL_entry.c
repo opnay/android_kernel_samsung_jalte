@@ -25,7 +25,7 @@
 #include <asm/cacheflush.h>
 #include <asm/memblock.h>
 
-extern volatile unsigned long bL_entry_vectors[BL_NR_CLUSTERS][BL_CPUS_PER_CLUSTER];
+extern volatile unsigned long bL_entry_vectors[MAX_NR_CLUSTERS][MAX_CPUS_PER_CLUSTER];
 
 void bL_set_entry_vector(unsigned cpu, unsigned cluster, void *ptr)
 {
@@ -102,7 +102,7 @@ bool __bL_outbound_enter_critical(unsigned int cpu, unsigned int cluster)
 	 * If any CPU has been woken up again from the DOWN state, then we
 	 * shouldn't be taking the cluster down at all: abort in that case.
 	 */
-	for (i = 0; i < BL_CPUS_PER_CLUSTER; i++) {
+	for (i = 0; i < MAX_CPUS_PER_CLUSTER; i++) {
 		int cpustate;
 
 		if (i == cpu)
@@ -197,7 +197,7 @@ void * __init bL_reserve_memory(struct device *dev, unsigned long *phys)
 int check_bL_vlock_phys(void)
 {
 	int i;
-	for (i = 0; i < BL_NR_CLUSTERS; i++) {
+	for (i = 0; i < MAX_NR_CLUSTERS; i++) {
 		int j;
 		if (bL_vlock->clusters[i].voting_owner != 0)
 			return -INVALID_OWNER;
@@ -266,7 +266,7 @@ int __init bL_cluster_sync_init(const struct bL_power_ops *ops)
 	 * The values of voting onwer & offset is clear.
 	 */
 	memset(bL_vlock, 0, sizeof *bL_vlock);
-	for (i = 0; i < BL_NR_CLUSTERS; i++) {
+	for (i = 0; i < MAX_NR_CLUSTERS; i++) {
 		int j;
 		bL_vlock->clusters[i].voting_owner = 0;
 		for_each_online_cpu(j)

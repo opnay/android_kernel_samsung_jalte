@@ -41,9 +41,9 @@ ENTRY(bl_entry_point)
 	mrc	p15, 0, r0, c0, c0, 5
 	ubfx	r9, r0, #0, #4			@ r9 = cpu
 	ubfx	r10, r0, #8, #4			@ r10 = cluster
-	mov	r3, #BL_CPUS_PER_CLUSTER
+	mov	r3, #MAX_CPUS_PER_CLUSTER
 	mla	r4, r3, r10, r9			@ r4 = canonical CPU index
-	cmp	r4, #(BL_CPUS_PER_CLUSTER * BL_NR_CLUSTERS)
+	cmp	r4, #(MAX_CPUS_PER_CLUSTER * MAX_NR_CLUSTERS)
 	blo	2f
 
 	/* We didn't expect this CPU.  Try to make it quiet. */
@@ -188,7 +188,7 @@ ENDPROC(bl_entry_point)
 
 	.type	bL_entry_vectors, #object
 ENTRY(bL_entry_vectors)
-	.space	4 * BL_NR_CLUSTERS * BL_CPUS_PER_CLUSTER
+	.space	4 * MAX_NR_CLUSTERS * MAX_CPUS_PER_CLUSTER
 
 	.type	bL_power_up_setup_phys, #object
 ENTRY(bL_power_up_setup_phys)

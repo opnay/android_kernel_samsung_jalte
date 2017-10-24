@@ -12,8 +12,8 @@
 #ifndef BL_ENTRY_H
 #define BL_ENTRY_H
 
-#define BL_CPUS_PER_CLUSTER	4
-#define BL_NR_CLUSTERS		2
+#define MAX_CPUS_PER_CLUSTER	4
+#define MAX_NR_CLUSTERS		2
 
 /* Definitions for bL_cluster_sync_struct */
 #define CPU_DOWN		0
@@ -38,14 +38,14 @@
 /* Synchronisation structures for coordinating safe cluster setup/teardown: */
 
 struct bL_cluster_sync_struct {
-	s8	cpus[BL_CPUS_PER_CLUSTER];	/* individual CPU states */
+	s8	cpus[MAX_CPUS_PER_CLUSTER];	/* individual CPU states */
 	s8	cluster;	/* cluster state */
 	s8	inbound;	/* inbound-side state */
 	s8	first_man;	/* CPU index of elected first man */
 };
 
 struct bL_sync_struct {
-	struct bL_cluster_sync_struct clusters[BL_NR_CLUSTERS];
+	struct bL_cluster_sync_struct clusters[MAX_NR_CLUSTERS];
 };
 
 /* How much physical memory to reserve for the synchronisation structure: */
@@ -55,11 +55,11 @@ extern unsigned long bL_sync_phys;	/* physical address of *bL_sync */
 
 struct bL_vlock_struct {
 	unsigned int voting_owner;
-	unsigned char voting_offset[BL_CPUS_PER_CLUSTER];
+	unsigned char voting_offset[MAX_CPUS_PER_CLUSTER];
 };
 
 struct bL_firstman_vlock_struct {
-	struct bL_vlock_struct clusters[BL_NR_CLUSTERS];
+	struct bL_vlock_struct clusters[MAX_NR_CLUSTERS];
 };
 
 extern unsigned long bL_vlock_phys;

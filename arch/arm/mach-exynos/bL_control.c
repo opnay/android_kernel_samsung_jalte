@@ -67,8 +67,8 @@ static struct hrtimer cluster_power_down_timer;
  * debugging.
  */
 static arch_spinlock_t exynos_lock = __ARCH_SPIN_LOCK_UNLOCKED;
-static int kfs_use_count[BL_CPUS_PER_CLUSTER][BL_NR_CLUSTERS];
-static unsigned int cluster_hotplug_cpu[BL_CPUS_PER_CLUSTER];
+static int kfs_use_count[MAX_CPUS_PER_CLUSTER][MAX_NR_CLUSTERS];
+static unsigned int cluster_hotplug_cpu[MAX_CPUS_PER_CLUSTER];
 static struct clk *apll;
 static struct clk *fout_apll;
 
@@ -655,7 +655,7 @@ device_initcall(bL_control_init);
 
 #define GIC_ENABLE_STATUS	0x1
 
-static int core_count[BL_NR_CLUSTERS];
+static int core_count[MAX_NR_CLUSTERS];
 /*
  * We can't use regular spinlocks. In the switcher case, it is possible
  * for an outbound CPU to call power_down() after its inbound counterpart
