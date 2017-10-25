@@ -256,6 +256,11 @@ static int g_debug_CCB_count = 1;
 int sec_clock_change(int level) {
 	PVR_LOG(("INFO: %s: Get value: %d", __func__, level));
 
+	if (level >= GPU_DVFS_MAX_LEVEL)
+		level = GPU_DVFS_MAX_LEVEL - 1;
+	else if (level < 0)
+		level = 0;
+
 	sgx_dvfs_down_requirement = g_gpu_dvfs_data[level].stay_total_count;
 	sec_gpu_vol_clk_change(g_gpu_dvfs_data[level].clock, g_gpu_dvfs_data[level].voltage);
 
@@ -337,9 +342,9 @@ void sec_gpu_dvfs_handler(int utilization_value)
 			}
 		}
 	} else {
-		sgx_dvfs_level = sec_gpu_dvfs_level_from_clk_get(gpu_clock_get());
+		level = sec_gpu_dvfs_level_from_clk_get(gpu_clock_get());
 		/* this check for current clock must be find in dvfs table */
-		if (sgx_dvfs_level < 0) {
+		if (level < 0) {
 			PVR_LOG(("WARN: current clock: %d MHz not found in DVFS table. so set to max clock", gpu_clock_get()));
 			sec_gpu_vol_clk_change(g_gpu_dvfs_data[BASE_START_LEVEL].clock, g_gpu_dvfs_data[BASE_START_LEVEL].voltage);
 			return;
@@ -347,44 +352,35 @@ void sec_gpu_dvfs_handler(int utilization_value)
 
 		PVR_DPF((PVR_DBG_MESSAGE, "INFO: AUTO DVFS [%d MHz] <%d>, utilization [%d]",
 				gpu_clock_get(),
-				g_gpu_dvfs_data[sgx_dvfs_level].threshold, utilization_value));
+				g_gpu_dvfs_data[level].threshold, utilization_value));
 
-		if (sgx_dvfs_level == (GPU_DVFS_MAX_LEVEL - 1)) {
+		if (level == (GPU_DVFS_MAX_LEVEL - 1)) {
 			// for lowest clock
 			for (i = 0; i < GPU_DVFS_MAX_LEVEL; i++) {
 				if (g_gpu_dvfs_data[i].threshold <= utilization_value) {
-					if (sgx_dvfs_level > i) { // to up
-						if (sgx_dvfs_max_lock && (i < custom_max_lock_level))
-							i = custom_max_lock_level;
-
-						sgx_dvfs_level = sec_clock_change(i);
-					}
-					break;
+					level = (sgx_dvfs_max_lock && (i < custom_max_lock_level)) ? custom_max_lock_level : i;
+					goto change;
 				}
 			}
 		} else {
 			// for the other clocks
 			if (utilization_value >= DVFS_UP_THRESHOLD) { // to UP
-				level = sgx_dvfs_level + 1; // increase 1 step
+				level -= ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD) ? 1 : 2;
 
 				if (sgx_dvfs_max_lock && (level < custom_max_lock_level))
 					level = custom_max_lock_level;
 
-				if ((level != GPU_DVFS_MAX_LEVEL)
-					&& ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD))
-					level += 1;
-
-				sgx_dvfs_level = sec_clock_change(level);
+				goto change;
 			} else if (utilization_value < DVFS_DOWN_THRESHOLD) { // to DOWN
 				if (--sgx_dvfs_down_requirement > 0)
 					goto exit;
 
-				level = sgx_dvfs_level - 1;
+				level += 1;
 
 				if (sgx_dvfs_min_lock && (level > custom_min_lock_level))
 					level = custom_min_lock_level;
 
-				sgx_dvfs_level = sec_clock_change(level);
+				goto change;
 			} else {
 				// Stay reset count
 				sgx_dvfs_down_requirement = g_gpu_dvfs_data[sgx_dvfs_level].stay_total_count;
@@ -392,6 +388,8 @@ void sec_gpu_dvfs_handler(int utilization_value)
 		}
 
 	}
+change:
+	sgx_dvfs_level = sec_clock_change(level);
 exit:
 	util_value = utilization_value;
 	return;
