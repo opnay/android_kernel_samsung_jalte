@@ -69,7 +69,6 @@ int custom_max_lock_level;
 int custom_threshold_change;
 int custom_threshold[MAX_DVFS_LEVEL*4];
 int sgx_dvfs_custom_threshold_size;
-int custom_threshold_change;
 char sgx_dvfs_table_string[256]={0};
 char* sgx_dvfs_table;
 /* set sys parameters */
