@@ -371,6 +371,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 			} else {
 				// Stay reset count
 				sgx_dvfs_down_requirement = dvfs_data[sgx_dvfs_level].stay_total_count;
+				goto exit;
 			}
 		}
 
