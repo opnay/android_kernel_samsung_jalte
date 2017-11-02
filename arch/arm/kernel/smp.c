@@ -740,18 +740,12 @@ int setup_profiling_timer(unsigned int multiplier)
 
 static void flush_all_cpu_cache(void *info)
 {
-	flush_dcache_level(flush_cache_level_cpu());
+	flush_cache_all();
 }
 
 void flush_all_cpu_caches(void)
 {
-	unsigned long flags;
-	preempt_disable();
-	smp_call_function(flush_all_cpu_cache, NULL, 1);
-	local_irq_save(flags);
-	flush_cache_all();
-	local_irq_restore(flags);
-	preempt_enable();
+	on_each_cpu(flush_all_cpu_cache, NULL, 1);
 }
 
 #ifdef CONFIG_CPU_FREQ

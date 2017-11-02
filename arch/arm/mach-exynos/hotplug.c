@@ -59,8 +59,8 @@ static inline void cpu_enter_lowpower_a15(void)
 	  : "=&r" (v)
 	  : "Ir" (CR_C)
 	  : "cc");
-
-	flush_dcache_level(flush_cache_level_cpu());
+ 
+	flush_cache_all();
 
 	asm volatile(
 	/*
