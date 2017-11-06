@@ -247,8 +247,8 @@ int sec_clock_change(int level) {
 	else if (level < 0)
 		level = 0;
 
-	sgx_dvfs_down_requirement = dvfs_data[level].stay_total_count;
 	sec_gpu_vol_clk_change(dvfs_data[level].clock, dvfs_data[level].voltage);
+	sec_gpu_dvfs_down_requirement_reset();
 
 	if ((g_debug_CCB_Info_Flag % g_debug_CCB_count) == 0)
 		PVR_LOG(("SGX CCB RO : %d, WO : %d, Total : %d", *g_debug_CCB_Info_RO, *g_debug_CCB_Info_WO, g_debug_CCB_Info_WCNT));
@@ -372,7 +372,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 			goto change;
 		} else {
 			// Stay reset count
-			sgx_dvfs_down_requirement = dvfs_data[sgx_dvfs_level].stay_total_count;
+			sec_gpu_dvfs_down_requirement_reset();
 			goto exit;
 		}
 	}
