@@ -62,8 +62,6 @@ static GPU_DVFS_DATA dvfs_data[] = {
 
 bool gpu_idle = false;
 int sgx_dvfs_level = -1;
-/* this value is dvfs mode- 0: auto, others: custom lock */
-int sgx_dvfs_custom_clock;
 int sgx_dvfs_min_lock;
 int sgx_dvfs_max_lock;
 int sgx_dvfs_down_requirement;
@@ -77,8 +75,6 @@ char* sgx_dvfs_table;
 /* set sys parameters */
 module_param(sgx_dvfs_level, int, S_IRUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(sgx_dvfs_level, "SGX DVFS status");
-module_param(sgx_dvfs_custom_clock, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-MODULE_PARM_DESC(sgx_dvfs_custom_clock, "SGX custom threshold array value");
 module_param_array(custom_threshold, int, &sgx_dvfs_custom_threshold_size, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 MODULE_PARM_DESC(custom_threshold, "SGX custom threshold array value");
 module_param(custom_threshold_change, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
@@ -90,7 +86,7 @@ MODULE_PARM_DESC(sgx_dvfs_table, "SGX DVFS frequency array (Mhz)");
 static int set_g3d_freq = 0;
 static int __init get_g3d_freq(char *str)
 {
-get_option(&str, &set_g3d_freq);
+	get_option(&str, &set_g3d_freq);
 	return 0;
 }
 early_param("g3dfreq", get_g3d_freq);
@@ -304,94 +300,83 @@ void sec_gpu_dvfs_handler(int utilization_value)
 	gpu_idle = false;
 
 #ifdef CONFIG_ASV_MARGIN_TEST
-	sgx_dvfs_custom_clock = set_g3d_freq;
-#endif
-	/* this check for custom dvfs setting - 0:auto, others: custom lock clock*/
-	if (sgx_dvfs_custom_clock) {
-		if (sgx_dvfs_custom_clock != gpu_clock_get()) {
-			sgx_dvfs_level = sec_gpu_dvfs_level_from_clk_get(sgx_dvfs_custom_clock);
-			/* this check for current clock must be find in dvfs table */
-			if (sgx_dvfs_level < 0) {
-				PVR_LOG(("WARN: custom clock: %d MHz not found in DVFS table", sgx_dvfs_custom_clock));
-				return;
-			}
-
-			if (sgx_dvfs_level < MAX_DVFS_LEVEL && sgx_dvfs_level >= 0) {
-
-				sec_gpu_vol_clk_change(dvfs_data[sgx_dvfs_level].clock, dvfs_data[sgx_dvfs_level].voltage);
-
-				PVR_LOG(("INFO: CUSTOM DVFS [%d MHz] (%d), utilization [%d] -(%d MHz)",
-						gpu_clock_get(),
-						dvfs_data[sgx_dvfs_level].threshold,
-						utilization_value,
-						sgx_dvfs_custom_clock
-						));
-			} else {
-				 PVR_LOG(("INFO: CUSTOM DVFS [%d MHz] invalid clock - restore auto mode", sgx_dvfs_custom_clock));
-				 sgx_dvfs_custom_clock = 0;
-			}
-		}
-	} else {
-		level = sec_gpu_dvfs_level_from_clk_get(gpu_clock_get());
+	if (!!set_g3d_freq && (gpu_clock_get() != set_g3d_freq)) {
+		level = sec_gpu_dvfs_level_from_clk_get(set_g3d_freq);
 		/* this check for current clock must be find in dvfs table */
 		if (level < 0) {
-			PVR_LOG(("WARN: current clock: %d MHz not found in DVFS table. so set to max clock", gpu_clock_get()));
-			sec_gpu_vol_clk_change(dvfs_data[BASE_START_LEVEL].clock, dvfs_data[BASE_START_LEVEL].voltage);
+			PVR_LOG(("WARN: custom clock: %d MHz not found in DVFS table", set_g3d_freq));
 			return;
 		}
 
-		PVR_DPF((PVR_DBG_MESSAGE, "INFO: AUTO DVFS [%d MHz] <%d>, utilization [%d]",
-				gpu_clock_get(),
-				dvfs_data[level].threshold, utilization_value));
+		if (level < MAX_DVFS_LEVEL && level >= 0) {
+			PVR_LOG(("INFO: CUSTOM DVFS [%d MHz] (%d), utilization [%d]",
+					dvfs_data[level].clock,
+					dvfs_data[level].threshold,
+					utilization_value
+					));
+			goto change;
+		}
+	}
+#endif
+	level = sec_gpu_dvfs_level_from_clk_get(gpu_clock_get());
+	/* this check for current clock must be find in dvfs table */
+	if (level < 0) {
+		PVR_LOG(("WARN: current clock: %d MHz not found in DVFS table. so set to max clock", gpu_clock_get()));
+		sec_gpu_vol_clk_change(dvfs_data[BASE_START_LEVEL].clock, dvfs_data[BASE_START_LEVEL].voltage);
+		return;
+	}
 
-		if (level == (MAX_DVFS_LEVEL - 1)) {
-			// for lowest clock
-			for (i = 0; i < MAX_DVFS_LEVEL; i++) {
-				if (dvfs_data[i].threshold <= utilization_value) {
-					level = (sgx_dvfs_max_lock && (i < custom_max_lock_level)) ? custom_max_lock_level : i;
-					goto change;
-				}
-			}
-		} else if (level <= DVFS_HIGH_CLOCK_LEVEL) {
-			// for high clock
-			if (utilization_value < DVFS_HIGH_DOWN_THRESHOLD) {
-				level += 1;
+	PVR_DPF((PVR_DBG_MESSAGE, "INFO: AUTO DVFS [%d MHz] <%d>, utilization [%d]",
+			gpu_clock_get(),
+			dvfs_data[level].threshold, utilization_value));
 
-				if (sgx_dvfs_min_lock && (level > custom_min_lock_level))
-					level = custom_min_lock_level;
-				
+	if (level == (MAX_DVFS_LEVEL - 1)) {
+		// for lowest clock
+		for (i = 0; i < MAX_DVFS_LEVEL; i++) {
+			if (dvfs_data[i].threshold <= utilization_value) {
+				level = (sgx_dvfs_max_lock && (i < custom_max_lock_level)) ? custom_max_lock_level : i;
 				goto change;
-			}
-		} else {
-			// for the other clocks
-			if (utilization_value >= DVFS_UP_THRESHOLD) { // to UP
-				level -= ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD) ? 1 : 2;
-
-				if (sgx_dvfs_max_lock && (level < custom_max_lock_level))
-					level = custom_max_lock_level;
-
-				if ((level <= DVFS_HIGH_CLOCK_LEVEL) && (utilization_value < DVFS_HIGH_THRESHOLD))
-					level = DVFS_HIGH_CLOCK_LEVEL + 1;
-
-				goto change;
-			} else if (utilization_value < DVFS_DOWN_THRESHOLD) { // to DOWN
-				if (--sgx_dvfs_down_requirement > 0)
-					goto exit;
-
-				level += 1;
-
-				if (sgx_dvfs_min_lock && (level > custom_min_lock_level))
-					level = custom_min_lock_level;
-
-				goto change;
-			} else {
-				// Stay reset count
-				sgx_dvfs_down_requirement = dvfs_data[sgx_dvfs_level].stay_total_count;
-				goto exit;
 			}
 		}
+	} else if (level <= DVFS_HIGH_CLOCK_LEVEL) {
+		// for high clock
+		if (utilization_value < DVFS_HIGH_DOWN_THRESHOLD) {
+			level += 1;
 
+			if (sgx_dvfs_min_lock && (level > custom_min_lock_level))
+				level = custom_min_lock_level;
+			
+			goto change;
+		}
+	} else {
+		// for the other clocks
+		if (utilization_value >= DVFS_UP_THRESHOLD) { // to UP
+			level -= ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD) ? 1 : 2;
+
+			if (sgx_dvfs_max_lock && (level < custom_max_lock_level))
+				level = custom_max_lock_level;
+
+			if ((level <= DVFS_HIGH_CLOCK_LEVEL) && (utilization_value < DVFS_HIGH_THRESHOLD))
+				level = DVFS_HIGH_CLOCK_LEVEL + 1;
+
+			goto change;
+		} else if (utilization_value < DVFS_DOWN_THRESHOLD) { // to DOWN
+			if (--sgx_dvfs_down_requirement > 0)
+				goto exit;
+
+			level += 1;
+
+			if (sgx_dvfs_min_lock && (level > custom_min_lock_level))
+				level = custom_min_lock_level;
+
+			goto change;
+		} else {
+			// Stay reset count
+			sgx_dvfs_down_requirement = dvfs_data[sgx_dvfs_level].stay_total_count;
+			goto exit;
+		}
 	}
+
 change:
 	sgx_dvfs_level = sec_clock_change(level);
 exit:
