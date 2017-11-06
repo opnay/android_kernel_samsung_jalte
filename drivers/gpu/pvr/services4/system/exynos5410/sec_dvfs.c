@@ -35,6 +35,9 @@
 #define DOWN_REQUIREMENT_THRESHOLD	3
 #define DVFS_UP_THRESHOLD		150
 #define DVFS_DOWN_THRESHOLD		20
+#define DVFS_HIGH_CLOCK_LEVEL	0
+#define DVFS_HIGH_THRESHOLD		200
+#define DVFS_HIGH_DOWN_THRESHOLD	50
 #define TURBO_UTILIZATION_THRESHOLD	50
 
 static GPU_DVFS_DATA dvfs_data[] = {
@@ -349,6 +352,16 @@ void sec_gpu_dvfs_handler(int utilization_value)
 					goto change;
 				}
 			}
+		} else if (level <= DVFS_HIGH_CLOCK_LEVEL) {
+			// for high clock
+			if (utilization_value < DVFS_HIGH_DOWN_THRESHOLD) {
+				level += 1;
+
+				if (sgx_dvfs_min_lock && (level > custom_min_lock_level))
+					level = custom_min_lock_level;
+				
+				goto change;
+			}
 		} else {
 			// for the other clocks
 			if (utilization_value >= DVFS_UP_THRESHOLD) { // to UP
@@ -356,6 +369,9 @@ void sec_gpu_dvfs_handler(int utilization_value)
 
 				if (sgx_dvfs_max_lock && (level < custom_max_lock_level))
 					level = custom_max_lock_level;
+
+				if ((level <= DVFS_HIGH_CLOCK_LEVEL) && (utilization_value < DVFS_HIGH_THRESHOLD))
+					level = DVFS_HIGH_CLOCK_LEVEL + 1;
 
 				goto change;
 			} else if (utilization_value < DVFS_DOWN_THRESHOLD) { // to DOWN
