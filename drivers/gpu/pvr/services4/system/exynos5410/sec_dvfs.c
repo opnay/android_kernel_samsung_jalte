@@ -32,7 +32,6 @@
 
 #define MAX_DVFS_LEVEL			ARRAY_SIZE(dvfs_data)
 #define BASE_START_LEVEL		0
-#define DOWN_REQUIREMENT_THRESHOLD	3
 #define DVFS_UP_THRESHOLD		150
 #define DVFS_DOWN_THRESHOLD		20
 #define DVFS_HIGH_CLOCK_LEVEL	0
@@ -40,22 +39,25 @@
 #define DVFS_HIGH_DOWN_THRESHOLD	50
 #define TURBO_UTILIZATION_THRESHOLD	50
 
+#define DVFS_STAY_COUNT_DEFAULT		2
+#define DVFS_STAY_COUNT_HIGH		1
+
 static GPU_DVFS_DATA dvfs_data[] = {
 /* clock, voltage, hold, stay */
 #ifdef USING_640MHZ
-	{ 640, 1175000, 250, 0 }, // Level 0
-	{ 532, 1150000, 180, 1 },
-	{ 480, 1100000, 100, 1 },
-	{ 440, 1025000,  60, 1 },
-	{ 350,  950000,  40, 2 },
-	{ 333,  925000,  20, 2 },
-	{ 266,  900000,  10, 2 },
-	{ 177,  900000,   0, 0 },
+	{ 640, 1175000, 250 }, // Level 0
+	{ 532, 1150000, 180 },
+	{ 480, 1100000, 100 },
+	{ 440, 1025000,  60 },
+	{ 350,  950000,  40 },
+	{ 333,  925000,  20 },
+	{ 266,  900000,  10 },
+	{ 177,  900000,   0 },
 #else
-	{ 480, 1100000, 170, 0 }, // Level 0
-	{ 350,  925000, 160, 0 },
-	{ 266,  900000, 150, 0 },
-	{ 177,  900000,   0, 0 },
+	{ 480, 1100000, 170 }, // Level 0
+	{ 350,  925000, 160 },
+	{ 266,  900000, 150 },
+	{ 177,  900000,   0 },
 #endif
 
 };
@@ -187,7 +189,7 @@ void sec_gpu_dvfs_init(void)
 	/* default dvfs level depend on default clock setting */
 	sgx_dvfs_level = sec_gpu_dvfs_level_from_clk_get(gpu_clock_get());
 	custom_threshold_change = 0;
-	sgx_dvfs_down_requirement = DOWN_REQUIREMENT_THRESHOLD;
+	sgx_dvfs_down_requirement = DVFS_STAY_COUNT_DEFAULT;
 
 	pdev = gpsPVRLDMDev;
 
@@ -225,13 +227,8 @@ int sec_gpu_dvfs_level_from_clk_get(int clock)
 
 void sec_gpu_dvfs_down_requirement_reset()
 {
-	int level;
-
-	level = sec_gpu_dvfs_level_from_clk_get(gpu_clock_get());
-	if (level >= 0)
-		sgx_dvfs_down_requirement = dvfs_data[level].stay_total_count;
-	else
-		sgx_dvfs_down_requirement = DOWN_REQUIREMENT_THRESHOLD;
+	sgx_dvfs_down_requirement =
+		(sgx_dvfs_level <= DVFS_HIGH_CLOCK_LEVEL) ? DVFS_STAY_COUNT_HIGH : DVFS_STAY_COUNT_DEFAULT;
 }
 
 extern unsigned int *g_debug_CCB_Info_RO;
