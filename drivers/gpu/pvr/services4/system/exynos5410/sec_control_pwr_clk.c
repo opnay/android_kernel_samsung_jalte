@@ -177,7 +177,7 @@ static int sec_gpu_clock_enable(void)
 	}
 
 	/* wait for more than 10 clocks to proper reset SGX core */
-	OSWaitus(1);
+	//OSWaitus(1);
 	return err;
 }
 
