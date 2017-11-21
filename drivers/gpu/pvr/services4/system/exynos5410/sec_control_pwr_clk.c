@@ -244,16 +244,14 @@ int sec_gpu_pwr_clk_state_set(sec_gpu_state state)
 
 int sec_gpu_pwr_clk_margin_set(unsigned int margin_offset)
 {
-	unsigned int offset = (!!margin_offset) ? margin_offset : 0;
-
 	mutex_lock(&lock);
 
 	// set or reset voltage margin - margin_offset
-	if (offset != gpu_voltage_marin) {
+	if (margin_offset != gpu_voltage_marin) {
 		if (sec_gpu_power_on)
-			gpu_voltage_set(sec_gpu_setting_voltage - gpu_voltage_marin + offset);
-		sec_gpu_setting_voltage = sec_gpu_setting_voltage - gpu_voltage_marin + offset;
-		gpu_voltage_marin = offset;
+			gpu_voltage_set(sec_gpu_setting_voltage - gpu_voltage_marin + margin_offset);
+		sec_gpu_setting_voltage = sec_gpu_setting_voltage - gpu_voltage_marin + margin_offset;
+		gpu_voltage_marin = margin_offset;
 	}
 	// else case already setting as same margin value also value is zero - do nothing
 
