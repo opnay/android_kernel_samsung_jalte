@@ -15,21 +15,18 @@
 #include <linux/spinlock.h>
 #include <mach/regs-clock.h>
 
-static int __s5p_mipi_phy_control(int phy_id,
-				  bool on, u32 reset)
+static int __s5p_mipi_phy_control(int id, bool on, u32 reset)
 {
 	static DEFINE_SPINLOCK(lock);
 	void __iomem *addr;
 	unsigned long flags;
-	int pid;
 	u32 cfg;
 
-	pid = (phy_id == -1) ? 0 : phy_id;
-
-	if (pid != 0 && pid != 1 && pid != 2)
+	id = max(0, id);
+	if (id > 2)
 		return -EINVAL;
-
-	addr = S5P_MIPI_DPHY_CONTROL(pid);
+	
+	addr = S5P_MIPI_DPHY_CONTROL(id);
 
 	spin_lock_irqsave(&lock, flags);
 
