@@ -205,15 +205,11 @@ int sec_gpu_pwr_clk_state_set(sec_gpu_state state)
 		}
 #endif
 		err = gpu_power_enable();
-		if (err) {
-			mutex_unlock(&lock);
-			return err;
-		}
+		if (err)
+			goto exit;
 		err = sec_gpu_clock_enable();
-		if (err) {
-			mutex_unlock(&lock);
-			return err;
-		}
+		if (err)
+			goto exit;
 		sec_gpu_power_on = true;
 	}
 	break;
@@ -222,10 +218,8 @@ int sec_gpu_pwr_clk_state_set(sec_gpu_state state)
 		sec_gpu_power_on = false;
 		sec_gpu_clock_disable();
 		err = gpu_power_disable();
-		if (err) {
-			mutex_unlock(&lock);
-			return err;
-		}
+		if (err)
+			goto exit;
 #ifdef CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ
 		pm_qos_update_request(&exynos5_g3d_cpu_qos, 0);
 		pm_qos_update_request(&exynos5_g3d_int_qos, 0);
@@ -238,6 +232,7 @@ int sec_gpu_pwr_clk_state_set(sec_gpu_state state)
 	break;
 	}
 
+exit:
 	mutex_unlock(&lock);
 	return err;
 }

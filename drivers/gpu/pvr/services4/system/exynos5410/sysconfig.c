@@ -155,33 +155,26 @@ static PVRSRV_ERROR SysLocateDevices(SYS_DATA *psSysData)
 PVRSRV_ERROR SysInitialise()
 {
 	IMG_UINT32			i;
-	PVRSRV_ERROR 		eError;
+	PVRSRV_ERROR 		eError = PVRSRV_OK;
 	PVRSRV_DEVICE_NODE	*psDeviceNode;
 	SGX_TIMING_INFORMATION*	psTimingInfo;
-	struct platform_device	*pdev;
 
 	gpsSysData = &gsSysData;
 	OSMemSet(gpsSysData, 0, sizeof(SYS_DATA));
 	mutex_init(&gsSysSpecificData.sPowerLock);
-
-	pdev = gpsPVRLDMDev;
 
 	PVR_LOG(("SysInitialise: start"));
 	eError = sec_gpu_pwr_clk_init();
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR, "SysInitialise: Failed to sec_gpu_pwr_clk_init"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 	eError = sec_gpu_pwr_clk_state_set(GPU_PWR_CLK_STATE_ON);
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR, "SysInitialise: Failed to sec_gpu_pwr_clk_state_set GPU_PWR_CLK_STATE_ON"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 #ifdef CONFIG_PVR_SGX_DVFS
@@ -193,9 +186,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to setup env structure"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 	gpsSysData->pvSysSpecificData = (IMG_PVOID)&gsSysSpecificData;
@@ -230,9 +221,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed in SysInitialiseCommon"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 	
@@ -240,9 +229,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to locate devices"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 	
@@ -250,9 +237,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to register device!"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 		
@@ -296,7 +281,8 @@ PVRSRV_ERROR SysInitialise()
 			}
 			default:
 				PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to find SGX device node!"));
-				return PVRSRV_ERROR_INIT_FAILURE;
+				eError = PVRSRV_ERROR_INIT_FAILURE;
+				goto err;
 		}
 
 		
@@ -312,9 +298,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to initialise device!"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 #ifdef SUPPORT_ACTIVE_POWER_MANAGEMENT
@@ -322,12 +306,17 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_MESSAGE, "SysInitialise: SGX mode change (GPU_PWR_CLK_STATE_OFF) fail"));
-		return eError;
+		goto err;
 	}
 #endif
 
 	PVR_LOG(("SysInitialise: end"));
 	return PVRSRV_OK;
+deinit:
+	SysDeinitialise(gpsSysData);
+	gpsSysData = IMG_NULL;
+err:
+	return eError;
 }
 
 
@@ -405,7 +394,7 @@ PVRSRV_ERROR SysFinalise(IMG_VOID)
 PVRSRV_ERROR SysDeinitialise (SYS_DATA *psSysData)
 {
 	SYS_SPECIFIC_DATA * psSysSpecData;
-	PVRSRV_ERROR eError;
+	PVRSRV_ERROR eError = PVRSRV_OK;
 
 
 	PVR_UNREFERENCED_PARAMETER(psSysData);
@@ -464,7 +453,7 @@ PVRSRV_ERROR SysDeinitialise (SYS_DATA *psSysData)
 	sec_gpu_pwr_clk_deinit();
 	PDUMPDEINIT();
 
-	return PVRSRV_OK;
+	return eError;
 }
 
 
@@ -592,26 +581,22 @@ IMG_VOID SysClearInterrupts(SYS_DATA* psSysData, IMG_UINT32 ui32ClearBits)
 }
 
 
-
 PVRSRV_ERROR SysSystemPrePowerState(PVRSRV_SYS_POWER_STATE eNewPowerState)
 {
-	PVRSRV_ERROR eError = PVRSRV_OK;
-	return eError;
+	return PVRSRV_OK;
 }
 
 
 PVRSRV_ERROR SysSystemPostPowerState(PVRSRV_SYS_POWER_STATE eNewPowerState)
 {
-	PVRSRV_ERROR eError = PVRSRV_OK;
-	return eError;
+	return PVRSRV_OK;
 }
 
 PVRSRV_ERROR SysSystemSetPowerMargin(IMG_UINT32 ui32offset)
 {
-	PVRSRV_ERROR eError = PVRSRV_OK;
 	PVR_LOG(("%s: set cold voltage margin:%d", __func__, ui32offset));
 	sec_gpu_pwr_clk_margin_set(ui32offset);
-	return eError;
+	return PVRSRV_OK;
 }
 
 PVRSRV_ERROR SysDevicePrePowerState(IMG_UINT32			ui32DeviceIndex,
@@ -622,9 +607,7 @@ PVRSRV_ERROR SysDevicePrePowerState(IMG_UINT32			ui32DeviceIndex,
 	PVR_UNREFERENCED_PARAMETER(eCurrentPowerState);
 
 	if (ui32DeviceIndex != gui32SGXDeviceID)
-	{
-		return PVRSRV_OK;
-	}
+		goto exit;
 
 	if (eNewPowerState == PVRSRV_DEV_POWER_STATE_OFF)
 	{
@@ -634,12 +617,12 @@ PVRSRV_ERROR SysDevicePrePowerState(IMG_UINT32			ui32DeviceIndex,
 		if (eError != PVRSRV_OK)
 		{
 			PVR_DPF((PVR_DBG_MESSAGE, "SysDevicePrePowerState: SGX mode change (GPU_PWR_CLK_STATE_OFF) fail"));
-			return eError;
+			goto exit;
 		}
 		PVRSRVSetDCState(DC_STATE_NO_FLUSH_COMMANDS);
 	}
 
-
+exit:
 	return eError;
 }
 
@@ -654,9 +637,7 @@ PVRSRV_ERROR SysDevicePostPowerState(IMG_UINT32			ui32DeviceIndex,
 	PVR_UNREFERENCED_PARAMETER(eNewPowerState);
 
 	if (ui32DeviceIndex != gui32SGXDeviceID)
-	{
-		return eError;
-	}
+		goto exit;
 
 	if (eNewPowerState == PVRSRV_DEV_POWER_STATE_ON)
 	{
@@ -666,10 +647,11 @@ PVRSRV_ERROR SysDevicePostPowerState(IMG_UINT32			ui32DeviceIndex,
 		if (eError != PVRSRV_OK)
 		{
 			PVR_DPF((PVR_DBG_MESSAGE, "SysDevicePostPowerState: SGX mode change (GPU_PWR_CLK_STATE_ON) fail"));
-			return eError;
+			goto exit;
 		}
 	}
 
+exit:
 	return eError;
 }
 

@@ -205,7 +205,6 @@ extern struct ion_device *ion_exynos;
 PVRSRV_ERROR IonInit(IMG_VOID)
 {
 	int uiHeapCount = gsGenericConfig.nr;
-	int uiError;
 	int i;
 
 	gapsIonHeaps = kzalloc(sizeof(struct ion_heap *) * uiHeapCount, GFP_KERNEL);
@@ -219,16 +218,14 @@ PVRSRV_ERROR IonInit(IMG_VOID)
 	}
 
 	/* Register all the heaps */
-	for (i = 0; i < gsGenericConfig.nr; i++)
+	for (i = 0; i < uiHeapCount; i++)
 	{
 		struct ion_platform_heap *psPlatHeapData = &gsGenericConfig.heaps[i];
 
 		gapsIonHeaps[i] = ion_heap_create(psPlatHeapData);
 		if (IS_ERR_OR_NULL(gapsIonHeaps[i]))
-		{
-			uiError = PTR_ERR(gapsIonHeaps[i]);
 			goto failHeapCreate;
-		}
+
 		ion_device_add_heap(gpsIonDev, gapsIonHeaps[i]);
 	}
 
@@ -237,9 +234,7 @@ failHeapCreate:
 	for (i = 0; i < uiHeapCount; i++)
 	{
 		if (gapsIonHeaps[i])
-		{
-				ion_heap_destroy(gapsIonHeaps[i]);
-		}
+			ion_heap_destroy(gapsIonHeaps[i]);
 	}
 	kfree(gapsIonHeaps);
 	return PVRSRV_ERROR_OUT_OF_MEMORY;
