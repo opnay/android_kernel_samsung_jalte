@@ -34,7 +34,7 @@
 #define BASE_START_LEVEL		0
 #define DVFS_UP_THRESHOLD		150
 #define DVFS_DOWN_THRESHOLD		20
-#define DVFS_HIGH_CLOCK_LEVEL	1	// 532Mhz
+#define DVFS_HIGH_CLOCK_LEVEL	1	// 480Mhz
 #define DVFS_HIGH_THRESHOLD		200
 #define DVFS_HIGH_DOWN_THRESHOLD	50
 #define TURBO_UTILIZATION_THRESHOLD	50
@@ -45,8 +45,7 @@
 static GPU_DVFS_DATA dvfs_data[] = {
 /* clock, voltage, hold, stay */
 #ifdef USING_640MHZ
-	{ 640, 1150000, 250 }, // Level 0
-	{ 532, 1100000, 180 },
+	{ 532, 1100000, 180 }, // Level 0
 	{ 480, 1050000, 100 },
 	{ 440,  975000,  60 },
 	{ 350,  925000,  40 },
