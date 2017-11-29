@@ -43,7 +43,7 @@
 #define DVFS_STAY_COUNT_HIGH		1
 
 static GPU_DVFS_DATA dvfs_data[] = {
-/* clock, voltage, hold, stay */
+/* clock, voltage, stay */
 #ifdef USING_640MHZ
 	{ 532, 1100000, 180 }, // Level 0
 	{ 480, 1050000, 100 },
@@ -68,18 +68,11 @@ int sgx_dvfs_max_lock;
 int sgx_dvfs_down_requirement;
 int custom_min_lock_level;
 int custom_max_lock_level;
-int custom_threshold_change;
-int custom_threshold[MAX_DVFS_LEVEL*4];
-int sgx_dvfs_custom_threshold_size;
 char sgx_dvfs_table_string[256]={0};
 char* sgx_dvfs_table;
 /* set sys parameters */
 module_param(sgx_dvfs_level, int, S_IRUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(sgx_dvfs_level, "SGX DVFS status");
-module_param_array(custom_threshold, int, &sgx_dvfs_custom_threshold_size, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-MODULE_PARM_DESC(custom_threshold, "SGX custom threshold array value");
-module_param(custom_threshold_change, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-MODULE_PARM_DESC(custom_threshold_change, "SGX DVFS custom threshold set (0: do nothing, 1: change, others: reset)");
 module_param(sgx_dvfs_table, charp , S_IRUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(sgx_dvfs_table, "SGX DVFS frequency array (Mhz)");
 
@@ -187,7 +180,6 @@ void sec_gpu_dvfs_init(void)
 
 	/* default dvfs level depend on default clock setting */
 	sgx_dvfs_level = sec_gpu_dvfs_level_from_clk_get(gpu_clock_get());
-	custom_threshold_change = 0;
 	sgx_dvfs_down_requirement = DVFS_STAY_COUNT_DEFAULT;
 
 	pdev = gpsPVRLDMDev;
@@ -255,35 +247,10 @@ int sec_clock_change(int level) {
 	return level;
 }
 
-int sec_custom_threshold_set()
-{
-	int i;
-	if ((16 > sgx_dvfs_custom_threshold_size) && (custom_threshold_change == 1)) {
-		PVR_LOG(("Error, custom_threshold element not enough[%d]!!", sgx_dvfs_custom_threshold_size));
-		custom_threshold_change = 0;
-		return -1;
-	}
-
-	for (i = 0; i < MAX_DVFS_LEVEL; i++) {
-		if (custom_threshold_change == 1) {
-			dvfs_data[i].threshold = custom_threshold[i * 4];
-			PVR_LOG(("set custom_threshold level[%d] ,val[%d]", i, dvfs_data[i].threshold));
-		} else {
-			dvfs_data[i].threshold = dvfs_data[i].threshold;
-			PVR_LOG(("set threshold value restore level[%d] val[%d]", i, dvfs_data[i].threshold));
-		}
-	}
-	custom_threshold_change = 0;
-	return 1;
-}
-
 int util_value = 0;
 void sec_gpu_dvfs_handler(int utilization_value)
 {
 	int i, level = 0;
-
-	if (custom_threshold_change)
-		sec_custom_threshold_set();
 
 	if (utilization_value < 0) { // gpu going to idle
 		gpu_idle = true;
