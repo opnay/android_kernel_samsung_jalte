@@ -19,6 +19,8 @@ from argparse import ArgumentParser, FileType, Action
 from os import fstat
 from struct import pack
 from hashlib import sha1
+import sys
+import re
 
 def filesize(f):
     if f is None:
@@ -46,7 +48,7 @@ def pad_file(f, padding):
 def write_header(args):
     BOOT_MAGIC = 'ANDROID!'.encode()
     args.output.write(pack('8s', BOOT_MAGIC))
-    args.output.write(pack('8I',
+    args.output.write(pack('10I',
         filesize(args.kernel),                          # size in bytes
         args.base + args.kernel_offset,                 # physical load addr
         filesize(args.ramdisk),                         # size in bytes
@@ -54,8 +56,9 @@ def write_header(args):
         filesize(args.second),                          # size in bytes
         args.base + args.second_offset,                 # physical load addr
         args.base + args.tags_offset,                   # physical addr for kernel tags
-        args.pagesize))                                 # flash page size we assume
-    args.output.write(pack('8x'))                       # future expansion: should be 0
+        args.pagesize,                                  # flash page size we assume
+        0,                                              # future expansion: MUST be 0
+        (args.os_version << 11) | args.os_patch_level)) # os version and patch level
     args.output.write(pack('16s', args.board.encode())) # asciiz product name
     args.output.write(pack('512s', args.cmdline[:512].encode()))
 
@@ -96,6 +99,32 @@ def write_padded_file(f_out, f_in, padding):
 def parse_int(x):
     return int(x, 0)
 
+def parse_os_version(x):
+    match = re.search(r'^(\d{1,3})(?:\.(\d{1,3})(?:\.(\d{1,3}))?)?', x)
+    if match:
+        a = int(match.group(1))
+        b = c = 0
+        if match.lastindex >= 2:
+            b = int(match.group(2))
+        if match.lastindex == 3:
+            c = int(match.group(3))
+        # 7 bits allocated for each field
+        assert a < 128
+        assert b < 128
+        assert c < 128
+        return (a << 14) | (b << 7) | c
+    return 0
+
+def parse_os_patch_level(x):
+    match = re.search(r'^(\d{4})-(\d{2})-(\d{2})', x)
+    if match:
+        y = int(match.group(1)) - 2000
+        m = int(match.group(2))
+        # 7 bits allocated for the year, 4 bits for the month
+        assert y >= 0 and y < 128
+        assert m > 0 and m <= 12
+        return (y << 4) | m
+    return 0
 
 def parse_cmdline():
     parser = ArgumentParser()
@@ -110,6 +139,10 @@ def parse_cmdline():
     parser.add_argument('--ramdisk_offset', help='ramdisk offset', type=parse_int, default=0x01000000)
     parser.add_argument('--second_offset', help='2nd bootloader offset', type=parse_int,
                         default=0x00f00000)
+    parser.add_argument('--os_version', help='operating system version', type=parse_os_version,
+                        default=0)
+    parser.add_argument('--os_patch_level', help='operating system patch level',
+                        type=parse_os_patch_level, default=0)
     parser.add_argument('--tags_offset', help='tags offset', type=parse_int, default=0x00000100)
     parser.add_argument('--board', help='board name', default='', action=ValidateStrLenAction,
                         maxlen=16)
@@ -133,8 +166,10 @@ def main():
     img_id = write_header(args)
     write_data(args)
     if args.id:
-        print('0x' + ''.join('{:02x}'.format(ord(c)) for c in img_id))
-
+        if isinstance(img_id, str):
+            # Python 2's struct.pack returns a string, but py3 returns bytes.
+            img_id = [ord(x) for x in img_id]
+        print('0x' + ''.join('{:02x}'.format(c) for c in img_id))
 
 if __name__ == '__main__':
     main()
