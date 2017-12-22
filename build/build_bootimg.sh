@@ -1,23 +1,16 @@
 source $(dirname $0)/export.sh
 
 RAMDISK=""
-BOOTIMG="boot"
-isName=false
+RAM_FILE="ramdisk.cpio"
+OUT_FILE="boot.img"
 
 function help() {
-	echo -e "build_bootimg.sh [-o|--out <out_file_name>] <ramdisk name>"
-	echo -e "  -o, --out\tSet boot.img file name / default: boot"
+	echo -e "build_bootimg.sh <ramdisk name>"
 	exit
 }
 
 for tmp in $@; do
-	if $isName; then
-		BOOTIMG=$tmp
-		isName=false
-		continue
-	fi
 	case $tmp in
-		-o | --out) is_name=true;;
 		-h | --help) help; exit;;
 		*) RAMDISK=$RAMDISK_ORIG/$tmp;;
 	esac
@@ -40,12 +33,12 @@ fi
 
 # Regenerate directory
 rm -rf $RAMDISK_OUT $KERNEL_BUILD_OUT
-mkdir -p $RAMDISK_OUT $KERNEL_BUILD_OUT
+mkdir -p $KERNEL_BUILD_OUT/usr
+cp $KERNEL_OUT/usr/gen_init_cpio $KERNEL_BUILD_OUT/usr/gen_init_cpio
 
 # Copy and Clean ramdisk
-cp -r $RAMDISK/* $RAMDISK_OUT/
+cp -r $RAMDISK $RAMDISK_OUT/
 find $RAMDISK_OUT -name EMPTY -exec rm -rf {} \;
-find $RAMDISK_OUT -name "*~" -exec rm -rf {} \;
 
 # Copy Module and strip.
 mkdir -p $RAMDISK_OUT/lib/modules/
@@ -59,35 +52,28 @@ done
 echo -e "\nimmortal.version=$IMMORTAL_VERSION" >> $RAMDISK_OUT/default.prop
 
 # get carrier
-CA=`sed -n -e 's/^CONFIG_MACH_JA_KOR_\(.\+\)\=y$/\L\1/p' $KERNEL_OUT/.config`
+ca=`sed -n -e 's/^CONFIG_MACH_JA_KOR_\(.\+\)\=y$/\L\1/p' $KERNEL_OUT/.config`
 
 # Rename .carrier files and remove unused file.
-for i in `find $RAMDISK_OUT -name "*.$CA"`; do
-	mv $i `echo $i | sed -e 's/\.'"$CA"'//'`
+for i in `find $RAMDISK_OUT -name "*.$ca"`; do
+	mv $i `echo $i | sed -e 's/\.'"$ca"'//'`
 done
 rm $(find $RAMDISK_OUT -name "*.skt" -o -name "*.kt" -o -name "*.lg")
 
-type=`find $KERNEL_OUT/usr -name "initramfs_data.cpio*" | sed -n -e 's/^.\+\.cpio\.\(.\+\)$/\1/p'`
+type=`sed -n -e 's/^CONFIG_RD_\(.\+\)\=y$/\L\1/p' $KERNEL_OUT/.config`
+if [ '$type' != '' ]; then
+	RAM_FILE=$RAM_FILE.$type
+fi
 
-case $type in
-	gz) compr="gzip -n -9 -f";;
-	bz2) compr="bzip2 -9 -f";;
-	lzma) compr="lzma -9 -f";;
-	xz) compr="xz --check=crc32 --lzma2=dict=1MiB";;
-	lzo) compr="lzop -9 -f";;
-	lz4) compr="lz4 -l -9 -f";;
-	*) compr="cat";;
-esac
-
-cd $RAMDISK_OUT && $KERNEL_BUILD/ramdisk_fix_permissions.sh && \
-    find . | fakeroot cpio -o -H newc > $KERNEL_BUILD_OUT/ramdisk_"$BOOTIMG".cpio
-cat $KERNEL_BUILD_OUT/ramdisk_"$BOOTIMG".cpio | $compr > $KERNEL_BUILD_OUT/ramdisk_"$BOOTIMG".cpio.$type
+cd $RAMDISK_OUT && $KERNEL_BUILD/ramdisk_fix_permissions.sh
+cd $KERNEL_BUILD_OUT && fakeroot $KERNEL_DIR/scripts/gen_initramfs_list.sh -o $RAM_FILE $RAMDISK_OUT
 
 cp $KERNEL_OUT/arch/arm/boot/zImage $KERNEL_BUILD_OUT/zImage
 
+cd $KERNEL_BUILD_OUT
 $mkbootimg $mkbootimg_args \
-    --kernel $KERNEL_BUILD_OUT/zImage \
-    --ramdisk $KERNEL_BUILD_OUT/ramdisk_"$BOOTIMG".cpio.$type \
-    -o $KERNEL_BUILD_OUT/$BOOTIMG.img
+    --kernel zImage \
+    --ramdisk $RAM_FILE \
+    -o $OUT_FILE
 
 #### End
