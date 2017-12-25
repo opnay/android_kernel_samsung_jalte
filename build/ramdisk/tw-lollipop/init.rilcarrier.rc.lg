@@ -1,0 +1,115 @@
+on init
+    symlink /data/tombstones /tombstones
+
+on post-fs-data
+    mkdir /data/data/com.ubivelox.wipiplayer/W 0770 system lgt_gid
+    mkdir /data/LGTContents 0770 system lgt_gid
+    mkdir /data/LGTContents/video 0770 system lgt_gid
+    mkdir /data/LGTContents/music 0770 system lgt_gid
+    mkdir /data/LGTContents/bell 0770 system lgt_gid
+    mkdir /data/LGTContents/app 0770 system lgt_gid
+    mkdir /data/LGTContents/DLtmp 0770 system lgt_gid
+    mkdir /data/LGTContents/ringforme 0770 system lgt_gid
+
+    chown system lgt_gid /data/data/com.ubivelox.wipiplayer/W
+    chown system lgt_gid /data/LGTContents
+    chown system lgt_gid /data/LGTContents/video
+    chown system lgt_gid /data/LGTContents/music
+    chown system lgt_gid /data/LGTContents/bell
+    chown system lgt_gid /data/LGTContents/app
+    chown system lgt_gid /data/LGTContents/DLtmp
+    chown system lgt_gid /data/LGTContents/ringforme
+
+on fs
+    mkdir /data/cp_log
+    chmod 0775 /data/cp_log
+    chown system radio /data/cp_log
+
+    mkdir /dev/block/modem
+    symlink /dev/block/platform/dw_mmc.0/by-name/m9kefs1 /dev/block/modem/m9kefs1
+    symlink /dev/block/platform/dw_mmc.0/by-name/m9kefs2 /dev/block/modem/m9kefs2
+    symlink /dev/block/platform/dw_mmc.0/by-name/m9kefs3 /dev/block/modem/m9kefs3
+    symlink /dev/block/platform/dw_mmc.0/by-name/ /dev/block/modem/dump_path
+    chown system radio /dev/block/modem/m9kefs1
+    chmod 0775 /dev/block/modem/m9kefs1
+    chown system radio /dev/block/modem/m9kefs2
+    chmod 0775 /dev/block/modem/m9kefs2
+    chown system radio /dev/block/modem/m9kefs3
+    chmod 0775 /dev/block/modem/m9kefs3
+    chown system radio /dev/block/modem/dump_path
+    chmod 0775 /dev/block/modem/dump_path
+
+    mkdir /firmware 0771 system system
+    mount vfat /dev/block/mmcblk0p13 /firmware ro shortname=lower fmask=0133,dmask=0022
+    mkdir /data/tombstones 0775 system system
+    mkdir /data/qcks 0775 system system
+    mkdir /tombstones/modem 0775 system system
+    mkdir /tombstones/lpass 0775 system system
+    mkdir /tombstones/wcnss 0775 system system
+    mkdir /tombstones/dsps 0775 system system
+    rmdir /tombstones/qcks
+    mkdir /tombstones/qcks 771 system system
+    rmdir /tombstones/efs
+    mkdir /tombstones/efs 771 system system
+
+    chown system radio /dev/block/platform/dw_mmc.0/by-name
+    chmod 0775 /dev/block/platform/dw_mmc.0/by-name
+
+#QCRIL
+    mkdir /dev/socket/qmux_radio 0770 radio radio
+    chmod 2770 /dev/socket/qmux_radio
+    mkdir /dev/socket/qmux_audio 0770 media audio
+    chmod 2770 /dev/socket/qmux_audio
+    mkdir /dev/socket/qmux_gps 0770 gps gps
+    chmod 2770 /dev/socket/qmux_gps
+
+    chown radio radio /sys/devices/virtual/hsicctl/hsicctl0/modem_wait
+
+service qc_kickstart /system/bin/qcks s
+    class core
+    user root
+    group radio cache inet misc audio sdcard_rw log system
+
+service diag_uart_log /system/bin/diag_uart_log
+    class main
+    user root
+    group radio
+
+service netmgrd /system/bin/netmgrd
+    class late_start
+    onrestart restart ril-daemon
+
+service ril-daemon /system/bin/rild
+    class main
+    socket rild stream 660 root radio
+    socket rild-debug stream 660 radio system
+    user root
+    group radio cache inet misc audio sdcard_rw qcom_oncrpc diag log sdcard_r
+
+service qmiproxy /system/bin/qmiproxy
+    class main
+    user radio
+    group radio gps
+
+service qmuxd /system/bin/qmuxd
+    class main
+    user root
+    group radio log audio bluetooth gps log
+
+# for LGU I-WLAN service
+service mwlan_vpncored /system/bin/mwlan_helper @vpncored
+    user system
+    group system inet
+    disabled
+    oneshot
+
+service loc_launcher /system/bin/loc_launcher
+    #loc_launcher will start as root and set its uid to gps
+    class late_start
+    group gps qcom_oncrpc inet net_raw qcom_diag net_admin wifi
+
+# for LGU I-WLAN
+on property:sys.mobicoredaemon.enable=true
+    insmod /lib/modules/mwlan_aarp.ko
+    chmod 0755 /system/bin/mwlan_helper
+

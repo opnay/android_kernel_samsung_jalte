@@ -1,0 +1,10 @@
+
+# LPM
+on property:ro.bootmode=charger
+    mount ext4 /dev/block/mmcblk0p20 /system wait ro
+    exec /init.lpm.sh
+    class_start sec-charger
+
+service playlpm /system/bin/lpm
+    class sec-charger
+    critical

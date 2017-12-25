@@ -1,0 +1,167 @@
+####### SKT
+on post-fs-data
+# SKT LAW Permanent memory access
+    mkdir /efs/sktdm_mem 0771 root root
+    chown radio system /efs/sktdm_mem
+    chmod 0771 /efs/sktdm_mem
+
+# SKT PM PlayReady
+    mkdir /data/playready 771 system skt
+    chown system skt /data/playready
+    chmod 0771 /data/playready
+
+# SKT DRM for hoppin
+    mkdir /data/data/.sktdrm 0775
+    chown system radio /data/data/.sktdrm
+    chmod 0775 /data/data/.sktdrm
+
+on boot
+# Define TCP buffer sizes for various networks
+#   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
+    setprop net.tcp.buffersize.default 4096,87380,110208,4096,16384,110208
+    setprop net.tcp.buffersize.lte     4094,281250,1220608,4096,140625,1220608
+    setprop net.tcp.buffersize.umts    4094,87380,1220608,4096,16384,1220608
+    setprop net.tcp.buffersize.hspa    4094,87380,1220608,4096,16384,1220608
+    setprop net.tcp.buffersize.hsupa   4094,87380,1220608,4096,16384,1220608
+    setprop net.tcp.buffersize.hsdpa   4094,87380,1220608,4096,16384,1220608
+    setprop net.tcp.buffersize.hspap   4094,87380,1220608,4096,16384,1220608
+    setprop net.tcp.buffersize.edge    4093,26280,35040,4096,16384,35040
+    setprop net.tcp.buffersize.gprs    4092,8760,11680,4096,8760,11680
+
+service cpboot-daemon /sbin/cbd -d -t ss222 -b s -m c -p 13
+    class main
+    user root
+    group radio cache inet misc audio sdcard_rw log sdcard_r shell
+    seclabel u:r:cbd:s0
+
+on post-fs-data
+# for SKT TBASED
+    mkdir /data/tbased 0775 root wifi
+    chown root wifi /data/tbased
+    chmod 0775 /data/tbased
+
+    chown wifi wifi /system/lib/libiwlan_module.so
+    chmod 0644 /system/lib/libiwlan_module.so
+    chmod 0755 /system/bin/tbased
+
+# SKT TBASE
+service tbased /system/bin/tbased
+    class main
+    user root
+    oneshot
+
+
+
+
+####### LG
+on init
+    mkdir /tombstones
+
+on boot
+# LGT contents directory
+    mkdir /data/data/com.ubivelox.wipiplayer/W 0770 system lgt_gid
+    mkdir /data/LGTContents 0770 system lgt_gid
+    mkdir /data/LGTContents/video 0770 system lgt_gid
+    mkdir /data/LGTContents/music 0770 system lgt_gid
+    mkdir /data/LGTContents/bell 0770 system lgt_gid
+    mkdir /data/LGTContents/app 0770 system lgt_gid
+    mkdir /data/LGTContents/DLtmp 0770 system lgt_gid
+    mkdir /data/LGTContents/ringforme 0770 system lgt_gid
+
+    chown system lgt_gid /data/data/com.ubivelox.wipiplayer/W
+    chown system lgt_gid /data/LGTContents
+    chown system lgt_gid /data/LGTContents/video
+    chown system lgt_gid /data/LGTContents/music
+    chown system lgt_gid /data/LGTContents/bell
+    chown system lgt_gid /data/LGTContents/app
+    chown system lgt_gid /data/LGTContents/DLtmp
+    chown system lgt_gid /data/LGTContents/ringforme
+
+on fs
+#MDM requirement
+    mkdir /data/cp_log
+    chmod 0775 /data/cp_log
+    chown system radio /data/cp_log
+
+    mkdir /dev/block/modem
+    symlink /dev/block/platform/dw_mmc.0/by-name/m9kefs1 /dev/block/modem/m9kefs1
+    symlink /dev/block/platform/dw_mmc.0/by-name/m9kefs2 /dev/block/modem/m9kefs2
+    symlink /dev/block/platform/dw_mmc.0/by-name/m9kefs3 /dev/block/modem/m9kefs3
+    symlink /dev/block/platform/dw_mmc.0/by-name/ /dev/block/modem/dump_path
+    chown system radio /dev/block/modem/m9kefs1
+    chmod 0775 /dev/block/modem/m9kefs1
+    chown system radio /dev/block/modem/m9kefs2
+    chmod 0775 /dev/block/modem/m9kefs2
+    chown system radio /dev/block/modem/m9kefs3
+    chmod 0775 /dev/block/modem/m9kefs3
+    chown system radio /dev/block/modem/dump_path
+    chmod 0775 /dev/block/modem/dump_path
+
+    mkdir /firmware 0771 system system
+    mount vfat /dev/block/mmcblk0p13 /firmware ro shortname=lower fmask=0133,dmask=0022
+    chown system system /tombstones
+    chmod 0775 /tombstones
+    restorecon -R /tombstones
+    mkdir /tombstones/modem 0775 system system
+    mkdir /tombstones/lpass 0775 system system
+    mkdir /tombstones/wcnss 0775 system system
+    mkdir /tombstones/dsps 0775 system system
+    rmdir /tombstones/qcks
+    mkdir /tombstones/qcks 771 system system
+    rmdir /tombstones/efs
+    mkdir /tombstones/efs 771 system system
+
+    chown system radio /dev/block/platform/dw_mmc.0/by-name
+    chmod 0775 /dev/block/platform/dw_mmc.0/by-name
+    
+#QCRIL
+#Create QMUX deamon socket area
+    mkdir /dev/socket/qmux_radio 0770 radio radio
+    chmod 2770 /dev/socket/qmux_radio
+    mkdir /dev/socket/qmux_audio 0770 media audio
+    chmod 2770 /dev/socket/qmux_audio
+    mkdir /dev/socket/qmux_gps 0770 gps gps
+    chmod 2770 /dev/socket/qmux_gps
+
+# Allow QMUX daemon to assign port open wait time
+    chown radio radio /sys/devices/virtual/hsicctl/hsicctl0/modem_wait		
+	
+# QC KickStart
+service qc_kickstart /system/bin/qcks s
+    class core
+    user root
+    group radio cache inet misc audio sdcard_rw log
+
+#QCRIL
+# diag app for cp uart
+service diag_uart_log /system/bin/diag_uart_log
+    class main
+    user root
+    group radio
+
+service netmgrd /system/bin/netmgrd
+    class late_start
+    onrestart restart ril-daemon
+
+service ril-daemon /system/bin/rild
+    class main
+    socket rild stream 660 root radio
+    socket rild-debug stream 660 radio system
+    user root
+    group radio cache inet misc audio sdcard_rw qcom_oncrpc diag log sdcard_r
+
+#For EncryptionMode - remove disabled, Modify class main
+service qmiproxy /system/bin/qmiproxy
+    class main
+    user radio
+    group radio gps
+
+service qmuxd /system/bin/qmuxd
+    class main
+    user root
+    group radio log audio bluetooth gps log	
+	
+# for LGU I-WLAN
+on property:sys.mobicoredaemon.enable=true
+    insmod /lib/modules/mwlan_aarp.ko
+
