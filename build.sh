@@ -1,7 +1,7 @@
 source build/export.sh
 
 # Export
-DEFCONFIG=lineageos_jalteskt_defconfig
+DEFCONFIG=lineageos_immortal_skt_defconfig
 BOOTIMG=boot
 
 function help() {
