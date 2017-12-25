@@ -155,33 +155,26 @@ static PVRSRV_ERROR SysLocateDevices(SYS_DATA *psSysData)
 PVRSRV_ERROR SysInitialise()
 {
 	IMG_UINT32			i;
-	PVRSRV_ERROR 		eError;
+	PVRSRV_ERROR 		eError = PVRSRV_OK;
 	PVRSRV_DEVICE_NODE	*psDeviceNode;
 	SGX_TIMING_INFORMATION*	psTimingInfo;
-	struct platform_device	*pdev;
 
 	gpsSysData = &gsSysData;
 	OSMemSet(gpsSysData, 0, sizeof(SYS_DATA));
 	mutex_init(&gsSysSpecificData.sPowerLock);
-
-	pdev = gpsPVRLDMDev;
 
 	PVR_LOG(("SysInitialise: start"));
 	eError = sec_gpu_pwr_clk_init();
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR, "SysInitialise: Failed to sec_gpu_pwr_clk_init"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 	eError = sec_gpu_pwr_clk_state_set(GPU_PWR_CLK_STATE_ON);
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR, "SysInitialise: Failed to sec_gpu_pwr_clk_state_set GPU_PWR_CLK_STATE_ON"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 #if defined(CONFIG_PVR_SGX_DVFS)
@@ -193,9 +186,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to setup env structure"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 	gpsSysData->pvSysSpecificData = (IMG_PVOID)&gsSysSpecificData;
@@ -230,9 +221,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed in SysInitialiseCommon"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 	
@@ -240,9 +229,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to locate devices"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 	
@@ -250,9 +237,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to register device!"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 		
@@ -296,7 +281,8 @@ PVRSRV_ERROR SysInitialise()
 			}
 			default:
 				PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to find SGX device node!"));
-				return PVRSRV_ERROR_INIT_FAILURE;
+				eError = PVRSRV_ERROR_INIT_FAILURE;
+				goto err;
 		}
 
 		
@@ -312,9 +298,7 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysInitialise: Failed to initialise device!"));
-		SysDeinitialise(gpsSysData);
-		gpsSysData = IMG_NULL;
-		return eError;
+		goto deinit;
 	}
 
 #if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
@@ -322,12 +306,17 @@ PVRSRV_ERROR SysInitialise()
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_MESSAGE, "SysInitialise: SGX mode change (GPU_PWR_CLK_STATE_OFF) fail"));
-		return eError;
+		goto err;
 	}
 #endif
 
 	PVR_LOG(("SysInitialise: end"));
 	return PVRSRV_OK;
+deinit:
+	SysDeinitialise(gpsSysData);
+	gpsSysData = IMG_NULL;
+err:
+	return eError;
 }
 
 

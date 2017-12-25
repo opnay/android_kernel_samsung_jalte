@@ -50,9 +50,13 @@ MODULE_PARM_DESC(sgx_gpu_power_state, "SGX power current status");
 
 void gpu_voltage_set(int sgx_vol)
 {
-	PVR_LOG(("SGX change voltage [%d] -> [%d] mV", sgx_gpu_vol, sgx_vol));
-	regulator_set_voltage(g3d_pd_regulator, sgx_vol, sgx_vol);
-	sgx_gpu_vol = regulator_get_voltage(g3d_pd_regulator);
+	if (sgx_gpu_vol == sgx_vol) {
+		PVR_LOG(("SGX voltage already [%d] mV", sgx_vol));
+	} else {
+		PVR_LOG(("SGX change voltage [%d] -> [%d] mV", sgx_gpu_vol, sgx_vol));
+		regulator_set_voltage(g3d_pd_regulator, sgx_vol, sgx_vol);
+		sgx_gpu_vol = regulator_get_voltage(g3d_pd_regulator);
+	}
 }
 
 int gpu_regulator_enable(void)
@@ -103,14 +107,14 @@ int gpu_power_enable(void)
 	} while (try_count--);
 
 	/*this is debug for runtimepm power gating state*/
+#ifdef PM_RUNTIME_DEBUG
 	{
 		void __iomem *status;
 		status = EXYNOS_PMUREG(0x4080);
 		sgx_gpu_power_state = __raw_readl(status);
-#ifdef PM_RUNTIME_DEBUG
 		PVR_LOG(("enable_gpu_power: read register: 0x%x", sgx_gpu_power_state));
-#endif
 	}
+#endif
 #endif
 	return 0;
 }
@@ -136,14 +140,14 @@ int gpu_power_disable(void)
 	} while (try_count--);
 
 	/*this is debug for runtimepm power gating state*/
+#ifdef PM_RUNTIME_DEBUG
 	{
 		void __iomem *status;
 		status = EXYNOS_PMUREG(0x4080);
 		sgx_gpu_power_state = __raw_readl(status);
-#ifdef PM_RUNTIME_DEBUG
 		PVR_LOG(("disable_gpu_power: read register: 0x%x", sgx_gpu_power_state));
-#endif
 	}
+#endif
 #endif
 	return 0;
 }

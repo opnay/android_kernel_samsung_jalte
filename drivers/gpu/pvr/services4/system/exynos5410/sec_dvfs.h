@@ -20,22 +20,13 @@
 #ifndef __SEC_DVFS_H__
 #define __SEC_DVFS_H__
 typedef struct _GPU_DVFS_DATA_TAG_ {
-	int level;
 	int clock;
 	int voltage;
-	int clock_source;
-	int min_threadhold;
-	int max_threadhold;
-	int quick_down_threadhold;
-	int quick_up_threadhold;
-	int stay_total_count;
-	int mask;
-	int etc;
+	int threshold;
 } GPU_DVFS_DATA, *pGPU_DVFS_DATA;
 
 void sec_gpu_dvfs_init(void);
-int sec_clock_change_up(int level, int step);
-int sec_clock_change_down(int value, int step);
+int sec_clock_change(int level);
 int sec_gpu_dvfs_level_from_clk_get(int clock);
 void sec_gpu_dvfs_down_requirement_reset(void);
 int sec_custom_threshold_set(void);
