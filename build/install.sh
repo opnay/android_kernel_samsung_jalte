@@ -67,6 +67,9 @@ else
 	$adb push $BOOTIMG /data/local/tmp/boot.img
 
 	echo -e "* Install..."
+	echo -e "*   Cleanup dev"
+	$adb_shell dd if=/dev/zero of=$DEVPATH
+	echo -e "*   Flashing boot.img"
 	$adb_shell dd if=/data/local/tmp/boot.img of=$DEVPATH
 
 	echo -e "* Reboot!"
