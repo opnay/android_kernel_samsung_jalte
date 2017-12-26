@@ -37,10 +37,7 @@
 extern struct pm_qos_request exynos5_g3d_mif_qos;
 extern struct pm_qos_request exynos5_g3d_int_qos;
 #endif
-static int sgx_gpu_utilization;
 extern int sgx_dvfs_level;
-module_param(sgx_gpu_utilization, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-MODULE_PARM_DESC(sgx_gpu_utilization, "SGX gpu utilization");
 
 struct mutex time_data_lock;
 struct mutex timer_lock;
@@ -151,6 +148,7 @@ static u32 normalize_time(struct timeval time)
 
 static void sec_gpu_utilization_handler(void *arg)
 {
+	int util = 0;
 	u64 time_now = get_time_ns();
 
 	struct timeval working_time;
@@ -176,15 +174,14 @@ static void sec_gpu_utilization_handler(void *arg)
 	/* changed way to compute the utilization */
 	working_time = (struct timeval)ns_to_timeval(total_work_time);
 	period_time = (struct timeval)ns_to_timeval(time_now - period_start_time);
-	sgx_gpu_utilization = (normalize_time(working_time) * 256) / normalize_time(period_time);
+	util = (normalize_time(working_time) * 256) / normalize_time(period_time);
 
 
 	total_work_time = 0;
 	period_start_time = time_now;
 
 	mutex_unlock(&time_data_lock);
-
-	sec_gpu_dvfs_handler(sgx_gpu_utilization);
+	sec_gpu_dvfs_handler(util);
 }
 
 void sec_gpu_utilization_init(void)
