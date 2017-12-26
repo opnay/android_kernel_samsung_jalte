@@ -198,8 +198,8 @@ int sec_clock_change(int level) {
 	sec_gpu_vol_clk_change(dvfs_data[level].clock, dvfs_data[level].voltage);
 	sec_gpu_dvfs_down_requirement_reset();
 
-	if ((g_debug_CCB_Info_Flag % g_debug_CCB_count) == 0)
-		PVR_LOG(("SGX CCB RO : %d, WO : %d, Total : %d", *g_debug_CCB_Info_RO, *g_debug_CCB_Info_WO, g_debug_CCB_Info_WCNT));
+//	if ((g_debug_CCB_Info_Flag % g_debug_CCB_count) == 0)
+//		PVR_LOG(("SGX CCB RO : %d, WO : %d, Total : %d", *g_debug_CCB_Info_RO, *g_debug_CCB_Info_WO, g_debug_CCB_Info_WCNT));
 
 	g_debug_CCB_Info_WCNT = 0;
 	g_debug_CCB_Info_Flag ++;
@@ -286,6 +286,6 @@ change:
 exit:
 	util_value = utilization_value;
 
-	PVR_LOG(("%s: util: %d, level: %d", __func__, utilization_value, sgx_dvfs_level));
+//	PVR_LOG(("%s: util: %d, level: %d", __func__, utilization_value, sgx_dvfs_level));
 	return;
 }
