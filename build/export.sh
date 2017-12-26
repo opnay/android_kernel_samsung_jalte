@@ -1,4 +1,4 @@
-IMMORTAL_VERSION=immortal-lineage-v1
+IMMORTAL_VERSION=immortal-lineage-171222-v1
 
 JN=16 #`grep process /proc/cpuinfo | wc -l`
 
