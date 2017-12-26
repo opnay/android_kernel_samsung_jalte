@@ -275,42 +275,35 @@ void sec_gpu_dvfs_handler(int utilization_value)
 			gpu_clock_get(),
 			dvfs_data[level].threshold, utilization_value));
 
-	if (level == sgx_dvfs_min) {
-		// for lowest clock
+	if (level == sgx_dvfs_min) { // for lowest clock
 		for (i = sgx_dvfs_max; i < sgx_dvfs_min; i++) {
 			if (dvfs_data[i].threshold <= utilization_value) {
 				goto change;
 			}
 		}
-	} else if (level <= DVFS_HIGH_CLOCK_LEVEL) {
-		// for high clock
+	} else if (utilization_value >= DVFS_UP_THRESHOLD) { // to UP
+		level -= ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD) ? 1 : 2;
+
+		if ((level <= DVFS_HIGH_CLOCK_LEVEL) && (utilization_value < DVFS_HIGH_THRESHOLD))
+			level = DVFS_HIGH_CLOCK_LEVEL + 1;
+
+		goto change;
+	} else if (level <= DVFS_HIGH_CLOCK_LEVEL) {// to DOWN for HIGH clock
 		if (utilization_value < DVFS_HIGH_DOWN_THRESHOLD) {
 			level += 1;
-
 			goto change;
 		}
-	} else {
-		// for the other clocks
-		if (utilization_value >= DVFS_UP_THRESHOLD) { // to UP
-			level -= ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD) ? 1 : 2;
-
-			if ((level <= DVFS_HIGH_CLOCK_LEVEL) && (utilization_value < DVFS_HIGH_THRESHOLD))
-				level = DVFS_HIGH_CLOCK_LEVEL + 1;
-
-			goto change;
-		} else if (utilization_value < DVFS_DOWN_THRESHOLD) { // to DOWN
-			if (--sgx_dvfs_down_requirement > 0)
-				goto exit;
-
-			level += 1;
-
-			goto change;
-		} else {
-			// Stay reset count
-			sec_gpu_dvfs_down_requirement_reset();
+	} else if (utilization_value < DVFS_DOWN_THRESHOLD) { // to DOWN
+		if (--sgx_dvfs_down_requirement > 0)
 			goto exit;
-		}
+
+		level += 1;
+		goto change;
 	}
+
+	// Stay reset count
+	sec_gpu_dvfs_down_requirement_reset();
+	goto exit;
 
 change:
 	sgx_dvfs_level = sec_clock_change(level);
