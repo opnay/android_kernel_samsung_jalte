@@ -30,36 +30,14 @@
 #include "sec_control_pwr_clk.h"
 #include "sec_clock.h"
 
-#define MAX_DVFS_LEVEL			ARRAY_SIZE(dvfs_data) - 1
-#define BASE_START_LEVEL		0
 #define DVFS_UP_THRESHOLD		150
 #define DVFS_DOWN_THRESHOLD		20
-#define DVFS_HIGH_CLOCK_LEVEL	1	// 480Mhz
 #define DVFS_HIGH_THRESHOLD		200
 #define DVFS_HIGH_DOWN_THRESHOLD	50
 #define TURBO_UTILIZATION_THRESHOLD	50
 
 #define DVFS_STAY_COUNT_DEFAULT		2
 #define DVFS_STAY_COUNT_HIGH		1
-
-static GPU_DVFS_DATA dvfs_data[] = {
-/* clock, voltage, stay */
-#ifdef USING_532MHZ
-	{ 532, 1100000, 180 }, // Level 0
-	{ 480, 1050000, 100 },
-	{ 440,  975000,  60 },
-	{ 350,  925000,  40 },
-	{ 333,  925000,  20 },
-	{ 266,  900000,  10 },
-	{ 177,  900000,   0 },
-#else
-	{ 480, 1100000, 170 }, // Level 0
-	{ 350,  925000, 160 },
-	{ 266,  900000, 150 },
-	{ 177,  900000,   0 },
-#endif
-
-};
 
 bool gpu_idle = false;
 int sgx_dvfs_level = -1;
@@ -68,6 +46,7 @@ int sgx_dvfs_max = BASE_START_LEVEL;
 int sgx_dvfs_down_requirement;
 char sgx_dvfs_table_string[256]={0};
 char* sgx_dvfs_table;
+
 /* set sys parameters */
 module_param(sgx_dvfs_level, int, S_IRUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(sgx_dvfs_level, "SGX DVFS status");
