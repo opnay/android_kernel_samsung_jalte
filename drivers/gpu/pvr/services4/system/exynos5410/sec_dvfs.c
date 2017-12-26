@@ -30,7 +30,7 @@
 #include "sec_control_pwr_clk.h"
 #include "sec_clock.h"
 
-#define MAX_DVFS_LEVEL			ARRAY_SIZE(dvfs_data)
+#define MAX_DVFS_LEVEL			ARRAY_SIZE(dvfs_data) - 1
 #define BASE_START_LEVEL		0
 #define DVFS_UP_THRESHOLD		150
 #define DVFS_DOWN_THRESHOLD		20
@@ -206,7 +206,7 @@ int sec_gpu_dvfs_level_from_clk_get(int clock)
 {
 	int i = 0;
 
-	for (i = 0; i < MAX_DVFS_LEVEL; i++) {
+	for (i = 0; i <= MAX_DVFS_LEVEL; i++) {
 		/* This is necessary because the intent
 		 * is the difference of kernel clock value
 		 * and sgx clock table value to calibrate it */
@@ -230,8 +230,8 @@ static int g_debug_CCB_count = 1;
 int sec_clock_change(int level) {
 	PVR_LOG(("INFO: %s: Get value: %d", __func__, level));
 
-	if (level >= MAX_DVFS_LEVEL)
-		level = MAX_DVFS_LEVEL - 1;
+	if (level > MAX_DVFS_LEVEL)
+		level = MAX_DVFS_LEVEL;
 	else if (level < 0)
 		level = 0;
 
@@ -271,7 +271,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 			return;
 		}
 
-		if (level < MAX_DVFS_LEVEL && level >= 0) {
+		if (level <= MAX_DVFS_LEVEL && level >= 0) {
 			PVR_LOG(("INFO: CUSTOM DVFS [%d MHz] (%d), utilization [%d]",
 					dvfs_data[level].clock,
 					dvfs_data[level].threshold,
@@ -282,6 +282,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 	}
 #endif
 	level = sec_gpu_dvfs_level_from_clk_get(gpu_clock_get());
+
 	/* this check for current clock must be find in dvfs table */
 	if (level < 0) {
 		PVR_LOG(("WARN: current clock: %d MHz not found in DVFS table. so set to max clock", gpu_clock_get()));
@@ -293,7 +294,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 			gpu_clock_get(),
 			dvfs_data[level].threshold, utilization_value));
 
-	if (level == (MAX_DVFS_LEVEL - 1)) {
+	if (level == MAX_DVFS_LEVEL) {
 		// for lowest clock
 		for (i = 0; i < MAX_DVFS_LEVEL; i++) {
 			if (dvfs_data[i].threshold <= utilization_value) {
