@@ -217,9 +217,6 @@ void sec_gpu_dvfs_handler(int utilization_value)
 		util_value = 0;
 		return;
 	}
-
-	PVR_LOG(("INFO: %s: Get value: %d", __func__, utilization_value));
-
 	gpu_idle = false;
 
 #ifdef CONFIG_ASV_MARGIN_TEST
@@ -288,5 +285,7 @@ change:
 	sgx_dvfs_level = sec_clock_change(level);
 exit:
 	util_value = utilization_value;
+
+	PVR_LOG(("%s: util: %d, level: %d", __func__, utilization_value, sgx_dvfs_level));
 	return;
 }
