@@ -195,6 +195,9 @@ int sec_clock_change(int level) {
 	else if (level < sgx_dvfs_max)
 		level = sgx_dvfs_max;
 
+	if (sgx_dvfs_level == level)
+		return level;
+
 	sec_gpu_vol_clk_change(dvfs_data[level].clock, dvfs_data[level].voltage);
 	sec_gpu_dvfs_down_requirement_reset();
 
