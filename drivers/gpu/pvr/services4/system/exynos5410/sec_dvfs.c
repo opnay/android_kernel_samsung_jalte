@@ -287,18 +287,12 @@ void sec_gpu_dvfs_handler(int utilization_value)
 		if (utilization_value < DVFS_HIGH_DOWN_THRESHOLD) {
 			level += 1;
 
-			if (level > sgx_dvfs_min)
-				level = sgx_dvfs_min;
-			
 			goto change;
 		}
 	} else {
 		// for the other clocks
 		if (utilization_value >= DVFS_UP_THRESHOLD) { // to UP
 			level -= ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD) ? 1 : 2;
-
-			if (level < sgx_dvfs_max)
-				level = sgx_dvfs_max;
 
 			if ((level <= DVFS_HIGH_CLOCK_LEVEL) && (utilization_value < DVFS_HIGH_THRESHOLD))
 				level = DVFS_HIGH_CLOCK_LEVEL + 1;
@@ -309,9 +303,6 @@ void sec_gpu_dvfs_handler(int utilization_value)
 				goto exit;
 
 			level += 1;
-
-			if (level > sgx_dvfs_min)
-				level = sgx_dvfs_min;
 
 			goto change;
 		} else {
