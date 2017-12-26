@@ -63,11 +63,9 @@ static GPU_DVFS_DATA dvfs_data[] = {
 
 bool gpu_idle = false;
 int sgx_dvfs_level = -1;
-int sgx_dvfs_min_lock;
-int sgx_dvfs_max_lock;
+int sgx_dvfs_min = MAX_DVFS_LEVEL;
+int sgx_dvfs_max = 0;
 int sgx_dvfs_down_requirement;
-int custom_min_lock_level;
-int custom_max_lock_level;
 char sgx_dvfs_table_string[256]={0};
 char* sgx_dvfs_table;
 /* set sys parameters */
@@ -75,6 +73,8 @@ module_param(sgx_dvfs_level, int, S_IRUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(sgx_dvfs_level, "SGX DVFS status");
 module_param(sgx_dvfs_table, charp , S_IRUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(sgx_dvfs_table, "SGX DVFS frequency array (Mhz)");
+
+int sec_clock_change(int level);
 
 #ifdef CONFIG_ASV_MARGIN_TEST
 static int set_g3d_freq = 0;
@@ -89,44 +89,25 @@ early_param("g3dfreq", get_g3d_freq);
 
 static int sec_gpu_lock_control_proc(int bmax, long value, size_t count)
 {
-	int lock_level = sec_gpu_dvfs_level_from_clk_get(value);
-	int retval = -EINVAL;
+	int level = sec_gpu_dvfs_level_from_clk_get(value);
 
 	sgx_dvfs_level = sec_gpu_dvfs_level_from_clk_get(gpu_clock_get());
-	if (lock_level < 0) { /* unlock something */
+
+	if (level < 0) { // unlock level
 		if (bmax)
-			sgx_dvfs_max_lock = custom_max_lock_level = 0;
+			sgx_dvfs_max = 0;
 		else
-			sgx_dvfs_min_lock = custom_min_lock_level = 0;
-
-		if (sgx_dvfs_min_lock && (sgx_dvfs_level > custom_min_lock_level)) /* min lock only - likely */
-			sec_gpu_vol_clk_change(dvfs_data[custom_min_lock_level].clock, dvfs_data[custom_min_lock_level].voltage);
-		else if (sgx_dvfs_max_lock && (sgx_dvfs_level < custom_max_lock_level)) /* max lock only - unlikely */
-			sec_gpu_vol_clk_change(dvfs_data[custom_max_lock_level].clock, dvfs_data[custom_max_lock_level].voltage);
-
-		if (value == 0)
-			retval = count;
-	} else{ /* lock something */
-		if (bmax) {
-			sgx_dvfs_max_lock = value;
-			custom_max_lock_level = lock_level;
-		} else {
-			sgx_dvfs_min_lock = value;
-			custom_min_lock_level = lock_level;
-		}
-
-        if ((sgx_dvfs_max_lock) && (sgx_dvfs_min_lock) && (sgx_dvfs_max_lock < sgx_dvfs_min_lock)){ /* abnormal status */
-			if (sgx_dvfs_max_lock) /* max lock */
-				sec_gpu_vol_clk_change(dvfs_data[custom_max_lock_level].clock, dvfs_data[custom_max_lock_level].voltage);
-		} else { /* normal status */
-			if ((bmax) && sgx_dvfs_max_lock && (sgx_dvfs_level < custom_max_lock_level)) /* max lock */
-				sec_gpu_vol_clk_change(dvfs_data[custom_max_lock_level].clock, dvfs_data[custom_max_lock_level].voltage);
-			if ((!bmax) && sgx_dvfs_min_lock && (sgx_dvfs_level > custom_min_lock_level)) /* min lock */
-				sec_gpu_vol_clk_change(dvfs_data[custom_min_lock_level].clock, dvfs_data[custom_min_lock_level].voltage);
-		}
-		retval = count;
+			sgx_dvfs_min = MAX_DVFS_LEVEL;
+	} else { // lock
+		if (bmax)
+			sgx_dvfs_max = (level < sgx_dvfs_min) ? level : sgx_dvfs_min;
+		else
+			sgx_dvfs_min = (level > sgx_dvfs_max) ? level : sgx_dvfs_max;
 	}
-	return retval;
+
+	// update current clock with changed min, max
+	sgx_dvfs_level = sec_clock_change(sgx_dvfs_level);
+	return count;
 }
 
 static ssize_t get_dvfs_table(struct device *d, struct device_attribute *a, char *buf)
@@ -137,8 +118,8 @@ static DEVICE_ATTR(sgx_dvfs_table, S_IRUGO | S_IRGRP | S_IROTH, get_dvfs_table, 
 
 static ssize_t get_min_clock(struct device *d, struct device_attribute *a, char *buf)
 {
-	PVR_LOG(("get_min_clock: %d MHz", sgx_dvfs_min_lock));
-	return snprintf(buf, sizeof(sgx_dvfs_min_lock), "%d\n", sgx_dvfs_min_lock);
+	PVR_LOG(("get_min_clock: %d MHz", dvfs_data[sgx_dvfs_min].clock));
+	return snprintf(buf, sizeof(sgx_dvfs_min), "%d\n", dvfs_data[sgx_dvfs_min].clock);
 }
 
 static ssize_t set_min_clock(struct device *d, struct device_attribute *a, const char *buf, size_t count)
@@ -152,8 +133,8 @@ static DEVICE_ATTR(sgx_dvfs_min_lock, S_IRUGO | S_IWUSR | S_IRGRP | S_IWGRP | S_
 
 static ssize_t get_max_clock(struct device *d, struct device_attribute *a, char *buf)
 {
-	PVR_LOG(("get_max_clock: %d MHz", sgx_dvfs_max_lock));
-	return snprintf(buf, sizeof(sgx_dvfs_max_lock), "%d\n", sgx_dvfs_max_lock);
+	PVR_LOG(("get_max_clock: %d MHz", dvfs_data[sgx_dvfs_max].clock));
+	return snprintf(buf, sizeof(sgx_dvfs_max), "%d\n", dvfs_data[sgx_dvfs_max].clock);
 }
 
 static ssize_t set_max_clock(struct device *d, struct device_attribute *a, const char *buf, size_t count)
@@ -230,10 +211,10 @@ static int g_debug_CCB_count = 1;
 int sec_clock_change(int level) {
 	PVR_LOG(("INFO: %s: Get value: %d", __func__, level));
 
-	if (level > MAX_DVFS_LEVEL)
-		level = MAX_DVFS_LEVEL;
-	else if (level < 0)
-		level = 0;
+	if (level > sgx_dvfs_min)
+		level = sgx_dvfs_min;
+	else if (level < sgx_dvfs_max)
+		level = sgx_dvfs_max;
 
 	sec_gpu_vol_clk_change(dvfs_data[level].clock, dvfs_data[level].voltage);
 	sec_gpu_dvfs_down_requirement_reset();
@@ -294,11 +275,10 @@ void sec_gpu_dvfs_handler(int utilization_value)
 			gpu_clock_get(),
 			dvfs_data[level].threshold, utilization_value));
 
-	if (level == MAX_DVFS_LEVEL) {
+	if (level == sgx_dvfs_min) {
 		// for lowest clock
-		for (i = 0; i < MAX_DVFS_LEVEL; i++) {
+		for (i = sgx_dvfs_max; i < sgx_dvfs_min; i++) {
 			if (dvfs_data[i].threshold <= utilization_value) {
-				level = (sgx_dvfs_max_lock && (i < custom_max_lock_level)) ? custom_max_lock_level : i;
 				goto change;
 			}
 		}
@@ -307,8 +287,8 @@ void sec_gpu_dvfs_handler(int utilization_value)
 		if (utilization_value < DVFS_HIGH_DOWN_THRESHOLD) {
 			level += 1;
 
-			if (sgx_dvfs_min_lock && (level > custom_min_lock_level))
-				level = custom_min_lock_level;
+			if (level > sgx_dvfs_min)
+				level = sgx_dvfs_min;
 			
 			goto change;
 		}
@@ -317,8 +297,8 @@ void sec_gpu_dvfs_handler(int utilization_value)
 		if (utilization_value >= DVFS_UP_THRESHOLD) { // to UP
 			level -= ((utilization_value - util_value) >= TURBO_UTILIZATION_THRESHOLD) ? 1 : 2;
 
-			if (sgx_dvfs_max_lock && (level < custom_max_lock_level))
-				level = custom_max_lock_level;
+			if (level < sgx_dvfs_max)
+				level = sgx_dvfs_max;
 
 			if ((level <= DVFS_HIGH_CLOCK_LEVEL) && (utilization_value < DVFS_HIGH_THRESHOLD))
 				level = DVFS_HIGH_CLOCK_LEVEL + 1;
@@ -330,8 +310,8 @@ void sec_gpu_dvfs_handler(int utilization_value)
 
 			level += 1;
 
-			if (sgx_dvfs_min_lock && (level > custom_min_lock_level))
-				level = custom_min_lock_level;
+			if (level > sgx_dvfs_min)
+				level = sgx_dvfs_min;
 
 			goto change;
 		} else {
