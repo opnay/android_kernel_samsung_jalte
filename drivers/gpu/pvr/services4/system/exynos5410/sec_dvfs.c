@@ -64,7 +64,7 @@ static GPU_DVFS_DATA dvfs_data[] = {
 bool gpu_idle = false;
 int sgx_dvfs_level = -1;
 int sgx_dvfs_min = MAX_DVFS_LEVEL;
-int sgx_dvfs_max = 0;
+int sgx_dvfs_max = BASE_START_LEVEL;
 int sgx_dvfs_down_requirement;
 char sgx_dvfs_table_string[256]={0};
 char* sgx_dvfs_table;
@@ -267,7 +267,7 @@ void sec_gpu_dvfs_handler(int utilization_value)
 	/* this check for current clock must be find in dvfs table */
 	if (level < 0) {
 		PVR_LOG(("WARN: current clock: %d MHz not found in DVFS table. so set to max clock", gpu_clock_get()));
-		sec_gpu_vol_clk_change(dvfs_data[BASE_START_LEVEL].clock, dvfs_data[BASE_START_LEVEL].voltage);
+		sgx_dvfs_level = sec_clock_change(sgx_dvfs_max);
 		return;
 	}
 
