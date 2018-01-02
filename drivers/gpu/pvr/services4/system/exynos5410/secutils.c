@@ -31,7 +31,7 @@
 /* clz func */
 #include <linux/bitops.h>
 
-#define GPU_UTILIZATION_TIME 100 /* 100 msec */
+#define GPU_UTILIZATION_TIME 200 /* 200 msec */
 
 #if defined(CONFIG_ARM_EXYNOS5410_BUS_DEVFREQ)
 extern struct pm_qos_request exynos5_g3d_mif_qos;
